@@ -18,6 +18,7 @@ text to help fight spam.
 * Implement a recurrent neural network (RNN) to try to improve on the baseline
 * Compare accuracy of the two methods for different training set sizes
 * Compare time and space complexity and usage of the two algorithms
+* Generate some text using both models and compare subjectively
 
 
 ## Data
@@ -25,16 +26,17 @@ text to help fight spam.
 The texts used to train the models can be obtained from Project Gutenberg at the
 following URLs:
 
-http://www.gutenberg.org/ebooks/325.txt.utf-8
-http://www.gutenberg.org/ebooks/135.txt.utf-8
-http://www.gutenberg.org/ebooks/28885.txt.utf-8
-http://www.gutenberg.org/ebooks/120.txt.utf-8
-http://www.gutenberg.org/ebooks/209.txt.utf-8
-http://www.gutenberg.org/ebooks/8486.utf-8
-http://www.gutenberg.org/ebooks/13969.txt.utf-8
-http://www.gutenberg.org/ebooks/289.txt.utf-8
-http://www.gutenberg.org/ebooks/8164.txt.utf-8
-http://www.gutenberg.org/ebooks/20387.txt.utf-8
+better - 
+http://www.gutenberg.org/files/325/325-0.txt
+http://www.gutenberg.org/files/135/135-0.txt
+http://www.gutenberg.org/files/28885/28885-0.txt
+http://www.gutenberg.org/files/120/120-0.txt
+http://www.gutenberg.org/files/209/209-0.txt
+http://www.gutenberg.org/files/8486/8486-0.txt
+http://www.gutenberg.org/files/13969/13969-0.txt
+http://www.gutenberg.org/files/289/289-0.txt
+http://www.gutenberg.org/files/8164/8164-0.txt
+http://www.gutenberg.org/files/20387/20387-0.txt
 
 The word2vec project page is at https://code.google.com/archive/p/word2vec/ -
 the word2vec word vectors, trained on 100 billion words from Google News, can be
@@ -44,20 +46,24 @@ obtained from https://docs.google.com/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=
 
 ## Usage
 
-Preprocess the texts - this cleans up the files in the `texts` directory and
-writes them to the `processed` directory.
+Show list of tasks
+    > make
 
-    > wp preprocess
+Run tests
+    > make test
 
+Run all tasks
+    > make all
+    
 Train the models
 
-    > wp train ngram
-    > wp train rnn
+    > make train-ngram
+    > make train-rnn
 
 Test the models
 
-    > wp test ngram
-    > wp test rnn
+    > make test-ngram
+    > make test-rnn
 
 
 ## License
