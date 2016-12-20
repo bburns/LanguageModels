@@ -1,0 +1,4 @@
+a b c d e f .
+a b d c e f .
+a b d e c f .
+a d b e c f .
