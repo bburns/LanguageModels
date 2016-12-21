@@ -34,15 +34,16 @@ data: download unzip split
 # split: $(foreach gnum,$(gutenbergs),data/train/$(gnum)-train.txt)
 
 # Word vectors
+# word_vectors_folder  = data/raw
 # word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
-# word_vectors_zipfile = data/raw/GoogleNews-vectors-negative300.bin.gz
-# word_vectors_file    = data/raw/GoogleNews-vectors-negative300.bin
+# word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
+# word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
 
-# test download and unzip with a small gutenberg file
-word_vectors_url     = http://www.gutenberg.org/files/5616/5616.zip
+# test download and unzip with a small file
 word_vectors_folder  = _scratch
-word_vectors_zipfile = $(word_vectors_folder)/5616.zip
-word_vectors_file    = $(word_vectors_folder)/5616.txt
+word_vectors_url     = ftp://ftp.gnu.org/gnu/ed/ed-1.9.tar.gz
+word_vectors_zipfile = $(word_vectors_folder)/ed-1.9.tar.gz
+word_vectors_file    = $(word_vectors_folder)/ed-1.9.tar
 
 download: $(word_vectors_zipfile)
 unzip: $(word_vectors_file)
@@ -52,9 +53,8 @@ $(word_vectors_zipfile):
 	touch $(word_vectors_zipfile)
 
 $(word_vectors_file): $(word_vectors_zipfile)
-	unzip -d $(word_vectors_folder) $(word_vectors_zipfile)
+	gzip -k -d $(word_vectors_zipfile)
 	touch $(word_vectors_file)
-
 
 
 split: data/split/train.txt
@@ -62,23 +62,7 @@ split: data/split/train.txt
 data/split/train.txt: data/raw/all.txt
 	python src/split.py
 
-data/raw/all.gz: _scratch/foo.zip
-	gunzip -k _scratch/foo.zip
-	mv _scratch/5616.txt _scratch/foo.txt
 
-
-
-# download: _scratch/foo.txt
-
-# _scratch/foo.txt: _scratch/foo.zip
-# 	cd _scratch
-# 	unzip foo.zip
-# 	mv 5616.txt foo.txt
-# 	cd ..
-
-# _scratch/foo.zip:
-# 	wget -O _scratch/foo.zip http://www.gutenberg.org/files/5616/5616.zip
-# 	touch _scratch/foo.zip
 
 # --------------------------------------------------------------------------------
 # * Test
