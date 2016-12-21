@@ -34,16 +34,12 @@ data: download unzip split
 # split: $(foreach gnum,$(gutenbergs),data/train/$(gnum)-train.txt)
 
 # Word vectors
+#. specify folder in environment variables/config file - default to data/raw for reviewer
 # word_vectors_folder  = data/raw
-# word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
-# word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
-# word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
-
-# test download and unzip with a small file
-word_vectors_folder  = _scratch
-word_vectors_url     = ftp://ftp.gnu.org/gnu/ed/ed-1.9.tar.gz
-word_vectors_zipfile = $(word_vectors_folder)/ed-1.9.tar.gz
-word_vectors_file    = $(word_vectors_folder)/ed-1.9.tar
+word_vectors_folder  = c:/users/bburns/desktop/NLPFiles
+word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
+word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
+word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
 
 download: $(word_vectors_zipfile)
 unzip: $(word_vectors_file)
