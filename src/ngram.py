@@ -2,6 +2,7 @@
 """
 n-gram word prediction model
 
+Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
@@ -9,7 +10,6 @@ from __future__ import print_function, division
 import nltk
 from nltk import tokenize
 
-# import pickle
 import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
 
@@ -21,15 +21,18 @@ class Ngram():
     The array is implemented as a dict of dicts.
     """
     def __init__(self, n):
-        self.n = n
-        self.d = {}
+        """
+        Create an n-gram model
+        """
+        self.n = n  # the n in n-gram
+        self.d = {} # dictionary of dictionary of ...
 
     def train(self, s):
         """
         Train the ngram model with the given string s.
         """
         print("tokenize words")
-        #. can we feed this a generator instead?
+        #. can we feed this a generator instead? eg readlines?
         words = tokenize.word_tokenize(s)
         print("get ngrams")
         word_tuples = nltk.ngrams(words, self.n)
@@ -39,7 +42,7 @@ class Ngram():
 
     def increment(self, word_tuple):
         """
-        Increment the value of the multidimensional array at index word_tuple by 1.
+        Increment the value of the multidimensional array at given index (word_tuple) by 1.
         """
         nwords = len(word_tuple)
         d = self.d
@@ -55,7 +58,7 @@ class Ngram():
 
     def get_random(self, words):
         """
-        Get a random following word following the given sequence.
+        Get a random word following the given sequence.
         """
         # get the last dictionary, which contains the subsequent words and their counts
         d = self.d
@@ -74,7 +77,6 @@ class Ngram():
             if stopat < ntotal:
                 return word
         return d.keys()[-1] # right? #. test
-
 
     def predict(self, words):
         """
@@ -105,7 +107,7 @@ class Ngram():
 
     def save(self, filename):
         """
-        Save ngram model to given filename.
+        Save the ngram model to the given filename.
         """
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
@@ -113,7 +115,7 @@ class Ngram():
     @staticmethod
     def load(filename):
         """
-        Load ngram model from given filename
+        Load an ngram model from the given filename.
         """
         with open(filename, 'rb') as f:
             model = pickle.load(f)
@@ -121,14 +123,14 @@ class Ngram():
 
 # works
 # use word tokenizer
-# words = word_tokenize(s)
+# words = tokenize.word_tokenize(s)
 # wlist = [words[i:] for i in range(n)]
 # d = {}
 # for words in zip(*wlist):
 #     print words
 
 # works
-# sentences = sent_tokenize(s)
+# sentences = tokenize.sent_tokenize(s)
 # for sentence in sentences:
 #     print sentence
 
