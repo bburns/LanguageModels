@@ -5,61 +5,120 @@
 # default task - comment out for release version
 all: test
 
-
-# Gutenberg texts to download
-gutenbergs = 325 135 28885 120 209 8486 13969 289 8164 20387
-
-# Word vectors to download
-# word_vectors=
-
+# --------------------------------------------------------------------------------
+# * Help
+# --------------------------------------------------------------------------------
 help:
 	@echo "Makefile for word prediction"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make data           get texts, preprocess, split, get vectors etc"
-	@echo "  make get-texts      download gutenberg texts"
-	@echo "  make preprocess     preprocess texts"
-	@echo "  make split          split texts into train, refine, test sets"
-	@echo "  make get-vectors    download word2vec vectors (1.5gb)"
-	@echo "  make unzip-vectors  unzip word2vec vectors"
+	@echo "  make data           do the following:"
+	@echo "    make download     download word2vec word vectors (1.5gb)"
+	@echo "    make unzip        unzip word2vec vectors"
+	@echo "    make split        split texts into train, refine, test sets"
 	@echo ""
-	@echo "  make test           test the ngram and rnn models"
+	@echo "  make test           do the following:"
+	@echo "    make test-split   test the splitter"
+	@echo "    make test-ngram   test the ngram model"
+	@echo "    make test-rnn     test the rnn model"
+	@echo ""
+	@echo "  make model          "
 
-test:
-	python test/test.py
+# --------------------------------------------------------------------------------
+# * Data
+# --------------------------------------------------------------------------------
+data: download unzip split
 
-# data: get-texts preprocess split get-vectors unzip-vectors
+# Gutenberg text files
+# gutenbergs = 325 135 28885 120 209 8486 13969 289 8164 20387
+# split: $(foreach gnum,$(gutenbergs),data/train/$(gnum)-train.txt)
+
+# Word vectors
+# word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
+# word_vectors_zipfile = data/raw/GoogleNews-vectors-negative300.bin.gz
+# word_vectors_file    = data/raw/GoogleNews-vectors-negative300.bin
+
+# test download and unzip with a small gutenberg file
+word_vectors_url     = http://www.gutenberg.org/files/5616/5616.zip
+word_vectors_folder  = _scratch
+word_vectors_zipfile = $(word_vectors_folder)/5616.zip
+word_vectors_file    = $(word_vectors_folder)/5616.txt
+
+download: $(word_vectors_zipfile)
+unzip: $(word_vectors_file)
+
+$(word_vectors_zipfile):
+	wget -O $(word_vectors_zipfile) $(word_vectors_url)
+	touch $(word_vectors_zipfile)
+
+$(word_vectors_file): $(word_vectors_zipfile)
+	unzip -d $(word_vectors_folder) $(word_vectors_zipfile)
+	touch $(word_vectors_file)
 
 
-# can't do this -
-# Are you human? You have used Project Gutenberg quite a lot today or clicked
-# through it really fast. To make sure you are human, we ask you to resolve this
-# captcha.
 
-get-texts: $(foreach gnum,$(gutenbergs),data/raw/$(gnum)-0.txt)
-# get-texts: data/raw/325-0.txt data/raw/135-0.txt data/raw/28885-0.txt data/raw/120-0.txt
+split: data/split/train.txt
 
-# note: % is a string matching operator, $* inserts the match
-# creates rules like the following:
-# data/raw/325-0.txt:
-# 	wget -O data/raw/325-0.txt http://www.gutenberg.org/files/325/325-0.txt
-# 	touch data/raw/325-0.txt
-data/raw/%-0.txt:
-	wget -O data/raw/$*-0.txt http://www.gutenberg.org/files/$*/$*-0.txt
-	touch data/raw/$*-0.txt
+data/split/train.txt: data/raw/all.txt
+	python src/split.py
 
-# %.txt:
-# 	wget -O data/raw/%.txt $(gutenbergs).txt
-# 	http://www.gutenberg.org/files/325/325-0.txt
+data/raw/all.gz: _scratch/foo.zip
+	gunzip -k _scratch/foo.zip
+	mv _scratch/5616.txt _scratch/foo.txt
 
+
+
+# download: _scratch/foo.txt
+
+# _scratch/foo.txt: _scratch/foo.zip
+# 	cd _scratch
+# 	unzip foo.zip
+# 	mv 5616.txt foo.txt
+# 	cd ..
+
+# _scratch/foo.zip:
+# 	wget -O _scratch/foo.zip http://www.gutenberg.org/files/5616/5616.zip
+# 	touch _scratch/foo.zip
+
+# --------------------------------------------------------------------------------
+# * Test
+# --------------------------------------------------------------------------------
+test: test-split test-ngram test-rnn
+
+test-split:
+	python test/test-split.py
+
+test-ngram:
+	python test/test-ngram.py
+
+test-rnn:
+	echo "nop"
 
 # split:
-# unzip: foo.gz
-# foo.gz:
 # train
 # test
 # all
 
+# --------------------------------------------------------------------------------
+# * Train
+# --------------------------------------------------------------------------------
+train: train-ngram
 
-.PHONY: test
+train-ngram:
+	python src/train.py
+
+models/model-ngram-basic.pickle: data/split/all_train.txt
+	python src/train.py
+
+
+# --------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+
+.PHONY: data download unzip split \
+        test test-split test-ngram test-rnn \
+        train train-ngram train-rnn
 
