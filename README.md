@@ -26,7 +26,6 @@ text to help fight spam.
 The texts used to train the models can be obtained from Project Gutenberg at the
 following URLs:
 
-better - 
 http://www.gutenberg.org/files/325/325-0.txt
 http://www.gutenberg.org/files/135/135-0.txt
 http://www.gutenberg.org/files/28885/28885-0.txt
@@ -37,6 +36,11 @@ http://www.gutenberg.org/files/13969/13969-0.txt
 http://www.gutenberg.org/files/289/289-0.txt
 http://www.gutenberg.org/files/8164/8164-0.txt
 http://www.gutenberg.org/files/20387/20387-0.txt
+
+These were then concatenated together, converted to UTF-8, and stripped of non-conforming characters with:
+
+    $ cat *.txt > foo.txt
+    $ iconv -t utf-8 -c foo.txt > all.txt
 
 The word2vec project page is at https://code.google.com/archive/p/word2vec/ -
 the word2vec word vectors, trained on 100 billion words from Google News, can be

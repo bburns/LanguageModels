@@ -12,15 +12,15 @@ help:
 	@echo "Makefile for word prediction"
 	@echo ""
 	@echo "Usage:"
-	@echo "  make data           do the following:"
-	@echo "    make download     download word2vec word vectors (1.5gb)"
-	@echo "    make unzip        unzip word2vec vectors"
-	@echo "    make split        split texts into train, refine, test sets"
+	@echo "  make data         do the following:"
+	@echo "  make download     download word2vec word vectors (1.5gb)"
+	@echo "  make unzip        unzip word2vec vectors"
+	@echo "  make split        split texts into train, refine, test sets"
 	@echo ""
-	@echo "  make test           do the following:"
-	@echo "    make test-split   test the splitter"
-	@echo "    make test-ngram   test the ngram model"
-	@echo "    make test-rnn     test the rnn model"
+	@echo "  make test         do the following:"
+	@echo "  make test-split   test the splitter"
+	@echo "  make test-ngram   test the ngram model"
+	@echo "  make test-rnn     test the rnn model"
 	@echo ""
 	@echo "  make model          "
 
@@ -29,34 +29,24 @@ help:
 # --------------------------------------------------------------------------------
 data: download unzip split
 
-# Gutenberg text files
-# gutenbergs = 325 135 28885 120 209 8486 13969 289 8164 20387
-# split: $(foreach gnum,$(gutenbergs),data/train/$(gnum)-train.txt)
-
-# Word vectors
-#. specify folder in environment variables/config file - default to data/raw for reviewer
-# word_vectors_folder  = data/raw
-word_vectors_folder  = c:/users/bburns/desktop/NLPFiles
+# word vectors
+word_vectors_folder  = data/raw
 word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
 word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
 word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
 
-download: $(word_vectors_zipfile)
 unzip: $(word_vectors_file)
-
-$(word_vectors_zipfile):
-	wget -O $(word_vectors_zipfile) $(word_vectors_url)
-	touch $(word_vectors_zipfile)
-
 $(word_vectors_file): $(word_vectors_zipfile)
 	gzip -k -d $(word_vectors_zipfile)
 	touch $(word_vectors_file)
 
+download: $(word_vectors_zipfile)
+$(word_vectors_zipfile):
+	wget -O $(word_vectors_zipfile) $(word_vectors_url)
+	touch $(word_vectors_zipfile)
 
-split: data/split/train.txt
-
-data/split/train.txt: data/raw/all.txt
-	python src/split.py
+split:
+	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/raw/all.txt data/split
 
 
 
@@ -74,11 +64,6 @@ test-ngram:
 test-rnn:
 	python src/test/test-rnn.py
 
-# split:
-# train
-# test
-# all
-
 # --------------------------------------------------------------------------------
 # * Train
 # --------------------------------------------------------------------------------
@@ -87,7 +72,7 @@ train: train-ngram
 train-ngram:
 	python src/train.py
 
-models/model-ngram-basic.pickle: data/split/all_train.txt
+models/model-ngram-basic.pickle: data/split/all-train.txt
 	python src/train.py
 
 

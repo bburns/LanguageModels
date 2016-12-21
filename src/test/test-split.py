@@ -14,7 +14,8 @@ import split
 
 random.seed(0)
 filename = "src/test/data/test.txt"
-split.split(filename)
+output_folder = "src/test/data" # same folder
+split.split(filename, output_folder)
 
 # should have created 3 files in same dir: test-train.txt, -validate, -test
 
