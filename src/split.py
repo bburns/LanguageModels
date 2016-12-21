@@ -15,15 +15,19 @@ import os.path
 from nltk import tokenize
 
 
-def which_file(output_files, proportions):
+def get_next_file(output_files, proportions):
     """
+    Get next output file to write to based on specified proportions.
     """
-    # nchars = map(output_files, lambda f: f.tell())
-    nchars = [f.tell() for f in output_files]
+    # determine which file to write to by comparing the
+    # current file size proportions against the given proportions,
+    # writing to the first one found with a lower proportion than desired.
+    nchars = [f.tell() for f in output_files] # file sizes
     ntotal = sum(nchars)
     if ntotal==0:
         return output_files[0]
-    pcurrent = [n/ntotal for n in nchars]
+    pcurrent = [n/ntotal for n in nchars] # file proportions
+    # find file that needs more data
     for i in range(len(output_files)):
         if pcurrent[i] < proportions[i]:
             return output_files[i]
@@ -35,56 +39,46 @@ def split(filename, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     Split a textfile on sentences into train, validate, and test files.
     """
 
-    assert abs(ptrain+pvalidate+ptest-1)<1e-6
+    assert abs(ptrain+pvalidate+ptest-1)<1e-6 # must add to 1.0
 
-    proportions = (ptrain, pvalidate, ptest)
-    suffixes = ('train','validate','test')
+    # initialize
     output_folder = 'data/split'
+    suffixes = ('train','validate','test')
+    proportions = (ptrain, pvalidate, ptest)
+    filetitle = os.path.basename(filename)[:-4] # eg 'all'
+    output_filenames = [output_folder + '/' + filetitle + '-' + suffix + '.txt' for suffix in suffixes]
+
+    # open output files for writing
     try:
         os.mkdir(output_folder)
     except:
         pass
-    filetitle = os.path.basename(filename)[:-4] # eg 'all'
-
-    # open files for writing
     output_files = []
-    for suffix in suffixes:
-        output_filename = output_folder + '/' + filetitle + '_' + suffix + '.txt'
+    for output_filename in output_filenames:
         print(output_filename)
         f = open(output_filename, 'wb')
         output_files.append(f)
 
-    f_all = open(filename, 'rb')
+    # open source datafile (eg all.txt)
+    f_data = open(filename, 'rb')
 
-    #. use generator for larger text somehow
-    s = f_all.read()
+    # parse into sentences
+    #. use generators for larger text somehow
+    s = f_data.read()
     sentences = tokenize.sent_tokenize(s)
-    # ifile = 0
+
+    # walk over sentences, outputting to the different output files
     for sentence in sentences:
         sentence = sentence.replace('\r\n',' ')
         sentence = sentence.replace('\n',' ')
         print(sentence)
         print()
-
-        # nchars = len(sentence)
-        # ntotal += nchars
-
-        # if nfilechars[ifile] / ntotal < proportions[i]:
-        # nfilechars[ifile] += nchars
-
-        # decide which file to write to
-        # ifile = which_file(output_files, proportions)
-        # f = output_files[ifile]
-        # ifile += 1
-        # if ifile >= len(output_files):
-        #     ifile = 0
-        # track filesizes and proportions
-        f = which_file(output_files, proportions)
+        f = get_next_file(output_files, proportions)
         f.write(sentence)
         f.write('\n\n')
 
-    f_all.close()
-
+    # close all files
+    f_data.close()
     for f in output_files:
         f.close()
 
