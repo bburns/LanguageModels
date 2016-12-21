@@ -1,0 +1,2 @@
+e a b c d f .
+b c a e f d .

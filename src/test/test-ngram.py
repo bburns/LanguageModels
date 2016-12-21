@@ -1,6 +1,6 @@
 
 """
-Test the n-gram and RNN models using a simple test dataset.
+Test the n-gram models using a simple test dataset.
 """
 
 from __future__ import print_function, division
@@ -12,8 +12,8 @@ import sys; sys.path.append('src')
 import ngram
 
 
-infile = 'test/test-train.txt'
-modelfile = 'test/model.pickle'
+infile = 'test/data/test-train.txt'
+modelfile = 'test/data/ngram-model-basic.pickle'
 n = 3
 
 print("read file")
