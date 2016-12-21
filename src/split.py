@@ -2,7 +2,6 @@
 """
 Split a textfile into train, validate, test files.
 
-Need to split on sentences, not lines, otherwise would wind up with artificial word tuples.
 """
 
 
@@ -37,12 +36,16 @@ def get_next_file(output_files, proportions):
 def split(filename, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     """
     Split a textfile on sentences into train, validate, and test files.
+
+    Will put resulting files in the same folder with -train etc appended.
+    Need to split on sentences, not lines, otherwise would wind up with
+    artificial word tuples.
     """
 
     assert abs(ptrain+pvalidate+ptest-1)<1e-6 # must add to 1.0
 
     # initialize
-    output_folder = 'data/split'
+    output_folder = os.path.dirname(filename) # eg 'data/split'
     suffixes = ('train','validate','test')
     proportions = (ptrain, pvalidate, ptest)
     filetitle = os.path.basename(filename)[:-4] # eg 'all'

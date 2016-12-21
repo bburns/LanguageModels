@@ -1,5 +1,6 @@
 
 """
+Test split.py
 """
 
 from __future__ import print_function, division
@@ -11,12 +12,11 @@ import sys; sys.path.append('src')
 import split
 
 
-# filename = "test/data/test.txt"
-filename = "data/raw/other/1920 M R James A Thin Ghost and Others.txt"
-print("splitting " + filename)
-
 random.seed(0)
-split.split(filename, 0.8, 0.1)
+filename = "src/test/data/test.txt"
+split.split(filename)
+
+#. now test split files size and contents
 
 
 

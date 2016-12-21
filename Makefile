@@ -66,13 +66,13 @@ data/split/train.txt: data/raw/all.txt
 test: test-split test-ngram test-rnn
 
 test-split:
-	python test/test-split.py
+	python src/test/test-split.py
 
 test-ngram:
-	python test/test-ngram.py
+	python src/test/test-ngram.py
 
 test-rnn:
-	echo "nop"
+	python src/test/test-rnn.py
 
 # split:
 # train
