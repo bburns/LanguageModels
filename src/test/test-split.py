@@ -16,8 +16,7 @@ random.seed(0)
 filename = "src/test/data/test.txt"
 split.split(filename)
 
-#. now test split files size and contents
-
+# should have created 3 files in same dir: test-train.txt, -validate, -test
 
 
 
