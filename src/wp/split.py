@@ -54,6 +54,14 @@ def get_sentences(s):
     sentences = tokenize.sent_tokenize(s)
     return sentences
 
+def get_tokens(s):
+    """
+    Parse a string into tokens and return in a list.
+    (currently just used by notebook to show what the models use)
+    """
+    tokens = tokenize.word_tokenize(s)
+    return tokens
+
 def split(filename, output_folder, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     """
     Split a textfile on sentences into train, validate, and test files.
