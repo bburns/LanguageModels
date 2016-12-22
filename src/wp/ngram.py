@@ -17,7 +17,7 @@ from pprint import pprint, pformat
 class NgramModel():
     """
     n-gram model - initialize with n.
-    Stores a sparse multidimensional array of word counts.
+    Stores a sparse multidimensional array of token counts.
     The array is implemented as a dict of dicts.
     """
 
@@ -28,73 +28,83 @@ class NgramModel():
         self.n = n  # the n in n-gram
         self._d = {} # dictionary of dictionary of ...
 
-    def train(self, s):
+    # def train(self, s):
+    #     """
+    #     Train the ngram model with the given string s.
+    #     """
+    #     print("tokenize words")
+    #     #. can we feed this a generator instead? eg readlines?
+    #     words = tokenize.word_tokenize(s)
+    #     print("get ngrams")
+    #     word_tuples = nltk.ngrams(words, self.n)
+    #     print("add ngrams to model")
+    #     for word_tuple in word_tuples:
+    #         self.increment(word_tuple)
+
+    def train(self, tokens):
         """
-        Train the ngram model with the given string s.
+        Train the ngram model with the given tokens.
         """
-        print("tokenize words")
-        #. can we feed this a generator instead? eg readlines?
-        words = tokenize.word_tokenize(s)
         print("get ngrams")
-        word_tuples = nltk.ngrams(words, self.n)
+        token_tuples = nltk.ngrams(tokens, self.n)
         print("add ngrams to model")
-        for word_tuple in word_tuples:
-            self.increment(word_tuple)
+        for token_tuple in token_tuples:
+            self.increment(token_tuple)
 
-    def increment(self, word_tuple):
+    def increment(self, token_tuple):
         """
-        Increment the value of the multidimensional array at given index (word_tuple) by 1.
+        Increment the value of the multidimensional array at given index (token_tuple) by 1.
         """
-        nwords = len(word_tuple)
+        ntokens = len(token_tuple)
         d = self._d
-        for i, word in enumerate(word_tuple):
-            if i==nwords-1:
-                if not word in d:
-                    d[word] = 0
-                d[word] += 1
+        for i, token in enumerate(token_tuple):
+            if i==ntokens-1:
+                if not token in d:
+                    d[token] = 0
+                d[token] += 1
             else:
-                if not word in d:
-                    d[word] = {}
-                d = d[word]
+                if not token in d:
+                    d[token] = {}
+                d = d[token]
 
-    def get_random(self, words):
+    def get_random(self, tokens):
         """
-        Get a random word following the given sequence.
+        Get a random token following the given sequence.
         """
-        # get the last dictionary, which contains the subsequent words and their counts
+        # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
-        for word in words:
-            if word in d:
-                d = d[word]
+        for token in tokens:
+            if token in d:
+                d = d[token]
             else:
                 return None
-        # pick a random word according to the distribution of subsequent words
-        ntotal = sum(d.values()) # total occurrences of subsequent words
+        # pick a random token according to the distribution of subsequent tokens
+        ntotal = sum(d.values()) # total occurrences of subsequent tokens
         p = random.random() # a random value 0.0-1.0
         stopat = p * ntotal # we'll get the cumulative sum and stop when we get here
         ntotal = 0
-        for word in d.keys():
-            ntotal += d[word]
+        for token in d.keys():
+            ntotal += d[token]
             if stopat < ntotal:
-                return word
+                return token
         return d.keys()[-1] # right? #. test
 
     #.. this should return the top k words with their percentages
-    def predict(self, words):
+    def predict(self, tokens):
         """
-        Get the most likely next word following the given sequence.
+        Get the most likely next token following the given sequence.
         """
-        # get the last dictionary, which contains the subsequent words and their counts
+        # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
-        for word in words:
-            if word in d:
-                d = d[word]
+        for token in tokens:
+            if token in d:
+                d = d[token]
             else:
                 return None
-        # find the most likely subsequent word
+        # find the most likely subsequent token
         # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
-        maxword = max(d, key=d.get)
-        return maxword
+        maxtoken = max(d, key=d.get)
+        return maxtoken
 
     def __str__(self):
         """

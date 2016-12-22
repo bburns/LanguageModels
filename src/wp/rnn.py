@@ -23,15 +23,15 @@ class RnnModel():
         """
         pass
 
-    def train(self, s):
+    def train(self, tokens):
         """
-        Train the rnn model with the given string s.
+        Train the rnn model with the given tokens.
         """
         pass
 
-    def predict(self, words):
+    def predict(self, tokens):
         """
-        Get the most likely next k words following the given sequence.
+        Get the most likely next k tokens following the given sequence.
         """
         pass
 
