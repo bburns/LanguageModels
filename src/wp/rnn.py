@@ -21,7 +21,7 @@ class RnnModel():
         """
         Create an rnn model
         """
-        pass
+        self.name = 'rnn'
 
     def train(self, tokens):
         """

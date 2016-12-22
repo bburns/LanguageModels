@@ -26,20 +26,8 @@ class NgramModel():
         Create an n-gram model
         """
         self.n = n  # the n in n-gram
+        self.name = "n-gram (n=%d)" % n
         self._d = {} # dictionary of dictionary of ...
-
-    # def train(self, s):
-    #     """
-    #     Train the ngram model with the given string s.
-    #     """
-    #     print("tokenize words")
-    #     #. can we feed this a generator instead? eg readlines?
-    #     words = tokenize.word_tokenize(s)
-    #     print("get ngrams")
-    #     word_tuples = nltk.ngrams(words, self.n)
-    #     print("add ngrams to model")
-    #     for word_tuple in word_tuples:
-    #         self.increment(word_tuple)
 
     def train(self, tokens):
         """
