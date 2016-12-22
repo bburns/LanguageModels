@@ -17,16 +17,21 @@ help:
 	@echo "  make unzip        unzip word2vec vectors"
 	@echo "  make split        split texts into train, refine, test sets"
 	@echo ""
-	@echo "  make test         do the following:"
+	@echo "  make train        "
+	@echo "  make validate     "
+	@echo "  make test         "
+	@echo ""
+	@echo "Unit tests:"
 	@echo "  make test-split   test the splitter"
 	@echo "  make test-ngram   test the ngram model"
 	@echo "  make test-rnn     test the rnn model"
-	@echo ""
-	@echo "  make model          "
 
 # --------------------------------------------------------------------------------
 # * Data
 # --------------------------------------------------------------------------------
+
+# download, unzip, and prepare data files for training, validating, and testing
+
 data: download unzip split
 
 # word vectors
@@ -51,9 +56,31 @@ split:
 
 
 # --------------------------------------------------------------------------------
+# * Train
+# --------------------------------------------------------------------------------
+
+train: train-ngram
+
+train-ngram: data/models/model-ngram-basic.pickle
+data/models/model-ngram-basic.pickle: data/split/all-train.txt
+	python src/train-ngram.py
+
+
+# --------------------------------------------------------------------------------
 # * Test
 # --------------------------------------------------------------------------------
-test: test-split test-ngram test-rnn
+
+# test: test-ngram
+
+# test-ngram: data/models/model-ngram-basic.pickle
+# data/models/model-ngram-basic.pickle: data/split/all-test.txt
+# 	python src/test-ngram.py
+
+# --------------------------------------------------------------------------------
+# * Unit Tests
+# --------------------------------------------------------------------------------
+
+# test: test-split test-ngram test-rnn
 
 test-split:
 	python src/test/test-split.py
@@ -65,25 +92,15 @@ test-rnn:
 	python src/test/test-rnn.py
 
 # --------------------------------------------------------------------------------
-# * Train
-# --------------------------------------------------------------------------------
-train: train-ngram
-
-train-ngram:
-	python src/train.py
-
-models/model-ngram-basic.pickle: data/split/all-train.txt
-	python src/train.py
-
-
-# --------------------------------------------------------------------------------
+# * other
 # --------------------------------------------------------------------------------
 
 
 # --------------------------------------------------------------------------------
+# * End
 # --------------------------------------------------------------------------------
 
 .PHONY: data download unzip split \
-        test test-split test-ngram test-rnn \
-        train train-ngram train-rnn
-
+        train train-ngram train-rnn \
+        test test-ngram test-rnn \
+        test-split test-ngram test-rnn

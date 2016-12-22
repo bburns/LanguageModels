@@ -14,7 +14,7 @@ import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
 
 
-class Ngram():
+class NgramModel():
     """
     n-gram model - initialize with n.
     Stores a sparse multidimensional array of word counts.
@@ -25,7 +25,7 @@ class Ngram():
         Create an n-gram model
         """
         self.n = n  # the n in n-gram
-        self.d = {} # dictionary of dictionary of ...
+        self._d = {} # dictionary of dictionary of ...
 
     def train(self, s):
         """
@@ -45,7 +45,7 @@ class Ngram():
         Increment the value of the multidimensional array at given index (word_tuple) by 1.
         """
         nwords = len(word_tuple)
-        d = self.d
+        d = self._d
         for i, word in enumerate(word_tuple):
             if i==nwords-1:
                 if not word in d:
@@ -61,7 +61,7 @@ class Ngram():
         Get a random word following the given sequence.
         """
         # get the last dictionary, which contains the subsequent words and their counts
-        d = self.d
+        d = self._d
         for word in words:
             if word in d:
                 d = d[word]
@@ -78,12 +78,13 @@ class Ngram():
                 return word
         return d.keys()[-1] # right? #. test
 
+    #.. this should return the top k words with their percentages
     def predict(self, words):
         """
         Get the most likely next word following the given sequence.
         """
         # get the last dictionary, which contains the subsequent words and their counts
-        d = self.d
+        d = self._d
         for word in words:
             if word in d:
                 d = d[word]
@@ -98,7 +99,7 @@ class Ngram():
         """
         Return model dictionary as a string.
         """
-        return pformat(self.d) # from pprint module
+        return pformat(self._d) # from pprint module
 
     # def get_probabilities(model):
         # for word in model:
@@ -120,19 +121,6 @@ class Ngram():
         with open(filename, 'rb') as f:
             model = pickle.load(f)
             return model
-
-# works
-# use word tokenizer
-# words = tokenize.word_tokenize(s)
-# wlist = [words[i:] for i in range(n)]
-# d = {}
-# for words in zip(*wlist):
-#     print words
-
-# works
-# sentences = tokenize.sent_tokenize(s)
-# for sentence in sentences:
-#     print sentence
 
 
 
