@@ -20,6 +20,7 @@ class NgramModel():
     Stores a sparse multidimensional array of word counts.
     The array is implemented as a dict of dicts.
     """
+
     def __init__(self, n):
         """
         Create an n-gram model
@@ -108,7 +109,7 @@ class NgramModel():
 
     def save(self, filename):
         """
-        Save the ngram model to the given filename.
+        Save the model to the given filename.
         """
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
@@ -116,7 +117,7 @@ class NgramModel():
     @staticmethod
     def load(filename):
         """
-        Load an ngram model from the given filename.
+        Load a model from the given filename.
         """
         with open(filename, 'rb') as f:
             model = pickle.load(f)

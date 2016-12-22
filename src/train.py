@@ -3,6 +3,9 @@
 Train the models.
 """
 
+#. this will be done in the experiment notebooks
+
+
 from __future__ import print_function, division
 import random
 from pprint import pprint
@@ -18,14 +21,14 @@ modelfile = 'data/models/ngram-model-basic.pickle'
 n = 3
 
 print("read file: " + infile)
-f = open(infile, 'r')
+f = open(infile, 'rb')
 s = f.read()
 s = s.strip()
 s = s.lower()
 f.close()
 
 print("train model")
-model = ngram.Ngram(n)
+model = ngram.NgramModel(n)
 model.train(s)
 
 print("save model: " + modelfile)

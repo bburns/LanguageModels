@@ -1,8 +1,12 @@
 
 """
-Split a textfile by sentences into train, validate, test files.
+Split a textfile by sentences into train, validate, test files,
+based on specified proportions.
 
 Usage:
+>>> import split
+>>> split.split('data/raw/all.txt', 'data/split', 0.8, 0.1, 0.1)
+or
 $ python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/raw/all.txt data/split
 
 """
@@ -40,6 +44,15 @@ def get_next_file(output_files, proportions):
             return output_files[i]
     return output_files[0]
 
+def get_sentences(s):
+    """
+    Parse a utf-8 string into sentences and return in a list.
+    """
+    s = s.decode('utf-8') # gutenbergs are all utf-8
+    s = s.replace('\r\n',' ')
+    s = s.replace('\n',' ')
+    sentences = tokenize.sent_tokenize(s)
+    return sentences
 
 def split(filename, output_folder, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     """
@@ -51,14 +64,13 @@ def split(filename, output_folder, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     ptrain, pvalidate, ptest: proportion of original file to put into respective
       output files
 
-    Note: need to split on sentences, not lines, otherwise would wind up with
+    Note: we need to split on sentences, not lines, otherwise would wind up with
     artificial word tuples.
     """
 
     assert abs(ptrain+pvalidate+ptest-1)<1e-6 # must add to 1.0
 
     # initialize
-    # output_folder = os.path.dirname(filename) # eg 'data/split'
     suffixes = ('train','validate','test')
     proportions = (ptrain, pvalidate, ptest)
     filetitle = os.path.basename(filename)[:-4] # eg 'all'
@@ -81,13 +93,10 @@ def split(filename, output_folder, ptrain=0.8, pvalidate=0.1, ptest=0.1):
     # parse into sentences
     #. use generators for larger text somehow
     s = f_data.read()
-    s = s.decode('utf-8') # gutenbergs are all utf-8
-    sentences = tokenize.sent_tokenize(s)
+    sentences = get_sentences(s)
 
     # walk over sentences, outputting to the different output files
     for sentence in sentences:
-        sentence = sentence.replace('\r\n',' ')
-        sentence = sentence.replace('\n',' ')
         print(sentence)
         print()
         f = get_next_file(output_files, proportions)
@@ -100,10 +109,11 @@ def split(filename, output_folder, ptrain=0.8, pvalidate=0.1, ptest=0.1):
         f.close()
 
 
-# command line handler
-# see https://pypi.python.org/pypi/argh
-import argh
-argh.dispatch_command(split)
+if __name__ == '__main__':
+    # command line handler
+    # see https://pypi.python.org/pypi/argh
+    import argh
+    argh.dispatch_command(split)
 
 
 
