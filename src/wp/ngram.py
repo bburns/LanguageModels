@@ -6,12 +6,28 @@ Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
+import heapq
 
 import nltk
 from nltk import tokenize
 
 import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
+
+
+
+
+def get_best_tokens(d, k):
+    """
+    Return the best k tokens with their probabilities from the given dictionary.
+    """
+    # maxtoken = max(d, key=d.get)
+    lst = list(d.items()) # eg [('a',5),('dog',1),...]
+    best = heapq.nlargest(k, lst, key=lambda pair: pair[1])
+    ntotal = sum(d.values())
+    best_pct = [(k,v/ntotal) for k,v in best]
+    return best_pct
+
 
 
 class NgramModel():
@@ -27,7 +43,8 @@ class NgramModel():
         """
         self.n = n  # the n in n-gram
         self.name = "n-gram (n=%d)" % n
-        self._d = {} # dictionary of dictionary of ...
+        self._d = {} # dictionary of dictionary of ... of counts
+
 
     def train(self, tokens):
         """
@@ -38,6 +55,7 @@ class NgramModel():
         print("add ngrams to model")
         for token_tuple in token_tuples:
             self.increment(token_tuple)
+
 
     def increment(self, token_tuple):
         """
@@ -54,6 +72,7 @@ class NgramModel():
                 if not token in d:
                     d[token] = {}
                 d = d[token]
+
 
     def get_random(self, tokens):
         """
@@ -77,8 +96,10 @@ class NgramModel():
                 return token
         return d.keys()[-1] # right? #. test
 
+
     #.. this should return the top k words with their percentages
-    def predict(self, tokens):
+    # def predict(self, tokens):
+    def predict(self, tokens, k):
         """
         Get the most likely next token following the given sequence.
         """
@@ -91,8 +112,11 @@ class NgramModel():
                 return None
         # find the most likely subsequent token
         # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
-        maxtoken = max(d, key=d.get)
-        return maxtoken
+        # maxtoken = max(d, key=d.get)
+        # return maxtoken
+        best_tokens = get_best_tokens(d, k)
+        return best_tokens
+
 
     def __str__(self):
         """
@@ -100,10 +124,12 @@ class NgramModel():
         """
         return pformat(self._d) # from pprint module
 
+
     # def get_probabilities(model):
         # for word in model:
         # for i, word in enumerate(tuple):
         # d = model[word0]
+
 
     def save(self, filename):
         """
@@ -111,6 +137,7 @@ class NgramModel():
         """
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
+
 
     @staticmethod
     def load(filename):

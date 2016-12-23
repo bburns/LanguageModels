@@ -15,6 +15,9 @@ December 29, 2016
 Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
+$ x + y $
+
+
 ### Problem Statement
 
 <!-- The problem which needs to be solved is clearly defined. A strategy for

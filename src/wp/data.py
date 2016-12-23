@@ -2,18 +2,7 @@
 """
 Data module - wraps all data and handles processing.
 
-
-# Split a textfile by sentences into train, validate, test files,
-# based on specified proportions.
-
-# Usage:
-# >>> import split
-# >>> split.split('data/raw/all.txt', 'data/split', 0.8, 0.1, 0.1)
-# or
-# $ python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/raw/all.txt data/split
-
 """
-
 
 from __future__ import print_function, division
 
@@ -26,15 +15,16 @@ from pprint import pprint
 from nltk import tokenize
 
 
-
-
 class Data():
     """
-    Wrapper around all data files, with tokenizers.
+    Wrapper around all data files, with splitter and tokenizers.
     """
 
     def __init__(self):
-        self.escape = '../../'
+        """
+        Create a data object - contains little to no state.
+        """
+        self.escape = '../../' # escape from the Experiment subfolder, where this is called from
         self.rawfiles    = self.escape + 'data/raw/*.txt'
         self.mergedfile  = self.escape + 'data/merged/all.txt'
         self.splitfolder = self.escape + 'data/split/'
@@ -69,23 +59,6 @@ class Data():
             print("Merged file created.")
 
 
-    # def get_string(self):
-    #     pass
-    #     # print("read file: " + infile)
-    #     # f = open(infile, 'rb')
-    #     # s = f.read()
-    #     # s = s.strip()
-    #     # s = s.lower()
-    #     # f.close()
-
-    #     # print("train model")
-    #     # model = ngram.NgramModel(n)
-    #     # model.train(s)
-
-    #     # print("save model: " + modelfile)
-    #     # model.save(modelfile)
-
-
     def _get_next_file(self, output_files, proportions):
         """
         Get next output file to write to based on specified proportions.
@@ -112,16 +85,6 @@ class Data():
         return output_files[0] # otherwise just return the first file
 
 
-    # def get_sentences(self, s):
-    #     """
-    #     Parse a utf-8 string into sentences and return in a list.
-    #     """
-    #     s = re.sub(r'[^\x00-\x7f]',r'', s) # strip out any non-ascii characters - nltk complains otherwise
-    #     s = s.replace('\r\n',' ')
-    #     s = s.replace('\n',' ')
-    #     sentences = tokenize.sent_tokenize(s)
-    #     return sentences
-
     def text(self, source, nchars=None):
         """
         Return contents of a data source.
@@ -132,6 +95,7 @@ class Data():
             s = f.read()
             if nchars: s = s[:nchars]
         return s
+
 
     def sentences(self, source, nchars=None):
         """
@@ -148,6 +112,7 @@ class Data():
             sentences = tokenize.sent_tokenize(s)
         return sentences
 
+
     def tokens(self, source, nchars=None):
         """
         Parse a data source into tokens and return in a list.
@@ -160,6 +125,7 @@ class Data():
             tokens = tokenize.word_tokenize(s)
         return tokens
 
+
     def tuples(self, source, ntokens_per_tuple, nchars=None):
         """
         Parse a data source into tokens and return as tuples.
@@ -169,14 +135,6 @@ class Data():
         tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
         tuples = zip(*tokenlists) # eg [['the','dog'], ['dog','barked'], ...]
         return tuples
-
-    # def get_tokens(self, s):
-    #     """
-    #     Parse a string into tokens and return in a list.
-    #     (currently just used by notebook to show what the models use)
-    #     """
-    #     tokens = tokenize.word_tokenize(s)
-    #     return tokens
 
 
     def split(self, ptrain=0.8, pvalidate=0.1, ptest=0.1):
@@ -250,6 +208,15 @@ class Data():
 
         print("The merged file has been split into train, validate, and test files.")
 
+
+# Split a textfile by sentences into train, validate, test files,
+# based on specified proportions.
+
+# Usage:
+# >>> import split
+# >>> split.split('data/raw/all.txt', 'data/split', 0.8, 0.1, 0.1)
+# or
+# $ python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/raw/all.txt data/split
 
 # if __name__ == '__main__':
 #     # command line handler
