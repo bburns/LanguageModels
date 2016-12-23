@@ -35,7 +35,7 @@ help:
 data: download unzip split
 
 # word vectors
-word_vectors_folder  = data/raw
+word_vectors_folder  = data/word_vectors
 word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
 word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
 word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
@@ -51,7 +51,7 @@ $(word_vectors_zipfile):
 	touch $(word_vectors_zipfile)
 
 split:
-	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/raw/all.txt data/split
+	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/processed/all.txt data/split
 
 
 

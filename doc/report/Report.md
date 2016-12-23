@@ -1,5 +1,11 @@
 
-from https://review.udacity.com/#!/rubrics/108/view
+# Word Prediction using Recurrent Neural Networks
+
+Brian Burns  
+Udacity Machine Learning Engineer Nanodegree
+December 29, 2016
+
+<!-- from https://review.udacity.com/#!/rubrics/108/view -->
 
 ## Definition
 
@@ -140,6 +146,8 @@ improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
 
 
+--------------------------------------------------------------------------------
+
 ## Quality
 
 ### Presentation
@@ -154,7 +162,6 @@ resources used to complete the project are cited and referenced. -->
 <!-- Code is formatted neatly with comments that effectively explain complex
 implementations. Output produces similar results and solutions as to those
 discussed in the project. -->
-
 
 
 
