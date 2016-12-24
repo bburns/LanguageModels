@@ -45,7 +45,7 @@ class Data():
         Converts files to plain ascii text.
         """
         if os.path.isfile(self.mergedfile):
-            print("The merged file already exists.")
+            print("The raw files have already been merged.")
         else:
             with open(self.mergedfile, 'wb') as f_all:
                 for filename in glob.glob(self.rawfiles):
@@ -56,7 +56,7 @@ class Data():
                         # s = str(s) # convert to plain string
                         s = s.replace('\r\n','\n') # dos2unix
                         f_all.write(s)
-            print("Merged file created.")
+            print("The raw files have been merged.")
 
 
     def _get_next_file(self, output_files, proportions):

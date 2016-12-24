@@ -17,6 +17,23 @@ related data sets or input data is given. -->
 
 $ x + y $
 
+important in speech recognition to help resolve ambiguity.
+until recently trigram was state of the art in word prediction.
+can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
+have to back off to digrams when trigram counts are too small. 
+eg if prompt is "dinosaur pizza", and you've never seen that pair before, must backoff to the bigram "pizza ___". 
+but trigrams fail to use a lot of information that can be used to predict the next word.
+doesn't understand similarities between words, eg cat and dog
+so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
+allows us to use much larger context, eg previous 10 words.
+bengio pioneered this.
+huge softmax layer
+skipmax connections go straight from input to output words
+was slightly worse than trigram
+since then have been improved considerably
+
+
+
 
 ### Problem Statement
 
