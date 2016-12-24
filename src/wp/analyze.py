@@ -75,6 +75,8 @@ def get_tuples(tokens, ntokens_per_tuple):
 
 def test_models(models, data, nchars=None):
     """
+    Test the given models on nchars of the given data's test tokens.
+    returns list of accuracy scores for each model
     """
 
     # get the test tokens
@@ -83,6 +85,7 @@ def test_models(models, data, nchars=None):
     # run test on the models
     npredictions = 1000
     k = 3 # number of tokens to predict
+    scores = []
     for model in models:
         print(model.name)
         n = model.n
@@ -99,7 +102,11 @@ def test_models(models, data, nchars=None):
                     nright += 1
             i += 1
             if i>npredictions: break
-        print("nright/total=%d/%d = %f" % (nright, npredictions, nright/npredictions))
+        accuracy = nright/npredictions
+        print("nright/total=%d/%d = %f" % (nright, npredictions, accuracy))
         print()
+        scores.append(accuracy)
+
+    return scores
 
 
