@@ -12,7 +12,7 @@ import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
 
 
-class RnnModel():
+class RnnModel(object):
     """
     Recurrent neural network (RNN) model
     """

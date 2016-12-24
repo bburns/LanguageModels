@@ -10,70 +10,105 @@ import os.path
 
 
 
-#. might need to use an alist instead of dict, to preserve order
-def encode_params(params):
+def create_models(model_list, nchars=None):
     """
-    Encode a dictionary of parameters as a string to be stored in a filename.
-    e.g. {'n':3,'b':1.2} => 'n-3,b-1.2'
+    Create models from the given model list with class and params.
     """
-    s = str(params)
-    s = s.replace(':','-')
-    s = s.replace("'",'')
-    s = s.replace('{','')
-    s = s.replace('}','')
-    s = s.replace(' ','')
-    s = '(' + s + ')'
-    return s
+    models = []
+    for modelclass, modelparams in model_list:
+        # params = modelparams.copy()
+        # params['nchars'] = nchars
+        # sparams = encode_params(params)
+        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
+        # if os.path.isfile(modelfile):
+        #     print("load model: " + modelfile)
+        #     model = modelclass.load(modelfile) # static method
+        # else:
+        print("create model object")
+        # model = modelclass(**modelparams) # __init__ method
+        model = modelclass(nchars=nchars, **modelparams) # __init__ method
+        # model = modelclass(**params) # __init__ method
+        models.append(model)
+    return models
 
 
-def train_models(model_list, data, nchars=None):
+def load_models(models):
     """
-    Train models on the training tokens, or load them if they're saved in files.
+    Load models from file if available.
+    """
+    models2 = []
+    for model in models:
+        # params = modelparams.copy()
+        # params['nchars'] = nchars
+        # sparams = encode_params(params)
+        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
+        if os.path.isfile(model.filename):
+            print("load model: " + model.filename)
+            modelclass = type(model)
+            model = modelclass.load(model.filename) # static method
+        models2.append(model)
+    return models2
+
+
+# def train_models(model_list, data, nchars=None):
+# def train_models(models, data):
+# def train_empty_models(models, data):
+def train_empty_models(models, data, nchars=None):
+    """
+    # Train models on the training tokens, or load them if they're saved in files.
+    Train empty models on the training tokens.
     """
 
     # get sequence of training tokens (slow)
     train_tokens = data.tokens('train', nchars)
 
     # iterate over models
-    models = []
-    for modelclass, modelparams in model_list:
+    # models = []
+    # for modelclass, modelparams in model_list:
+    models2 = []
+    for model in models:
 
         # load existing model, or create, train, and save one
-        params = modelparams.copy()
-        params['nchars'] = nchars
-        sparams = encode_params(params)
-        modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
-        if os.path.isfile(modelfile):
-            print("load model: " + modelfile)
-            model = modelclass.load(modelfile) # static method
-        else:
-            print("create model object")
-            model = modelclass(**modelparams)
+        # params = modelparams.copy()
+        # params['nchars'] = nchars
+        # sparams = encode_params(params)
+        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
+        # if os.path.isfile(modelfile):
+            # print("load model: " + modelfile)
+            # model = modelclass.load(modelfile) # static method
+        # else:
+        if not model.trained():
+            # print("create model object")
+            # model = modelclass(**modelparams)
 
             print("train model")
             model.train(train_tokens)
 
-            print("save model: " + modelfile)
-            model.save(modelfile)
+            # print("save model: " + modelfile)
+            # model.save(modelfile)
+            print("save model")
+            model.save()
 
-        models.append(model)
+        # models.append(model)
+        models2.append(model)
 
     print("done")
-    return models
+    # return models
+    return models2
 
 
 #> move to data.py?
 def get_tuples(tokens, ntokens_per_tuple):
     """
     Group sequences of tokens together.
-    e.g. ['the','dog','barked',...]=>[['the','dog'],['dog','barked'],...]
+    e.g. ['the','dog','barked',...] => [['the','dog'],['dog','barked'],...]
     """
     tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
     tuples = zip(*tokenlists)
     return tuples
 
 
-def test_models(models, data, nchars=None):
+def test_models(models, data, npredictions_max=1000, k=3, nchars=None):
     """
     Test the given models on nchars of the given data's test tokens.
     returns list of accuracy scores for each model
@@ -83,8 +118,8 @@ def test_models(models, data, nchars=None):
     test_tokens = data.tokens('test', nchars)
 
     # run test on the models
-    npredictions = 1000
-    k = 3 # number of tokens to predict
+    # npredictions = 1000
+    # k = 3 # number of tokens to predict
     scores = []
     for model in models:
         print(model.name)
@@ -101,8 +136,9 @@ def test_models(models, data, nchars=None):
                 if actual in predicted_tokens:
                     nright += 1
             i += 1
-            if i>npredictions: break
-        accuracy = nright/npredictions
+            if i > npredictions_max: break
+        npredictions = i
+        accuracy = nright / npredictions
         print("nright/total=%d/%d = %f" % (nright, npredictions, accuracy))
         print()
         scores.append(accuracy)
