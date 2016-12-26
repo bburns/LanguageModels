@@ -1,6 +1,6 @@
 
 """
-Analyze models
+Analyze models - load/train/save/test models on given data.
 """
 
 from __future__ import print_function, division
@@ -8,96 +8,25 @@ import os
 import os.path
 
 
-modelfolder_default = '../../data/models'
-
-
-# def create_models(model_list, nchars=None):
-def create_models(model_list, nchars=None, modelfolder=None):
+def init_models(modelspecs, modelfolder, data, nchars=None):
     """
-    Create models from the given model list with class and params.
+    Initialize models from the given model list and data, loading/training/saving as needed.
     """
-    models = []
-    for modelclass, modelparams in model_list:
-        # params = modelparams.copy()
-        # params['nchars'] = nchars
-        # sparams = encode_params(params)
-        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
-        # if os.path.isfile(modelfile):
-        #     print("load model: " + modelfile)
-        #     model = modelclass.load(modelfile) # static method
-        # else:
-        print("create model object")
-        if modelfolder is None:
-            modelfolder = modelfolder_default
-        # model = modelclass(**modelparams) # __init__ method
-        # model = modelclass(nchars=nchars, **modelparams) # __init__ method
-        model = modelclass(nchars=nchars, modelfolder=modelfolder, **modelparams) # __init__ method
-        # model = modelclass(**params) # __init__ method
-        models.append(model)
-    return models
-
-
-def load_models(models):
-    """
-    Load models from file if available.
-    """
-    models2 = []
-    for model in models:
-        # params['nchars'] = nchars
-        # sparams = encode_params(params)
-        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
-        # if os.path.isfile(model.filename):
-        #     print("load model: " + model.filename)
-        #     modelclass = type(model)
-        #     model = modelclass.load(model.filename) # static method
-        model = model.load()
-        models2.append(model)
-    return models2
-
-
-# def train_models(model_list, data, nchars=None):
-# def train_models(models, data):
-# def train_empty_models(models, data):
-def train_empty_models(models, data, nchars=None):
-    """
-    # Train models on the training tokens, or load them if they're saved in files.
-    Train empty models on the training tokens.
-    """
-
-    # get sequence of training tokens (slow)
+    # get sequence of training tokens if needed (slow)
+    #. do only if needed
     train_tokens = data.tokens('train', nchars)
-
-    # iterate over models
-    # models = []
-    # for modelclass, modelparams in model_list:
-    models2 = []
-    for model in models:
-
-        # load existing model, or create, train, and save one
-        # params = modelparams.copy()
-        # params['nchars'] = nchars
-        # sparams = encode_params(params)
-        # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
-        # if os.path.isfile(modelfile):
-            # print("load model: " + modelfile)
-            # model = modelclass.load(modelfile) # static method
-        # else:
+    models = []
+    for (modelclass, modelparams) in modelspecs:
+        print("create model object")
+        model = modelclass(modelfolder=modelfolder, nchars=nchars, **modelparams) # __init__ method
+        model = model.load()
         if not model.trained():
-            # print("create model object")
-            # model = modelclass(**modelparams)
-
             print("train model")
             model.train(train_tokens)
-
-            # print("save model: " + modelfile)
-            # model.save(modelfile)
             print("save model")
             model.save()
-
-        models2.append(model)
-
-    print("done")
-    return models2
+        models.append(model)
+    return models
 
 
 #> move to data.py?

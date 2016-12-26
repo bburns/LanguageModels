@@ -64,7 +64,7 @@ class NgramModel(object):
 
     # def __init__(self, n):
     # def __init__(self, n, nchars=None):
-    def __init__(self, n, nchars=None, modelfolder='.'):
+    def __init__(self, n, modelfolder='.', nchars=None):
         """
         Create an n-gram model.
         """
@@ -217,6 +217,7 @@ class NgramModel(object):
         if filename is None:
             filename = self.filename()
         if os.path.isfile(filename):
+            print("load model")
             with open(filename, 'rb') as f:
                 model = pickle.load(f)
                 return model
