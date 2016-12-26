@@ -201,15 +201,6 @@ class NgramModel(object):
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
-    # @staticmethod
-    # def load(filename):
-    #     """
-    #     Load a model from the given filename.
-    #     """
-    #     with open(filename, 'rb') as f:
-    #         model = pickle.load(f)
-    #         return model
-
     def load(self, filename=None):
         """
         Load model from the given or default filename.
