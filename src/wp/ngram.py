@@ -17,22 +17,12 @@ import nltk
 from nltk import tokenize
 
 
-# modelfolder = "models"
-# modelfolder = "../../models"
-
-
-#. might need to use an alist instead of dict, to preserve order
 def encode_params(params):
     """
-    # Encode a dictionary of parameters as a string to be stored in a filename.
-    # e.g. {'n':3,'b':1.2} => '(n-3,b-1.2)'
     Encode a list of parameters as a string to be stored in a filename.
     e.g. (('n',3),('b',1.2)) => '(n-3-b-1.2)'
     """
     s = str(params)
-    # s = s.replace(':','-')
-    # s = s.replace('{','')
-    # s = s.replace('}','')
     s = s.replace(",",'-')
     s = s.replace("'",'')
     s = s.replace('(','')
@@ -62,8 +52,6 @@ class NgramModel(object):
     The sparse array is implemented as a dict of dicts.
     """
 
-    # def __init__(self, n):
-    # def __init__(self, n, nchars=None):
     def __init__(self, n, modelfolder='.', nchars=None):
         """
         Create an n-gram model.
@@ -165,7 +153,7 @@ class NgramModel(object):
 
     def predict(self, tokens, k):
         """
-        Get the most likely next token following the given sequence.
+        Get the most likely next k tokens following the given sequence.
         """
         # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
@@ -187,6 +175,7 @@ class NgramModel(object):
         """
         return pformat(self._d) # from pprint module
 
+    #. move save/load to baseclass wp.Model
     def save(self, filename=None):
         """
         Save the model to the given or default filename.
