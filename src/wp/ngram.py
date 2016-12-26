@@ -6,6 +6,8 @@ Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
+import os
+import os.path
 import random
 import heapq
 import cPickle as pickle # faster version of pickle
@@ -14,6 +16,9 @@ from pprint import pprint, pformat
 import nltk
 from nltk import tokenize
 
+
+# modelfolder = "models"
+# modelfolder = "../../models"
 
 
 #. might need to use an alist instead of dict, to preserve order
@@ -48,26 +53,36 @@ def get_best_tokens(d, k):
     return best_pct
 
 
+
 class NgramModel(object):
     """
     n-gram model - initialize with n.
+
     Stores a sparse multidimensional array of token counts.
+    The sparse array is implemented as a dict of dicts.
     """
-    # the sparse array is implemented as a dict of dicts
 
     # def __init__(self, n):
-    def __init__(self, n, nchars=None):
+    # def __init__(self, n, nchars=None):
+    def __init__(self, n, nchars=None, modelfolder='.'):
         """
-        Create an n-gram model
+        Create an n-gram model.
         """
         self.n = n  # the n in n-gram
         self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens eh?
+        self.modelfolder = modelfolder
         self.name = "n-gram (n=%d)" % n
         self._d = {} # dictionary of dictionary of ... of counts
-        params = (('nchars',nchars),('n',n))
-        sparams = encode_params(params)
-        classname = type(self).__name__
-        self.filename = "models/%s-%s.pickle" % (classname, sparams)
+
+    def filename(self):
+        """
+        Get default filename for model.
+        """
+        classname = type(self).__name__ # ie 'NgramModel'
+        params = (('nchars',self.nchars),('n',self.n))
+        sparams = encode_params(params) # eg 'nchars-1000-n-3'
+        filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
+        return filename
 
     def train(self, tokens):
         """
@@ -132,33 +147,20 @@ class NgramModel(object):
         """
         start1 = '.'
         output = []
-        if self.n==2:
-            input = [start1]
-            for i in range(k-1):
-                next = self.get_random(input)
-                input.pop(0)
-                input.append(next)
-                output.append(next)
-        if self.n==3:
+        input = [start1]
+        if self.n>=3:
             start2 = random.choice(self._d[start1].keys())
-            input = [start1, start2]
+            input.append(start2)
             output.append(start2)
-            for i in range(k-1):
-                next = self.get_random(input)
-                input.pop(0)
-                input.append(next)
-                output.append(next)
-        if self.n==4:
-            start2 = random.choice(self._d[start1].keys())
+        if self.n>=4:
             start3 = random.choice(self._d[start1][start2].keys())
-            input = [start1, start2, start3]
-            output.append(start2)
+            input.append(start3)
             output.append(start3)
-            for i in range(k-1):
-                next = self.get_random(input)
-                input.pop(0)
-                input.append(next)
-                output.append(next)
+        for i in range(k-1):
+            next = self.get_random(input)
+            input.pop(0)
+            input.append(next)
+            output.append(next)
         return output
 
     def predict(self, tokens, k):
@@ -187,21 +189,38 @@ class NgramModel(object):
 
     def save(self, filename=None):
         """
-        Save the model to the given filename, or the default.
+        Save the model to the given or default filename.
         """
-        if not filename:
-            filename = self.filename
+        if filename is None:
+            filename = self.filename()
+        try:
+            folder = os.path.dirname(filename)
+            os.mkdir(folder)
+        except:
+            pass
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
-    @staticmethod
-    def load(filename):
-        """
-        Load a model from the given filename.
-        """
-        with open(filename, 'rb') as f:
-            model = pickle.load(f)
-            return model
+    # @staticmethod
+    # def load(filename):
+    #     """
+    #     Load a model from the given filename.
+    #     """
+    #     with open(filename, 'rb') as f:
+    #         model = pickle.load(f)
+    #         return model
 
+    def load(self, filename=None):
+        """
+        Load model from the given or default filename.
+        """
+        if filename is None:
+            filename = self.filename()
+        if os.path.isfile(filename):
+            with open(filename, 'rb') as f:
+                model = pickle.load(f)
+                return model
+        else:
+            return self
 
 

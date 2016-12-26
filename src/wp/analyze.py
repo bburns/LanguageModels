@@ -8,9 +8,11 @@ import os
 import os.path
 
 
+modelfolder_default = '../../data/models'
 
 
-def create_models(model_list, nchars=None):
+# def create_models(model_list, nchars=None):
+def create_models(model_list, nchars=None, modelfolder=None):
     """
     Create models from the given model list with class and params.
     """
@@ -25,8 +27,11 @@ def create_models(model_list, nchars=None):
         #     model = modelclass.load(modelfile) # static method
         # else:
         print("create model object")
+        if modelfolder is None:
+            modelfolder = modelfolder_default
         # model = modelclass(**modelparams) # __init__ method
-        model = modelclass(nchars=nchars, **modelparams) # __init__ method
+        # model = modelclass(nchars=nchars, **modelparams) # __init__ method
+        model = modelclass(nchars=nchars, modelfolder=modelfolder, **modelparams) # __init__ method
         # model = modelclass(**params) # __init__ method
         models.append(model)
     return models
@@ -38,14 +43,14 @@ def load_models(models):
     """
     models2 = []
     for model in models:
-        # params = modelparams.copy()
         # params['nchars'] = nchars
         # sparams = encode_params(params)
         # modelfile = 'models/' + modelclass.__name__ + '-' + sparams + '.pickle'
-        if os.path.isfile(model.filename):
-            print("load model: " + model.filename)
-            modelclass = type(model)
-            model = modelclass.load(model.filename) # static method
+        # if os.path.isfile(model.filename):
+        #     print("load model: " + model.filename)
+        #     modelclass = type(model)
+        #     model = modelclass.load(model.filename) # static method
+        model = model.load()
         models2.append(model)
     return models2
 
@@ -89,11 +94,9 @@ def train_empty_models(models, data, nchars=None):
             print("save model")
             model.save()
 
-        # models.append(model)
         models2.append(model)
 
     print("done")
-    # return models
     return models2
 
 
@@ -139,7 +142,7 @@ def test_models(models, data, npredictions_max=1000, k=3, nchars=None):
             if i > npredictions_max: break
         npredictions = i
         accuracy = nright / npredictions
-        print("nright/total=%d/%d = %f" % (nright, npredictions, accuracy))
+        print("accuracy = nright/total = %d/%d = %f" % (nright, npredictions, accuracy))
         print()
         scores.append(accuracy)
 

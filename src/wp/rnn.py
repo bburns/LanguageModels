@@ -35,10 +35,12 @@ class RnnModel(object):
         """
         pass
 
-    def save(self, filename):
+    def save(self, filename=None):
         """
-        Save the model to the given filename.
+        Save the model to the default or given filename.
         """
+        if not filename:
+            filename = self.filename
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 

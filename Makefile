@@ -1,5 +1,5 @@
 
-# Makefile for word prediction
+# Makefile for word prediction project
 
 
 # default task - comment out for release version
@@ -9,7 +9,7 @@ all: test
 # * Help
 # --------------------------------------------------------------------------------
 help:
-	@echo "Makefile for word prediction"
+	@echo "Makefile for word prediction project"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make data         do the following:"
@@ -21,10 +21,20 @@ help:
 	@echo "  make validate     "
 	@echo "  make test         "
 	@echo ""
+	@echo "  make report       make pdf of report - doc/report/report.pdf"
+	@echo ""
 	@echo "Unit tests:"
 	@echo "  make test-split   test the splitter"
 	@echo "  make test-ngram   test the ngram model"
 	@echo "  make test-rnn     test the rnn model"
+
+# --------------------------------------------------------------------------------
+# * Report
+# --------------------------------------------------------------------------------
+
+report: doc/report/report.pdf
+doc/report/report.pdf: doc/report/report.md
+	pandoc doc/report/report.md -o doc/report/report.pdf
 
 # --------------------------------------------------------------------------------
 # * Data
