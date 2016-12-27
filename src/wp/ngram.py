@@ -6,47 +6,22 @@ Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
-import os
-import os.path
+
 import random
-import heapq
-import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
 
 import nltk
 from nltk import tokenize
 
-
-def encode_params(params):
-    """
-    Encode a list of parameters as a string to be stored in a filename.
-    e.g. (('n',3),('b',1.2)) => '(n-3-b-1.2)'
-    """
-    s = str(params)
-    s = s.replace(",",'-')
-    s = s.replace("'",'')
-    s = s.replace('(','')
-    s = s.replace(')','')
-    s = s.replace(' ','')
-    s = '(' + s + ')'
-    return s
-
-def get_best_tokens(d, k):
-    """
-    Return the best k tokens with their probabilities from the given dictionary.
-    """
-    # convert list to a heap, find k largest values
-    lst = list(d.items()) # eg [('a',5),('dog',1),...]
-    best = heapq.nlargest(k, lst, key=lambda pair: pair[1])
-    ntotal = sum(d.values())
-    best_pct = [(k,v/ntotal) for k,v in best]
-    return best_pct
+import model
+import util
 
 
-
-class NgramModel(object):
+# class NgramModel(object):
+class NgramModel(model.Model):
     """
     n-gram model - initialize with n.
+    Inherits some code from Model class.
 
     Stores a sparse multidimensional array of token counts.
     The sparse array is implemented as a dict of dicts.
@@ -68,7 +43,7 @@ class NgramModel(object):
         """
         classname = type(self).__name__ # ie 'NgramModel'
         params = (('nchars',self.nchars),('n',self.n))
-        sparams = encode_params(params) # eg 'nchars-1000-n-3'
+        sparams = util.encode_params(params) # eg 'nchars-1000-n-3'
         filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
         return filename
 
@@ -91,6 +66,7 @@ class NgramModel(object):
         else:
             return False
 
+    #. prefix with _ ?
     def increment(self, token_tuple):
         """
         Increment the value of the multidimensional array at given index (token_tuple) by 1.
@@ -155,6 +131,7 @@ class NgramModel(object):
         """
         Get the most likely next k tokens following the given sequence.
         """
+        #. add assert len(tokens)==self.n, or ignore too much/not enough info?
         # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
         for token in tokens:
@@ -166,42 +143,17 @@ class NgramModel(object):
         # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
         # maxtoken = max(d, key=d.get)
         # return maxtoken
-        best_tokens = get_best_tokens(d, k)
+        best_tokens = util.get_best_tokens(d, k)
         return best_tokens
 
     def __str__(self):
         """
-        Return model dictionary as a string.
+        Return description of model.
         """
-        return pformat(self._d) # from pprint module
-
-    #. move save/load to baseclass wp.Model
-    def save(self, filename=None):
-        """
-        Save the model to the given or default filename.
-        """
-        if filename is None:
-            filename = self.filename()
-        try:
-            folder = os.path.dirname(filename)
-            os.mkdir(folder)
-        except:
-            pass
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f)
-
-    def load(self, filename=None):
-        """
-        Load model from the given or default filename.
-        """
-        if filename is None:
-            filename = self.filename()
-        if os.path.isfile(filename):
-            print("load model")
-            with open(filename, 'rb') as f:
-                model = pickle.load(f)
-                return model
-        else:
-            return self
+        # return pformat(self._d) # from pprint module
+        s = ''
+        s += self.name + '\n'
+        s += 'vocab size %d\n' % len(self._d)
+        return s
 
 

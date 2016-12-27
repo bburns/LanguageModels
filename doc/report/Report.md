@@ -15,9 +15,17 @@ December 29, 2016
 Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
-$y = x^2 + 2$
-
+problem domain
 important in speech recognition to help resolve ambiguity.
+also _ and _.
+
+project origin
+ie approaches to solve the problem, and what we'll use. 
+
+input data
+we'll use gutenberg 1m words of novels and stories. others use larger corpora, eg google's _, _, _. 
+
+
 until recently trigram was state of the art in word prediction.
 can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
 have to back off to digrams when trigram counts are too small. 
@@ -26,25 +34,44 @@ but trigrams fail to use a lot of information that can be used to predict the ne
 doesn't understand similarities between words, eg cat and dog
 so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
 allows us to use much larger context, eg previous 10 words.
-bengio pioneered this.
+bengio pioneered this. (year?)
 huge softmax layer
 skipmax connections go straight from input to output words
 was slightly worse than trigram
 since then have been improved considerably
+>how?
+>this was a plain rnn?
 
+then came lstm's in 1997
+various types, incl gru 2014 - simpler
+then attention 2015
 
 
 
 ### Problem Statement
 
-<!-- The problem which needs to be solved is clearly defined. A strategy for
-solving the problem, including discussion of the expected solution, has been
-made. -->
+<!-- The problem which needs to be solved is clearly defined.
+A strategy for solving the problem, including discussion of the expected solution,
+has been made. -->
+
+Problem: given a sequence of n words, predict the k most likely next words and their probabilities. 
+
+eg n=9, give a choice of k=3 most likely next words
+eg "The dog ran down the field and caught the __"
+predictions - frisbee 10% ball 9% stick 8%
+
+strategy
+based on literature, expect rnn lstm gru to offer best performance for a given amount of computation
+
+
 
 ### Metrics
 
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
+
+will use accuracy or mean error rate
+see what is used in lit
 
 
 ## Analysis
@@ -57,6 +84,106 @@ lieu of a dataset, a thorough description of the input space or input data has
 been made. Abnormalities or characteristics about the data or input that need to
 be addressed have been identified. -->
 
+dataset
+ncharacters
+nletters/word
+nwords (crude, before preprocessing into sentences and tokens)
+<!-- ntokens (incl punctuation like , . " n't etc) -->
+<!-- nsentences -->
+nsentences
+nwords/sentence, do histogram
+
+
+samples
+
+    The landscape was gloomy and deserted. He was encompassed by space.
+    There was nothing around him but an obscurity in which his gaze was
+    lost, and a silence which engulfed his voice.
+    -lesmiserables
+
+    Either the well was very deep, or she fell very slowly, for she had
+    plenty of time as she went down to look about her, and to wonder what
+    was going to happen next. 
+    -alice
+
+    The story had held us, round the fire, sufficiently breathless, but
+    except the obvious remark that it was gruesome, as, on Christmas Eve
+    in an old house, a strange tale should essentially be, I remember no
+    comment uttered till somebody happened to say that it was the only case
+    he had met in which such a visitation had fallen on a child. 
+    -turnofthescrew
+
+    Meantime the Rat, warm and comfortable, dozed by his fireside. His paper
+    of half-finished verses slipped from his knee, his head fell back, his
+    mouth opened, and he wandered by the verdant banks of dream-rivers. Then
+    a coal slipped, the fire crackled and sent up a spurt of flame, and he
+    woke with a start. 
+    -wind
+
+cleaning/abnormalities/characteristics
+oddities like . . . . ., ***, * * * *, table of contents, gutenberg preface, hyphens, different quotation marks, unicode characters?
+how clean them up
+
+count occurrences of . . . . , ***, quotation mark types, non-ascii characters
+
+gutenberg preface, eg - 
+
+    The Project Gutenberg EBook of Les Misérables, by Victor Hugo
+
+    This eBook is for the use of anyone anywhere at no cost and with almost
+    no restrictions whatsoever. You may copy it, give it away or re-use
+    it under the terms of the Project Gutenberg License included with this
+    eBook or online at www.gutenberg.org
+
+    Title: Les Misérables Complete in Five Volumes
+    Author: Victor Hugo
+    Translator: Isabel F. Hapgood
+    Release Date: June 22, 2008 [EBook #135]
+    Last Updated: January 18, 2016
+    Language: English
+    Character set encoding: UTF-8
+    ***START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES***
+    Produced by Judith Boss and David Widger
+
+title page, eg
+
+    LES MISÉRABLES
+    By Victor Hugo
+    Translated by Isabel F. Hapgood
+    Thomas Y. Crowell & Co. No. 13, Astor Place New York
+    Copyright 1887
+    Enlarge
+    Enlarge
+    Enlarge
+    Enlarge
+    Enlarge
+    Enlarge
+
+table of contents, eg
+
+    Contents
+
+    LES MISÉRABLES
+
+    VOLUME I.--FANTINE.
+
+    PREFACE
+
+    BOOK FIRST--A JUST MAN
+    CHAPTER I--M. MYRIEL
+    CHAPTER II--M. MYRIEL BECOMES M. WELCOME
+    CHAPTER III--A HARD BISHOPRIC FOR A GOOD BISHOP
+    CHAPTER IV--WORKS CORRESPONDING TO WORDS
+    CHAPTER V--MONSEIGNEUR BIENVENU MADE HIS CASSOCKS LAST TOO LONG
+    CHAPTER VI--WHO GUARDED HIS HOUSE FOR HIM
+    CHAPTER VII--CRAVATTE
+    CHAPTER VIII--PHILOSOPHY AFTER DRINKING
+    CHAPTER IX--THE BROTHER AS DEPICTED BY THE SISTER
+    CHAPTER X--THE BISHOP IN THE PRESENCE OF AN UNKNOWN LIGHT
+    CHAPTER XI--A RESTRICTION
+    CHAPTER XII--THE SOLITUDE OF MONSEIGNEUR WELCOME
+    CHAPTER XIII--WHAT HE BELIEVED
+    CHAPTER XIV--WHAT HE THOUGHT
 
 
 ### Exploratory Visualization
@@ -66,10 +193,16 @@ characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
 
+
+
 ### Algorithms and Techniques
 
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
+
+
+
+
 
 
 ### Benchmark
@@ -77,6 +210,9 @@ properly justified based on the characteristics of the problem. -->
 <!-- Student clearly defines a benchmark result or threshold for comparing
 performances of solutions obtained. -->
 
+n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)
+
+published results? 
 
 
 
@@ -90,29 +226,9 @@ corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
 
-raw text:
+cleanup gutenberg preface, titlepages, table of contents manually, or just leave in as noise - simpler.
 
-between their stems. The sky was now golden and the horizon, a horizon
-of distant woods, it seemed, was purple.
 
-But all that Dr. Ashton could find to say, after contemplating this
-prospect for many minutes, was: "Abominable!"
-
-A listener would have been aware, immediately upon this, of the sound
-of footsteps coming somewhat hurriedly in the direction of the study:
-by the resonance he could have told that they were traversing a much
-larger room. Dr. Ashton turned round in his chair as the door opened,
-and looked expectant. The incomer was a lady--a stout lady in the
-
-split by sentence:
-
-The sky was now golden and the horizon, a horizon of distant woods, it seemed, was purple.
-
-But all that Dr. Ashton could find to say, after contemplating this prospect for many minutes, was: "Abominable!"
-
-A listener would have been aware, immediately upon this, of the sound of footsteps coming somewhat hurriedly in the direction of the study: by the resonance he could have told that they were traversing a much larger room.
-
-Dr. Ashton turned round in his chair as the door opened, and looked expectant.
 
 
 ### Implementation
@@ -163,8 +279,8 @@ Madeleine arrived there were all the neck was not the sister 's the banks of a b
 She opened the brim and terrible quagmire was trying to my fancy it had n't know what may be
 
 n-gram (n=3)
-A pile of stones , destined to weep .
 LIKE SUMMER TEMPESTS CAME HIS TEARS XII . THE EBB-TIDE RUNS
+A pile of stones , destined to weep .
 Monsieur my father a copy , or for whatever it was a hopeless state , constructed in the U.S. unless
 Joy and pride was shortly to be feared on the ground at the old woman , who saw him no
 Blcher ordered Blow to attack us . Here was another , to such an authority in reference to what Boulatruelle
