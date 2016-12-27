@@ -105,11 +105,33 @@ class NgramModel(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    def generate(self, k):
+    # def generate(self, k):
+    #     """
+    #     Generate k tokens of random text.
+    #     """
+    #     # start1 = '.'
+    #     start1 = 'END'
+    #     output = []
+    #     input = [start1]
+    #     if self.n>=3:
+    #         start2 = random.choice(self._d[start1].keys())
+    #         input.append(start2)
+    #         output.append(start2)
+    #     if self.n>=4:
+    #         start3 = random.choice(self._d[start1][start2].keys())
+    #         input.append(start3)
+    #         output.append(start3)
+    #     for i in range(k-1):
+    #         next = self.get_random(input)
+    #         input.pop(0)
+    #         input.append(next)
+    #         output.append(next)
+    #     return output
+
+    def generate(self, k=1):
         """
-        Generate k tokens of random text.
+        Generate k sentences of random text.
         """
-        # start1 = '.'
         start1 = 'END'
         output = []
         input = [start1]
@@ -121,11 +143,14 @@ class NgramModel(model.Model):
             start3 = random.choice(self._d[start1][start2].keys())
             input.append(start3)
             output.append(start3)
-        for i in range(k-1):
-            next = self.get_random(input)
-            input.pop(0)
-            input.append(next)
-            output.append(next)
+        for i in range(k):
+            while True:
+                next = self.get_random(input)
+                input.pop(0)
+                input.append(next)
+                output.append(next)
+                if next=='END':
+                    break
         return output
 
     def predict(self, tokens, k):
@@ -171,7 +196,7 @@ if __name__ == '__main__':
     token = model.get_random(test_tokens)
     print(test_tokens)
     print(token)
-    tokens = model.generate(10)
+    tokens = model.generate(5)
     print(' '.join(tokens))
     print()
 
@@ -180,7 +205,7 @@ if __name__ == '__main__':
     token = model.get_random(test_tokens)
     print(test_tokens)
     print(token)
-    tokens = model.generate(10)
+    tokens = model.generate(5)
     print(' '.join(tokens))
     print()
 
