@@ -142,7 +142,7 @@ gutenberg preface, eg -
     Last Updated: January 18, 2016
     Language: English
     Character set encoding: UTF-8
-    ***START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES***
+    *** START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
     Produced by Judith Boss and David Widger
 
 title page, eg
@@ -162,13 +162,9 @@ title page, eg
 table of contents, eg
 
     Contents
-
     LES MISÉRABLES
-
     VOLUME I.--FANTINE.
-
     PREFACE
-
     BOOK FIRST--A JUST MAN
     CHAPTER I--M. MYRIEL
     CHAPTER II--M. MYRIEL BECOMES M. WELCOME
@@ -184,6 +180,49 @@ table of contents, eg
     CHAPTER XII--THE SOLITUDE OF MONSEIGNEUR WELCOME
     CHAPTER XIII--WHAT HE BELIEVED
     CHAPTER XIV--WHAT HE THOUGHT
+
+gutenberg license at end, eg
+
+    End of the Project Gutenberg EBook of My Man Jeeves, by P. G. Wodehouse
+    *** END OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
+    ***** This file should be named 8164-8.txt or 8164-8.zip *****
+    This and all associated files of various formats will be found in:
+    http://www.gutenberg.org/8/1/6/8164/
+    Produced by Suzanne L. Shell, Charles Franks and the Online
+    Distributed Proofreading Team
+    Updated editions will replace the previous one--the old editions
+    will be renamed.
+    [and 15 page license...]
+
+
+gutenberg header and footer markers - not consistent, but regexp should capture diffs. eg
+
+    "\*\*\*[ ]*START.*\*\*\*"
+    "\*\*\*[ ]*END.*\*\*\*"
+
+    *** START OF THIS PROJECT GUTENBERG EBOOK PHANTASTES ***
+    *** START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
+    *** START OF THIS PROJECT GUTENBERG EBOOK ALICE'S ADVENTURES IN WONDERLAND ***
+    *** START OF THIS PROJECT GUTENBERG EBOOK TREASURE ISLAND ***
+    *** START OF THIS PROJECT GUTENBERG EBOOK THE TURN OF THE SCREW ***
+    *** START OF THE PROJECT GUTENBERG EBOOK GHOST STORIES OF AN ANTIQUARY ***
+    ***START OF THE PROJECT GUTENBERG EBOOK THE HILL OF DREAMS***
+    *** START OF THIS PROJECT GUTENBERG EBOOK THE WIND IN THE WILLOWS ***
+    *** START OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
+    ***START OF THE PROJECT GUTENBERG EBOOK A THIN GHOST AND OTHERS***
+    
+    *** END OF THIS PROJECT GUTENBERG EBOOK PHANTASTES ***
+    *** END OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
+    *** END OF THIS PROJECT GUTENBERG EBOOK ALICE'S ADVENTURES IN WONDERLAND ***
+    *** END OF THIS PROJECT GUTENBERG EBOOK TREASURE ISLAND ***
+    *** END OF THIS PROJECT GUTENBERG EBOOK THE TURN OF THE SCREW ***
+    *** END OF THE PROJECT GUTENBERG EBOOK GHOST STORIES OF AN ANTIQUARY ***
+    ***END OF THE PROJECT GUTENBERG EBOOK THE HILL OF DREAMS***
+    *** END OF THIS PROJECT GUTENBERG EBOOK THE WIND IN THE WILLOWS ***
+    *** END OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
+    ***END OF THE PROJECT GUTENBERG EBOOK A THIN GHOST AND OTHERS***
+
+
 
 
 ### Exploratory Visualization
@@ -277,14 +316,16 @@ Hucheloup . `` and whatever , and the Italian , there was no additional contact 
 And the old stockade . The lip was indubitable -- THE FOUNDATION , your breakfast ? The woman of
 Madeleine arrived there were all the neck was not the sister 's the banks of a bore a few
 She opened the brim and terrible quagmire was trying to my fancy it had n't know what may be
+Ballad of which sped I COULD HARDLY BELIEVE IN FAIRY LAND I was higher than you give thee From
 
 n-gram (n=3)
 LIKE SUMMER TEMPESTS CAME HIS TEARS XII . THE EBB-TIDE RUNS
-A pile of stones , destined to weep .
 Monsieur my father a copy , or for whatever it was a hopeless state , constructed in the U.S. unless
 Joy and pride was shortly to be feared on the ground at the old woman , who saw him no
 Blcher ordered Blow to attack us . Here was another , to such an authority in reference to what Boulatruelle
+A pile of stones , destined to weep .
 Dry happiness resembles the voice of the choir , as strange as anything that was easy to inspire my pupils
+My spirits rose as I lay with half-closed eyes . I was not so with me out of the hand
 
 n-gram (n=4)
 Terror had seized on the whole day , with intervals of listening ; and the gipsy never grudged it him .
@@ -293,6 +334,10 @@ Drive it out better . The glass must be violet for iron jewellery , and black fo
 Joy and pride in his sons overcame his sorrow at their loss . On me he heaped every kindness that heart
 Blcher ordered extermination . Roguet had set the lugubrious example of threatening with death any French grenadier who should bring him
 Dry happiness resembles dry bread . One eats , but one morning she out of her bed , saying to the
+
+Just like a rocket too , it burst in the air of splendidly coloured fire-flies , which sped hither and thither
+A lovelier night I never saw . Indeed ! Where were you last night . She was . When she reached
+
 
 ffnn
 

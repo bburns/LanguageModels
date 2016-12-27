@@ -17,11 +17,11 @@ def init_models(modelspecs, modelfolder, data, nchars=None):
     for (modelclass, modelparams) in modelspecs:
         print("create model object")
         model = modelclass(modelfolder=modelfolder, nchars=nchars, **modelparams) # __init__ method
-        model = model.load()
-        if not model.trained():
+        model = model.load() # load model if available
+        if not model.trained:
             # get sequence of training tokens if needed (slow)
             if not train_tokens:
-                print("obtaining training tokens")
+                print("get complete stream of training tokens, nchars=%d" % nchars)
                 train_tokens = data.tokens('train', nchars)
             print("train model")
             model.train(train_tokens)
@@ -49,12 +49,14 @@ def test_models(models, data, npredictions_max=1000, k=3, nchars=None):
     """
 
     # get the test tokens
+    print('get complete stream of test tokens, nchars=%d' % nchars)
     test_tokens = data.tokens('test', nchars)
 
     # run test on the models
     scores = []
     for model in models:
         n = model.n
+        print('get tuples, n=%d' % n)
         test_tuples = get_tuples(test_tokens, n) # group tokens into sequences
         i = 0
         nright = 0

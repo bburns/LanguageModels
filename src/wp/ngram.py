@@ -6,10 +6,8 @@ Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
-
 import random
 from pprint import pprint, pformat
-
 import nltk
 from nltk import tokenize
 
@@ -17,7 +15,6 @@ import model
 import util
 
 
-# class NgramModel(object):
 class NgramModel(model.Model):
     """
     n-gram model - initialize with n.
@@ -36,6 +33,7 @@ class NgramModel(model.Model):
         self.modelfolder = modelfolder
         self.name = "n-gram (n=%d)" % n
         self._d = {} # dictionary of dictionary of ... of counts
+        self.trained = False
 
     def filename(self):
         """
@@ -49,45 +47,47 @@ class NgramModel(model.Model):
 
     def train(self, tokens):
         """
-        Train the ngram model with the given tokens.
+        Train the ngram model with the given token stream.
         """
         print("get ngrams, n=%d" % self.n)
+        #. is this a generator? will want n=10+ for rnn. if not make one
         token_tuples = nltk.ngrams(tokens, self.n)
         print("add ngrams to model")
         for token_tuple in token_tuples:
-            self.increment(token_tuple)
+            self._increment_count(token_tuple)
+        self.trained = True
 
-    def trained(self):
-        """
-        Has this model been trained yet?
-        """
-        if self._d:
-            return True
-        else:
-            return False
-
-    #. prefix with _ ?
-    def increment(self, token_tuple):
+    def _increment_count(self, token_tuple):
         """
         Increment the value of the multidimensional array at given index (token_tuple) by 1.
         """
         ntokens = len(token_tuple)
         d = self._d
+        # need to iterate down the token stream to find the last dictionary,
+        # where you can increment the counter.
         for i, token in enumerate(token_tuple):
-            if i==ntokens-1:
-                if not token in d:
-                    d[token] = 0
-                d[token] += 1
+            if i==ntokens-1: # at last dictionary
+                if token in d:
+                    d[token] += 1
+                else:
+                    d[token] = 1
             else:
-                if not token in d:
+                if token in d:
+                    d = d[token]
+                else:
                     d[token] = {}
-                d = d[token]
+                    d = d[token]
 
     def get_random(self, tokens):
         """
         Get a random token following the given sequence.
         """
-        # get the last dictionary, which contains the subsequent tokens and their counts
+        if self.n==1:
+            tokens = [] # no context - will just return a random token from vocabulary
+        else:
+            tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
+        # print(tokens)
+        # get the final dictionary, which contains the subsequent tokens and their counts
         d = self._d
         for token in tokens:
             if token in d:
@@ -109,7 +109,8 @@ class NgramModel(model.Model):
         """
         Generate k tokens of random text.
         """
-        start1 = '.'
+        # start1 = '.'
+        start1 = 'END'
         output = []
         input = [start1]
         if self.n>=3:
@@ -156,4 +157,30 @@ class NgramModel(model.Model):
         s += 'vocab size %d\n' % len(self._d)
         return s
 
+
+if __name__ == '__main__':
+
+    strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
+    stest = "the cat"
+    # stest = "the cat slept"
+    train_tokens = strain.split()
+    test_tokens = stest.split()
+
+    model = NgramModel(n=2)
+    model.train(train_tokens)
+    token = model.get_random(test_tokens)
+    print(test_tokens)
+    print(token)
+    tokens = model.generate(10)
+    print(' '.join(tokens))
+    print()
+
+    model = NgramModel(n=1)
+    model.train(train_tokens)
+    token = model.get_random(test_tokens)
+    print(test_tokens)
+    print(token)
+    tokens = model.generate(10)
+    print(' '.join(tokens))
+    print()
 
