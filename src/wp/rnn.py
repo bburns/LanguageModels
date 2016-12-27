@@ -12,9 +12,14 @@ import os
 import os.path
 import random
 import heapq
+import re
+import itertools
+import operator
+import time
 import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
 
+import numpy as np
 import nltk
 from nltk import tokenize
 
@@ -26,13 +31,14 @@ class RnnModel(object):
     Recurrent neural network (RNN) model
     """
 
-    def __init__(self, modelfolder='.', nchars=None, nwords=1000, nhidden=100, bptt_truncate=4):
+    def __init__(self, modelfolder='.', nchars=None, nvocab=1000, nhidden=100, bptt_truncate=4):
         """
         Create an RNN model
         modelfolder - default location for model files
         nchars      - number of training characters to use
         nvocab      - number of vocabulary words to learn
         nhidden     - number of units in the hidden layer
+        bptt_truncate - backpropagate through time truncation
         """
         self.modelfolder = modelfolder
         self.name = 'rnn'
@@ -66,23 +72,15 @@ class RnnModel(object):
         #     self.increment(token_tuple)
         self.trained = True
 
-    #. just use the .trained value - change in ngram and analyze also
-    def trained(self):
-        """
-        Has this model been trained yet?
-        """
-        return self.trained
-
     def get_random(self, tokens):
         """
         Get a random token following the given sequence.
         """
         pass
 
-    #. better - make n sentences of random text
     def generate(self, k):
         """
-        Generate k tokens of random text.
+        Generate k sentences of random text.
         """
         pass
 
@@ -106,55 +104,25 @@ class RnnModel(object):
         """
         pass
 
-    #. move save/load to baseclass wp.Model
-
-    def save(self, filename=None):
-        """
-        Save the model to the default or given filename.
-        """
-        if filename is None:
-            filename = self.filename()
-        try:
-            folder = os.path.dirname(filename)
-            os.mkdir(folder)
-        except:
-            pass
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f)
-
-    def load(self, filename=None):
-        """
-        Load model from the given or default filename.
-        """
-        if filename is None:
-            filename = self.filename()
-        if os.path.isfile(filename):
-            print("load model")
-            with open(filename, 'rb') as f:
-                model = pickle.load(f)
-                return model
-        else:
-            return self
-
     # ----------------------------
 
     def forward_propagation(self, x):
         """
         Do forward propagation for sequence x and return output values and hidden states. (?)
         """
-        ntimesteps = len(x)
+        nsteps = len(x)
         # During forward propagation we save all hidden states in s because need them later.
-        # We add one additional element for the initial hidden state, which we set to 0
-        s = np.zeros((ntimesteps + 1, self.nhidden))
+        s = np.zeros((nsteps + 1, self.nhidden))
+        # We added one additional element for the initial hidden state, which we set to 0
         s[-1] = np.zeros(self.nhidden)
         # The outputs at each time step. Again, we save them for later.
-        o = np.zeros((ntimesteps, self.nvocab))
+        o = np.zeros((nsteps, self.nvocab))
         # For each time step...
-        for ntimestep in np.arange(ntimesteps):
-            # Note that we are indexing U by x[ntimestep] -
+        for nstep in np.arange(nsteps):
+            # Note that we are indexing U by x[nstep] -
             # this is the same as multiplying U with a one-hot vector.
-            s[ntimestep] = np.tanh(self.U[:,x[ntimestep]] + self.W.dot(s[ntimestep-1]))
-            o[ntimestep] = util.softmax(self.V.dot(s[ntimestep]))
+            s[nstep] = np.tanh(self.U[:,x[nstep]] + self.W.dot(s[nstep-1]))
+            o[nstep] = util.softmax(self.V.dot(s[nstep]))
         # We not only return the calculated outputs, but also the hidden states.
         # We will use them later to calculate the gradients.
         return [o, s]
@@ -180,7 +148,7 @@ class RnnModel(object):
         """
         # Divide the total loss by the number of training examples
         nexamples = np.sum((len(y_i) for y_i in y))
-        total_loss = self.calculate_total_loss(x, y)
+        total_loss = self.total_loss(x, y)
         avg_loss = total_loss / nexamples
         return avg_loss
 
@@ -192,11 +160,12 @@ class RnnModel(object):
     # of the current time step, but also the previous time steps. If you know
     # calculus, it really is just applying the chain rule.
 
-    def bptt(self, x, y):
+    def backpropagation(self, x, y):
         """
         Backpropagation through time
         """
-        T = len(y)
+        # T = len(y)
+        nsteps = len(y)
         # Perform forward propagation
         o, s = self.forward_propagation(x)
         # We accumulate the gradients in these variables
@@ -204,26 +173,32 @@ class RnnModel(object):
         dLdV = np.zeros(self.V.shape)
         dLdW = np.zeros(self.W.shape)
         delta_o = o
-        delta_o[np.arange(len(y)), y] -= 1.
+        # delta_o[np.arange(len(y)), y] -= 1.0
+        delta_o[np.arange(nsteps), y] -= 1.0
         # For each output backwards...
-        for t in np.arange(T)[::-1]:
-            dLdV += np.outer(delta_o[t], s[t].T)
+        # for t in np.arange(T)[::-1]:
+        # for t in np.arange(nsteps)[::-1]:
+        for nstep in np.arange(nsteps)[::-1]:
+            # dLdV += np.outer(delta_o[t], s[t].T)
+            dLdV += np.outer(delta_o[nstep], s[nstep].T)
             # Initial delta calculation
-            delta_t = self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
+            # delta_t = self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
+            delta_t = self.V.T.dot(delta_o[nstep]) * (1 - (s[nstep] ** 2))
             # Backpropagation through time (for at most self.bptt_truncate steps)
-            for bptt_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
-                # print "Backpropagation step t=%d bptt step=%d " % (t, bptt_step)
-                dLdW += np.outer(delta_t, s[bptt_step-1])
-                dLdU[:,x[bptt_step]] += delta_t
+            # for backpropagation_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
+            for backpropagation_step in np.arange(max(0, nstep-self.bptt_truncate), nstep+1)[::-1]:
+                # print "Backpropagation step t=%d backpropagation step=%d " % (t, backpropagation_step)
+                dLdW += np.outer(delta_t, s[backpropagation_step-1])
+                dLdU[:,x[backpropagation_step]] += delta_t
                 # Update delta for next step
-                delta_t = self.W.T.dot(delta_t) * (1 - s[bptt_step-1] ** 2)
+                delta_t = self.W.T.dot(delta_t) * (1 - s[backpropagation_step-1] ** 2)
         return [dLdU, dLdV, dLdW]
 
     def gradient_check(self, x, y, h=0.001, error_threshold=0.01):
         """
         Calculate the gradients using backpropagation. We want to check if these are correct.
         """
-        bptt_gradients = self.bptt(x, y)
+        backpropagation_gradients = self.backpropagation(x, y)
         # List of all parameters we want to check.
         model_parameters = ['U', 'V', 'W']
         # Gradient check for each parameter
@@ -239,14 +214,14 @@ class RnnModel(object):
                 original_value = parameter[ix]
                 # Estimate the gradient using (f(x+h) - f(x-h))/(2*h)
                 parameter[ix] = original_value + h
-                gradplus = self.calculate_total_loss([x],[y])
+                gradplus = self.total_loss([x],[y])
                 parameter[ix] = original_value - h
-                gradminus = self.calculate_total_loss([x],[y])
+                gradminus = self.total_loss([x],[y])
                 estimated_gradient = (gradplus - gradminus)/(2*h)
                 # Reset parameter to original value
                 parameter[ix] = original_value
                 # The gradient for this parameter calculated using backpropagation
-                backprop_gradient = bptt_gradients[pidx][ix]
+                backprop_gradient = backpropagation_gradients[pidx][ix]
                 # calculate The relative error: (|x - y|/(|x| + |y|))
                 relative_error = np.abs(backprop_gradient - estimated_gradient) / \
                                  (np.abs(backprop_gradient) + np.abs(estimated_gradient))
@@ -267,11 +242,123 @@ class RnnModel(object):
         Perform one step of stochastic gradient descent (SGD).
         """
         # Calculate the gradients
-        dLdU, dLdV, dLdW = self.bptt(x, y)
+        dLdU, dLdV, dLdW = self.backpropagation(x, y)
         # Change parameters according to gradients and learning rate
         self.U -= learning_rate * dLdU
         self.V -= learning_rate * dLdV
         self.W -= learning_rate * dLdW
+
+
+
+if __name__=='__main__':
+
+    import matplotlib.pyplot as plt
+
+    nvocab = 100
+    nhidden = 10
+    infile = '../../data/raw/1865 Lewis Carroll Alice in Wonderland.txt'
+
+    # strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
+    # stest = "the cat"
+    # # stest = "the cat slept"
+    # train_tokens = strain.split()
+    # test_tokens = stest.split()
+
+    unknown_token = "UNKNOWN_TOKEN"
+    sentence_start_token = "START_TOKEN"
+    sentence_end_token = "END_TOKEN"
+
+    # Read the data and append SENTENCE_START and SENTENCE_END tokens
+    print("Reading text...")
+    with open(infile, 'rb') as f:
+        # Split full comments into sentences
+        s = f.read()
+        s = re.sub(r'[^\x00-\x7f]',r'', s) # remove nonascii characters
+        s = s.replace('\r\n','\n') # dos2unix
+        s = s.replace('\n',' ')
+        s = s.lower()
+        sentences = nltk.sent_tokenize(s)
+        # Append START and END tokens
+        sentences = ["%s %s %s" % (sentence_start_token, sent, sentence_end_token) for sent in sentences]
+    print("Parsed %d sentences." % (len(sentences)))
+
+    # Tokenize the sentences into words
+    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+
+    # Count the word frequencies
+    word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    print("Found %d unique words tokens." % len(word_freq.items()))
+
+    # Get the most common words and build index_to_word and word_to_index vectors
+    vocab = word_freq.most_common(nvocab-1)
+    print('vocab includes:',vocab[:20])
+    index_to_word = [pair[0] for pair in vocab]
+    index_to_word.append(unknown_token)
+    word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
+
+    print("Using vocabulary size %d." % nvocab)
+    print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
+          (vocab[-1][0], vocab[-1][1]))
+
+    # Replace all words not in our vocabulary with the unknown token
+    for i, sent in enumerate(tokenized_sentences):
+        tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
+
+    print('Example sentence:')
+    print(sentences[500])
+    print('Tokenized:')
+    print(tokenized_sentences[500])
+
+    # Create the training data
+    print('Create training data:')
+    X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
+    y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
+    print('X_train:',X_train[500]) # tokenized: The dog ran down the hill . END
+    print('y_train:',y_train[500]) # tokenized: dog ran down the hill . END
+
+    C = nvocab
+    H = nhidden
+    nparams = 2*H*C + H**2
+    print("nparams to learn %d." % nparams)
+
+    np.random.seed(0)
+    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    o, s = model.forward_propagation(X_train[500])
+    print('output matrix')
+    print(o.shape)
+    # print(o)
+
+    print('predictions')
+    predictions = model.predict(X_train[500])
+    print(predictions.shape)
+    print(predictions)
+
+    # Limit to 1000 examples to save time
+    print("Expected Loss for random predictions: %f" % np.log(nvocab))
+    print("Actual loss: %f" % model.average_loss(X_train[:1000], y_train[:1000]))
+
+    # # To avoid performing millions of expensive calculations we use a smaller vocabulary size for checking.
+    # grad_check_vocab_size = 100
+    # np.random.seed(10)
+    # model = RnnModel(grad_check_vocab_size, 10, bptt_truncate=1000)
+    # model.gradient_check([0,1,2,3], [1,2,3,4])
+
+    np.random.seed(0)
+    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    t = time.time()
+    model.sgd_step(X_train[500], y_train[500], 0.005)
+    print('time for one sgd step: %f sec' % (time.time() - t))
+
+    # Train on a small subset of the data to see what happens
+    np.random.seed(0)
+    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    losses = util.train_with_sgd(model, X_train[:100], y_train[:100], nepochs=10, evaluate_loss_after=1)
+    print(losses)
+
+    # plt.line(losses)
+    # plt.show()
+
+
 
 
 
