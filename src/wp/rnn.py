@@ -34,10 +34,10 @@ class RnnModel(object):
     def __init__(self, modelfolder='.', nchars=None, nvocab=1000, nhidden=100, bptt_truncate=4):
         """
         Create an RNN model
-        modelfolder - default location for model files
-        nchars      - number of training characters to use
-        nvocab      - number of vocabulary words to learn
-        nhidden     - number of units in the hidden layer
+        modelfolder   - default location for model files
+        nchars        - number of training characters to use - None means use all
+        nvocab        - number of vocabulary words to learn
+        nhidden       - number of units in the hidden layer
         bptt_truncate - backpropagate through time truncation
         """
         self.modelfolder = modelfolder
@@ -78,11 +78,30 @@ class RnnModel(object):
         """
         pass
 
-    def generate(self, k):
+    # def generate(self, k):
+        # pass
+    def generate(self):
         """
-        Generate k sentences of random text.
+        Generate a sentence of random text.
         """
-        pass
+        iunknown = word_to_index[unknown_token]
+        # start the sentence with the END token
+        iend = word_to_index[sentence_end_token]
+        iwords = [iend]
+        # repeat until we get an end token
+        while True:
+            o, s = self.forward_propagation(iwords)
+            next_word_probs = o[-1]
+            iword = iunknown
+            # don't want to sample unknown words
+            while iword == iunknown:
+                samples = np.random.multinomial(1, next_word_probs)
+                iword = np.argmax(samples)
+            iwords.append(iword)
+            if iword == iend:
+                break
+        s = [index_to_word[iword] for iword in iwords[1:-1]]
+        return s
 
     def predict(self, tokens, k):
         """
@@ -102,13 +121,17 @@ class RnnModel(object):
         """
         Return model as a string.
         """
-        pass
+        s = self.name
+        return s
 
     # ----------------------------
 
     def forward_propagation(self, x):
         """
-        Do forward propagation for sequence x and return output values and hidden states. (?)
+        Do forward propagation for sequence x and return output values and hidden states.
+        x should be a list of numbers, eg [2, 4, 5, 1], referring to words in the vocabulary.
+        o is the softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
+        s is the internal state of the hidden layer for each time step.
         """
         nsteps = len(x)
         # During forward propagation we save all hidden states in s because need them later.
@@ -118,19 +141,21 @@ class RnnModel(object):
         # The outputs at each time step. Again, we save them for later.
         o = np.zeros((nsteps, self.nvocab))
         # For each time step...
-        for nstep in np.arange(nsteps):
+        for t in np.arange(nsteps):
             # Note that we are indexing U by x[nstep] -
             # this is the same as multiplying U with a one-hot vector.
-            s[nstep] = np.tanh(self.U[:,x[nstep]] + self.W.dot(s[nstep-1]))
-            o[nstep] = util.softmax(self.V.dot(s[nstep]))
+            # ie picks out a column from the matrix U.
+            s[t] = np.tanh(self.U[:,x[t]] + self.W.dot(s[t-1])) # note how t-1=-1 for t=0
+            o[t] = util.softmax(self.V.dot(s[t]))
         # We not only return the calculated outputs, but also the hidden states.
         # We will use them later to calculate the gradients.
         return [o, s]
 
-    #. should x be X?
+    #. x should be X?
     def total_loss(self, x, y):
         """
-        Return total value of loss function for all training examples (?)
+        Return total value of loss function for all training examples (?).
+        x is a sequence of numbers
         """
         total_loss = 0
         # For each sentence...
@@ -205,7 +230,8 @@ class RnnModel(object):
         for pidx, pname in enumerate(model_parameters):
             # Get the actual parameter value from the mode, e.g. model.W
             parameter = operator.attrgetter(pname)(self)
-            print("Performing gradient check for parameter %s with size %d." % (pname, np.prod(parameter.shape)))
+            print("Performing gradient check for parameter %s with size %d." % \
+                  (pname, np.prod(parameter.shape)))
             # Iterate over each element of the parameter matrix, e.g. (0,0), (0,1), ...
             it = np.nditer(parameter, flags=['multi_index'], op_flags=['readwrite'])
             while not it.finished:
@@ -254,36 +280,26 @@ if __name__=='__main__':
 
     import matplotlib.pyplot as plt
 
-    nvocab = 100
-    nhidden = 10
-    infile = '../../data/raw/1865 Lewis Carroll Alice in Wonderland.txt'
+    s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
+    print(s)
 
-    # strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
-    # stest = "the cat"
-    # # stest = "the cat slept"
-    # train_tokens = strain.split()
-    # test_tokens = stest.split()
+    nvocab = 10
+    nhidden = 5
 
-    unknown_token = "UNKNOWN_TOKEN"
-    sentence_start_token = "START_TOKEN"
-    sentence_end_token = "END_TOKEN"
+    unknown_token = "UNKNOWN"
+    sentence_end_token = "END"
 
-    # Read the data and append SENTENCE_START and SENTENCE_END tokens
-    print("Reading text...")
-    with open(infile, 'rb') as f:
-        # Split full comments into sentences
-        s = f.read()
-        s = re.sub(r'[^\x00-\x7f]',r'', s) # remove nonascii characters
-        s = s.replace('\r\n','\n') # dos2unix
-        s = s.replace('\n',' ')
-        s = s.lower()
-        sentences = nltk.sent_tokenize(s)
-        # Append START and END tokens
-        sentences = ["%s %s %s" % (sentence_start_token, sent, sentence_end_token) for sent in sentences]
-    print("Parsed %d sentences." % (len(sentences)))
+    # split text into sentences
+    sentences = nltk.sent_tokenize(s)
+    print(sentences)
+
+    # append END tokens
+    sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
+    print(sentences)
 
     # Tokenize the sentences into words
     tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    print(tokenized_sentences)
 
     # Count the word frequencies
     word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
@@ -291,74 +307,112 @@ if __name__=='__main__':
 
     # Get the most common words and build index_to_word and word_to_index vectors
     vocab = word_freq.most_common(nvocab-1)
-    print('vocab includes:',vocab[:20])
+    print('most common words',vocab)
     index_to_word = [pair[0] for pair in vocab]
     index_to_word.append(unknown_token)
+    print('index to word',index_to_word)
     word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
+    print('word to index',word_to_index)
 
-    print("Using vocabulary size %d." % nvocab)
-    print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
-          (vocab[-1][0], vocab[-1][1]))
+    # print("Using vocabulary size %d." % nvocab)
+    # print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
+    #       (vocab[-1][0], vocab[-1][1]))
 
     # Replace all words not in our vocabulary with the unknown token
+    print('replace unknown words with UNKNOWN token')
     for i, sent in enumerate(tokenized_sentences):
         tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
+    print(tokenized_sentences)
 
-    print('Example sentence:')
-    print(sentences[500])
-    print('Tokenized:')
-    print(tokenized_sentences[500])
+    # print('Example sentence:')
+    # print(sentences[500])
+    # print('Tokenized:')
+    # print(tokenized_sentences[500])
 
     # Create the training data
     print('Create training data:')
     X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
     y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
-    print('X_train:',X_train[500]) # tokenized: The dog ran down the hill . END
-    print('y_train:',y_train[500]) # tokenized: dog ran down the hill . END
+    # print('X_train:',X_train[500]) # tokenized: The dog ran down the hill . END
+    # print('y_train:',y_train[500]) # tokenized: dog ran down the hill . END
+    print('X_train:',X_train) # tokenized: The dog ran down the hill . END
+    print('y_train:',y_train) # tokenized: dog ran down the hill . END
 
     C = nvocab
     H = nhidden
     nparams = 2*H*C + H**2
     print("nparams to learn %d." % nparams)
+    print()
 
+    print('Train model on one sentence')
+    print('input matrix')
+    print(X_train[1])
+    s = [index_to_word[i] for i in X_train[1]]
+    print(s)
     np.random.seed(0)
     model = RnnModel(nvocab=nvocab, nhidden=nhidden)
-    o, s = model.forward_propagation(X_train[500])
-    print('output matrix')
+    o, s = model.forward_propagation(X_train[1])
+    print('state matrix (hidden unit state, per time step)')
+    print(s.shape)
+    print(s)
+
+    print('output matrix (softmax over vocabulary, per time step)')
     print(o.shape)
-    # print(o)
+    print(o)
 
     print('predictions')
-    predictions = model.predict(X_train[500])
+    predictions = model.predict(X_train[1])
     print(predictions.shape)
     print(predictions)
+    s = [index_to_word[i] for i in predictions]
+    print(s)
+    print('actual')
+    print(y_train[1])
+    s = [index_to_word[i] for i in y_train[1]]
+    print(s)
 
-    # Limit to 1000 examples to save time
-    print("Expected Loss for random predictions: %f" % np.log(nvocab))
-    print("Actual loss: %f" % model.average_loss(X_train[:1000], y_train[:1000]))
+    print()
 
+
+    # # Check loss calculations
+    # # Limit to 1000 examples to save time
+    # print("Expected Loss for random predictions: %f" % np.log(nvocab))
+    # print("Actual loss: %f" % model.average_loss(X_train[:1000], y_train[:1000]))
+
+    # # Check gradient calculations
     # # To avoid performing millions of expensive calculations we use a smaller vocabulary size for checking.
     # grad_check_vocab_size = 100
     # np.random.seed(10)
-    # model = RnnModel(grad_check_vocab_size, 10, bptt_truncate=1000)
+    # model = RnnModel(nvocab=grad_check_vocab_size, nhidden=10, bptt_truncate=1000)
     # model.gradient_check([0,1,2,3], [1,2,3,4])
 
-    np.random.seed(0)
-    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
-    t = time.time()
-    model.sgd_step(X_train[500], y_train[500], 0.005)
-    print('time for one sgd step: %f sec' % (time.time() - t))
 
-    # Train on a small subset of the data to see what happens
+    # print('see how long one sgd step takes')
+    # np.random.seed(0)
+    # model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    # t = time.time()
+    # # model.sgd_step(X_train[500], y_train[500], 0.005)
+    # model.sgd_step(X_train[1], y_train[1], 0.005)
+    # print('time for one sgd step: %f sec' % (time.time() - t))
+
+    # Train on data
+    print('Train model on data')
     np.random.seed(0)
     model = RnnModel(nvocab=nvocab, nhidden=nhidden)
-    losses = util.train_with_sgd(model, X_train[:100], y_train[:100], nepochs=10, evaluate_loss_after=1)
+    # losses = util.train_with_sgd(model, X_train[:100], y_train[:100], nepochs=10, evaluate_loss_after=1)
+    losses = util.train_with_sgd(model, X_train, y_train, nepochs=10, evaluate_loss_after=1)
     print(losses)
+    print()
 
     # plt.line(losses)
     # plt.show()
 
-
-
-
-
+    # generate sentences
+    print("Generate sentences")
+    nsentences = 10
+    nwordsmin = 2
+    for i in range(nsentences):
+        tokens = []
+        while len(tokens)<nwordsmin:
+            tokens = model.generate()
+        print(' '.join(tokens))
