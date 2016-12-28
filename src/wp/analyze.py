@@ -56,16 +56,16 @@ def test_models(models, data, npredictions_max=1000, k=3, nchars=None):
     scores = []
     for model in models:
         n = model.n
-        print('get tuples, n=%d' % n)
+        print('group tokens into tuples, n=%d' % n)
         test_tuples = get_tuples(test_tokens, n) # group tokens into sequences
         i = 0
         nright = 0
         for tuple in test_tuples:
             prompt = tuple[:-1]
             actual = tuple[-1]
-            prediction = model.predict(prompt, k)
-            if prediction: # can be None
-                predicted_tokens = [pair[0] for pair in prediction]
+            tokprobs = model.predict(prompt, k)
+            if tokprobs: # can be None
+                predicted_tokens = [tokprob[0] for tokprob in tokprobs]
                 if actual in predicted_tokens:
                     nright += 1
             i += 1
@@ -76,5 +76,9 @@ def test_models(models, data, npredictions_max=1000, k=3, nchars=None):
         scores.append(accuracy)
 
     return scores
+
+
+if __name__ == '__main__':
+    pass
 
 

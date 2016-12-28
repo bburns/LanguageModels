@@ -329,14 +329,9 @@ My spirits rose as I lay with half-closed eyes . I was not so with me out of the
 
 n-gram (n=4)
 Terror had seized on the whole day , with intervals of listening ; and the gipsy never grudged it him .
-Chateaubriand , had he not given his five francs to the old man . '' `` And my boots . ''
-Drive it out better . The glass must be violet for iron jewellery , and black for gold jewellery . Spain
-Joy and pride in his sons overcame his sorrow at their loss . On me he heaped every kindness that heart
-Blcher ordered extermination . Roguet had set the lugubrious example of threatening with death any French grenadier who should bring him
-Dry happiness resembles dry bread . One eats , but one morning she out of her bed , saying to the
-
-Just like a rocket too , it burst in the air of splendidly coloured fire-flies , which sped hither and thither
-A lovelier night I never saw . Indeed ! Where were you last night . She was . When she reached
+The glass must be violet for iron jewellery , and black for gold jewellery . 
+Dry happiness resembles dry bread . 
+Just like a rocket too , it burst in the air of splendidly coloured fire-flies , which sped hither and thither .
 
 
 ffnn

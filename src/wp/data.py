@@ -15,6 +15,9 @@ import random
 import glob
 import re
 from pprint import pprint
+from collections import defaultdict
+
+import nltk
 from nltk import tokenize
 
 
@@ -27,6 +30,7 @@ class Data():
         """
         Create a data object - contains little to no state - most is in predefined files.
         """
+        #. could pass some of these as parameters
         self.escape = '../../' # escape from the Experiment subfolder, where this is called from
         self.rawfiles    = self.escape + 'data/raw/*.txt'
         self.mergedfile  = self.escape + 'data/merged/all.txt'
@@ -130,7 +134,7 @@ class Data():
 
     def text(self, source, nchars=None):
         """
-        Return contents of a data source.
+        Return contents of a data source up to nchars.
         """
         #. use generators
         filename = self.sourcefiles[source]
@@ -139,54 +143,101 @@ class Data():
             if nchars: s = s[:nchars]
         return s
 
+    def find_vocabulary(self, source, nvocab):
+        """
+        Find most used words and generate indices.
+        """
+        tokens = self.tokens(source)
+        vocab = Vocab(tokens, nvocab)
+        return vocab
+
     def sentences(self, source, nchars=None):
         """
-        Parse a data source into sentences and return in a list.
+        Parse a data source into sentences up to nchars and return in a list.
         """
         #. use generators
-        # filename = self.sourcefiles[source]
-        # with open(filename, 'rb') as f:
-        #     s = f.read()
-        #     if nchars: s = s[:nchars]
-        #     # sentences = self.get_sentences(s)
-        #     s = s.replace('\r\n',' ')
-        #     s = s.replace('\n',' ')
-        #     sentences = tokenize.sent_tokenize(s)
         s = self.text(source, nchars)
         s = s.replace('\r\n',' ')
         s = s.replace('\n',' ')
         sentences = tokenize.sent_tokenize(s)
         return sentences
 
+    def tokenized_sentences(self, source, nchars=None):
+        """
+        Parse a data source into tokenized sentences up to nchars, return in list.
+        """
+        sentences = self.sentences(source, nchars)
+        tokenized_sentences = [tokenize.word_tokenize(sentence) for sentence in sentences]
+        #. trim vocab here, ie pass nvocab=None, use UNKNOWN where needed?
+        return tokenized_sentences
+
+    def indexed_sentences(self, source, vocab, nchars=None):
+        """
+        Parse a data source into indexed sentences up to nchars, return in list.
+        """
+        # word_to_index = {'The':1,'dog':2,'cat':3,'slept':4,'barked':5,'UNKNOWN':6}
+        sentences = self.tokenized_sentences(source, nchars)
+        indexed_sentences = [[vocab.word_to_index[word] for word in sentence] for sentence in sentences]
+        # # replace all words not in vocabulary with UNKNOWN
+        # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+        # # replace words with numbers
+        # itokens = [self.word_to_index[token] for token in tokens]
+        # X_train = itokens[:-1]
+        # y_train = itokens[1:]
+        return indexed_sentences
+
     def tokens(self, source, nchars=None):
         """
-        Parse a data source into tokens and return in a list.
+        Parse a data source into tokens up to nchars and return in a list.
         """
+        #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
-        # filename = self.sourcefiles[source]
-        # with open(filename, 'rb') as f:
-        #     s = f.read()
-        #     if nchars: s = s[:nchars]
-        #     tokens = tokenize.word_tokenize(s)
-        # return tokens
         sentences = self.sentences(source, nchars)
         tokens = []
         for sentence in sentences:
-            sentence = sentence.lower()
+            # sentence = sentence.lower() # reduces vocab space
             words = tokenize.word_tokenize(sentence)
             tokens.extend(words)
             tokens.append('END') # add an END token to every sentence
         return tokens
 
+    def indexed_tokens(self, source, vocab, nchars=None):
+        """
+        Parse a data source into tokens up to nchars and return indices according to vocabulary.
+        """
+        tokens = self.tokens(source, nchars)
+        indexed_tokens = [vocab.word_to_index[token] for token in tokens]
+        return indexed_tokens
+
     def tuples(self, source, ntokens_per_tuple, nchars=None):
         """
-        Parse a data source into tokens and return as tuples.
+        Parse a data source into tokens up to nchars and return as tuples.
         """
         #. use generators!
         tokens = self.tokens(source)
         tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
         tuples = zip(*tokenlists) # eg [['the','dog'], ['dog','barked'], ...]
         return tuples
+
+
+class Vocab(object):
+    """
+    """
+    def __init__(self, tokens, nvocab):
+        """
+        """
+        self.nvocab = nvocab
+        unknown_token = "UNKNOWN"
+        word_freqs = nltk.FreqDist(tokens)
+        wordcounts = word_freqs.most_common(nvocab-1)
+        self.index_to_word = [wordcount[0] for wordcount in wordcounts]
+        self.index_to_word.append(unknown_token)
+        # self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
+        self.word_to_index = defaultdict(lambda: unknown_token)
+        for i, word in enumerate(self.index_to_word):
+            self.word_to_index[word] = i
+
+
 
 # Split a textfile by sentences into train, validate, test files,
 # based on specified proportions.
@@ -202,9 +253,36 @@ class Data():
 #     argh.dispatch_command(split)
 
 if __name__ == '__main__':
+
     data = Data()
-    tokens = data.tokens('train', 300)
-    print(tokens)
+    data.merge()
+    data.split()
+
+    # tokens = data.tokens('train', 300)
+    # print('train:',tokens)
+    # print()
+
+    # tokens = data.tokens('test', 300)
+    # print('test:',tokens)
+    # print()
+
+    # sentences = data.sentences('train', 300)
+    # print('train:',sentences)
+    # print()
+
+    # tokenized_sentences = data.tokenized_sentences('train', 300)
+    # print('train:',tokenized_sentences)
+    # print()
+
+    # indexed_sentences = data.indexed_sentences('train', 300)
+    # print('train:',indexed_sentences)
+    # print()
 
 
+    s = 'The dog barked. The cat slept.'
+    nvocab = 3
+    vocab = Vocab(s.split(), nvocab)
+    print(vocab)
+    print(vocab.index_to_word)
+    print(vocab.word_to_index)
 

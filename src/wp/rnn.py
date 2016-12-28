@@ -61,16 +61,48 @@ class RnnModel(object):
         filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
         return filename
 
-    def train(self, tokens):
+    def train(self, tokens, nepochs=10):
         """
-        Train the rnn model with the given tokens.
+        Train the model with the given tokens.
         """
+        #. could just go through text 10 tokens at a time?
         # print("get ngrams, n=%d" % self.n)
         # token_tuples = nltk.ngrams(tokens, self.n)
         # print("add ngrams to model")
         # for token_tuple in token_tuples:
         #     self.increment(token_tuple)
+        unknown_token = "UNKNOWN"
+        word_freqs = nltk.FreqDist(tokens)
+        wordcounts = word_freqs.most_common(self.nvocab-1)
+        self.index_to_word = [wordcount[0] for wordcount in wordcounts]
+        self.index_to_word.append(unknown_token)
+        self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
+        # replace words not in vocabulary with UNKNOWN
+        tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+        print(tokens)
+        # replace words with numbers
+        itokens = [self.word_to_index[token] for token in tokens]
+        print(itokens)
+        # X_train = itokens[:-1]
+        # y_train = itokens[1:]
+        # split x and y into sequences of 10 tokens. or rnd # tokens.
+        seqs = []
+        seq = []
+        for i, itoken in enumerate(itokens):
+            seq.append(itoken)
+            if len(seq)>=10:
+                seqs.append(seq)
+                seq = []
+        seqs.append(seq)
+        print(seqs)
+        X_train = [seq[:-1] for seq in seqs]
+        y_train = [seq[1:] for seq in seqs]
+        print(X_train)
+        print(y_train)
+        # train model with stochastic gradient descent - learns U, V, W
+        losses = util.train_with_sgd(self, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
         self.trained = True
+        return losses
 
     def get_random(self, tokens):
         """
@@ -78,15 +110,15 @@ class RnnModel(object):
         """
         pass
 
-    # def generate(self, k):
-        # pass
     def generate(self):
         """
         Generate a sentence of random text.
         """
-        iunknown = word_to_index[unknown_token]
+        unknown_token = "UNKNOWN"
+        end_token = "END"
+        iunknown = self.word_to_index[unknown_token]
+        iend = self.word_to_index[end_token]
         # start the sentence with the END token
-        iend = word_to_index[sentence_end_token]
         iwords = [iend]
         # repeat until we get an end token
         while True:
@@ -100,7 +132,8 @@ class RnnModel(object):
             iwords.append(iword)
             if iword == iend:
                 break
-        s = [index_to_word[iword] for iword in iwords[1:-1]]
+        # s = [index_to_word[iword] for iword in iwords[1:-1]]
+        s = [self.index_to_word[iword] for iword in iwords[1:-1]]
         return s
 
     def predict(self, tokens, k):
@@ -151,11 +184,11 @@ class RnnModel(object):
         # We will use them later to calculate the gradients.
         return [o, s]
 
-    #. x should be X?
     def total_loss(self, x, y):
         """
         Return total value of loss function for all training examples (?).
-        x is a sequence of numbers
+        x is a list of sentences (sequence of numbers)
+        y is a list of labels, ie y[i][j] should follow from x[i][0]...x[i][j-1]
         """
         total_loss = 0
         # For each sentence...
@@ -177,45 +210,30 @@ class RnnModel(object):
         avg_loss = total_loss / nexamples
         return avg_loss
 
-    # how do we calculate those gradients we mentioned above? In a traditional
-    # Neural Network we do this through the backpropagation algorithm. In RNNs we
-    # use a slightly modified version of the this algorithm called Backpropagation
-    # Through Time (BPTT). Because the parameters are shared by all time steps in
-    # the network, the gradient at each output depends not only on the calculations
-    # of the current time step, but also the previous time steps. If you know
-    # calculus, it really is just applying the chain rule.
-
     def backpropagation(self, x, y):
         """
         Backpropagation through time
         """
-        # T = len(y)
         nsteps = len(y)
-        # Perform forward propagation
+        # perform forward propagation
         o, s = self.forward_propagation(x)
-        # We accumulate the gradients in these variables
+        # accumulate the gradients in these variables
         dLdU = np.zeros(self.U.shape)
         dLdV = np.zeros(self.V.shape)
         dLdW = np.zeros(self.W.shape)
         delta_o = o
-        # delta_o[np.arange(len(y)), y] -= 1.0
         delta_o[np.arange(nsteps), y] -= 1.0
-        # For each output backwards...
-        # for t in np.arange(T)[::-1]:
-        # for t in np.arange(nsteps)[::-1]:
-        for nstep in np.arange(nsteps)[::-1]:
-            # dLdV += np.outer(delta_o[t], s[t].T)
-            dLdV += np.outer(delta_o[nstep], s[nstep].T)
-            # Initial delta calculation
-            # delta_t = self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
-            delta_t = self.V.T.dot(delta_o[nstep]) * (1 - (s[nstep] ** 2))
-            # Backpropagation through time (for at most self.bptt_truncate steps)
-            # for backpropagation_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
-            for backpropagation_step in np.arange(max(0, nstep-self.bptt_truncate), nstep+1)[::-1]:
-                # print "Backpropagation step t=%d backpropagation step=%d " % (t, backpropagation_step)
+        # for each output backwards...
+        for t in np.arange(nsteps)[::-1]:
+            dLdV += np.outer(delta_o[t], s[t].T)
+            # initial delta calculation
+            delta_t = self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
+            # backpropagation through time (for at most self.bptt_truncate steps)
+            for backpropagation_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
+                # print("Backpropagation step t=%d backpropagation step=%d " % (t, backpropagation_step))
                 dLdW += np.outer(delta_t, s[backpropagation_step-1])
                 dLdU[:,x[backpropagation_step]] += delta_t
-                # Update delta for next step
+                # update delta for next step
                 delta_t = self.W.T.dot(delta_t) * (1 - s[backpropagation_step-1] ** 2)
         return [dLdU, dLdV, dLdW]
 
@@ -266,10 +284,11 @@ class RnnModel(object):
     def sgd_step(self, x, y, learning_rate):
         """
         Perform one step of stochastic gradient descent (SGD).
+        Adjusts parameters U, V, W based on backpropagation gradients.
         """
-        # Calculate the gradients
+        # calculate the gradients
         dLdU, dLdV, dLdW = self.backpropagation(x, y)
-        # Change parameters according to gradients and learning rate
+        # change parameters according to gradients and learning rate
         self.U -= learning_rate * dLdU
         self.V -= learning_rate * dLdV
         self.W -= learning_rate * dLdW
@@ -278,8 +297,6 @@ class RnnModel(object):
 
 if __name__=='__main__':
 
-    import matplotlib.pyplot as plt
-
     s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
     print(s)
 
@@ -287,56 +304,64 @@ if __name__=='__main__':
     nhidden = 5
 
     unknown_token = "UNKNOWN"
-    sentence_end_token = "END"
+    # end_token = "END"
 
     # split text into sentences
     sentences = nltk.sent_tokenize(s)
     print(sentences)
 
-    # append END tokens
-    sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
-    print(sentences)
+    # # append END tokens
+    # sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
+    # print(sentences)
 
-    # Tokenize the sentences into words
-    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    print(tokenized_sentences)
+    # # Tokenize the sentences into words
+    # tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    # print(tokenized_sentences)
 
-    # Count the word frequencies
-    word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
-    print("Found %d unique words tokens." % len(word_freq.items()))
+    tokens = []
+    for sentence in sentences:
+        sentence = sentence.lower()
+        words = nltk.word_tokenize(sentence)
+        tokens.extend(words)
+        tokens.append('END') # add an END token to every sentence
 
-    # Get the most common words and build index_to_word and word_to_index vectors
-    vocab = word_freq.most_common(nvocab-1)
-    print('most common words',vocab)
-    index_to_word = [pair[0] for pair in vocab]
-    index_to_word.append(unknown_token)
-    print('index to word',index_to_word)
-    word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
-    print('word to index',word_to_index)
+    # # Count the word frequencies
+    # word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    # print("Found %d unique words tokens." % len(word_freq.items()))
 
-    # print("Using vocabulary size %d." % nvocab)
-    # print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
-    #       (vocab[-1][0], vocab[-1][1]))
+    # # Get the most common words and build index_to_word and word_to_index vectors
+    # vocab = word_freq.most_common(nvocab-1)
+    # print('most common words',vocab)
+    # index_to_word = [pair[0] for pair in vocab]
+    # index_to_word.append(unknown_token)
+    # print('index to word',index_to_word)
+    # word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
+    # print('word to index',word_to_index)
 
-    # Replace all words not in our vocabulary with the unknown token
-    print('replace unknown words with UNKNOWN token')
-    for i, sent in enumerate(tokenized_sentences):
-        tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
-    print(tokenized_sentences)
+    # # print("Using vocabulary size %d." % nvocab)
+    # # print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
+    # #       (vocab[-1][0], vocab[-1][1]))
 
-    # print('Example sentence:')
-    # print(sentences[500])
-    # print('Tokenized:')
-    # print(tokenized_sentences[500])
+    # # Replace all words not in our vocabulary with the unknown token
+    # print('replace unknown words with UNKNOWN token')
+    # for i, sent in enumerate(tokenized_sentences):
+    #     tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
+    # print(tokenized_sentences)
 
-    # Create the training data
-    print('Create training data:')
-    X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
-    y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
-    # print('X_train:',X_train[500]) # tokenized: The dog ran down the hill . END
-    # print('y_train:',y_train[500]) # tokenized: dog ran down the hill . END
-    print('X_train:',X_train) # tokenized: The dog ran down the hill . END
-    print('y_train:',y_train) # tokenized: dog ran down the hill . END
+    # # print('Example sentence:')
+    # # print(sentences[500])
+    # # print('Tokenized:')
+    # # print(tokenized_sentences[500])
+
+    # # Create the training data
+    # print('Create training data:')
+    # X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
+    # y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
+    # # print('X_train:',X_train[500])
+    # # print('y_train:',y_train[500])
+    # print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
+    # print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
+
 
     C = nvocab
     H = nhidden
@@ -344,34 +369,34 @@ if __name__=='__main__':
     print("nparams to learn %d." % nparams)
     print()
 
-    print('Train model on one sentence')
-    print('input matrix')
-    print(X_train[1])
-    s = [index_to_word[i] for i in X_train[1]]
-    print(s)
-    np.random.seed(0)
-    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
-    o, s = model.forward_propagation(X_train[1])
-    print('state matrix (hidden unit state, per time step)')
-    print(s.shape)
-    print(s)
+    # print('Train model on one sentence')
+    # print('input matrix')
+    # print(X_train[1])
+    # s = [index_to_word[i] for i in X_train[1]]
+    # print(s)
+    # np.random.seed(0)
+    # model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    # o, s = model.forward_propagation(X_train[1])
+    # print('state matrix (hidden unit state, per time step)')
+    # print(s.shape)
+    # print(s)
 
-    print('output matrix (softmax over vocabulary, per time step)')
-    print(o.shape)
-    print(o)
+    # print('output matrix (softmax over vocabulary, per time step)')
+    # print(o.shape)
+    # print(o)
 
-    print('predictions')
-    predictions = model.predict(X_train[1])
-    print(predictions.shape)
-    print(predictions)
-    s = [index_to_word[i] for i in predictions]
-    print(s)
-    print('actual')
-    print(y_train[1])
-    s = [index_to_word[i] for i in y_train[1]]
-    print(s)
+    # print('predictions')
+    # predictions = model.predict(X_train[1])
+    # print(predictions.shape)
+    # print(predictions)
+    # s = [index_to_word[i] for i in predictions]
+    # print(s)
+    # print('actual')
+    # print(y_train[1])
+    # s = [index_to_word[i] for i in y_train[1]]
+    # print(s)
 
-    print()
+    # print()
 
 
     # # Check loss calculations
@@ -399,11 +424,16 @@ if __name__=='__main__':
     print('Train model on data')
     np.random.seed(0)
     model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    # nepochs = 2000
+    nepochs = 100
+    model.train(tokens, nepochs)
     # losses = util.train_with_sgd(model, X_train[:100], y_train[:100], nepochs=10, evaluate_loss_after=1)
-    losses = util.train_with_sgd(model, X_train, y_train, nepochs=10, evaluate_loss_after=1)
-    print(losses)
-    print()
+    # losses = util.train_with_sgd(model, X_train, y_train, nepochs=10, evaluate_loss_after=1)
+    # losses = util.train_with_sgd(model, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
+    # print(losses)
+    # print()
 
+    # import matplotlib.pyplot as plt
     # plt.line(losses)
     # plt.show()
 
@@ -413,6 +443,6 @@ if __name__=='__main__':
     nwordsmin = 2
     for i in range(nsentences):
         tokens = []
-        while len(tokens)<nwordsmin:
+        while len(tokens) < nwordsmin:
             tokens = model.generate()
         print(' '.join(tokens))

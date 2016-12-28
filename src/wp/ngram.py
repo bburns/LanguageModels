@@ -8,6 +8,7 @@ Basic version - no backoff or smoothing.
 from __future__ import print_function, division
 import random
 from pprint import pprint, pformat
+
 import nltk
 from nltk import tokenize
 
@@ -45,7 +46,7 @@ class NgramModel(model.Model):
         filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
         return filename
 
-    def train(self, tokens):
+    def train(self, tokens, nepochs='unused'):
         """
         Train the ngram model with the given token stream.
         """
@@ -78,7 +79,7 @@ class NgramModel(model.Model):
                     d[token] = {}
                     d = d[token]
 
-    def get_random(self, tokens):
+    def generate_token(self, tokens):
         """
         Get a random token following the given sequence.
         """
@@ -105,29 +106,6 @@ class NgramModel(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    # def generate(self, k):
-    #     """
-    #     Generate k tokens of random text.
-    #     """
-    #     # start1 = '.'
-    #     start1 = 'END'
-    #     output = []
-    #     input = [start1]
-    #     if self.n>=3:
-    #         start2 = random.choice(self._d[start1].keys())
-    #         input.append(start2)
-    #         output.append(start2)
-    #     if self.n>=4:
-    #         start3 = random.choice(self._d[start1][start2].keys())
-    #         input.append(start3)
-    #         output.append(start3)
-    #     for i in range(k-1):
-    #         next = self.get_random(input)
-    #         input.pop(0)
-    #         input.append(next)
-    #         output.append(next)
-    #     return output
-
     def generate(self, k=1):
         """
         Generate k sentences of random text.
@@ -145,7 +123,7 @@ class NgramModel(model.Model):
             output.append(start3)
         for i in range(k):
             while True:
-                next = self.get_random(input)
+                next = self.generate_token(input)
                 input.pop(0)
                 input.append(next)
                 output.append(next)
@@ -185,15 +163,69 @@ class NgramModel(model.Model):
 
 if __name__ == '__main__':
 
+    import itertools
+    import numpy as np
+
+    s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
+    print(s)
+
+    nvocab = 10
+
+    unknown_token = "UNKNOWN"
+    sentence_end_token = "END"
+
+    # split text into sentences
+    sentences = nltk.sent_tokenize(s)
+    print(sentences)
+
+    # append END tokens
+    sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
+    print(sentences)
+
+    # Tokenize the sentences into words
+    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    print(tokenized_sentences)
+
+    # Count the word frequencies
+    word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    print("Found %d unique words tokens." % len(word_freq.items()))
+
+    # Get the most common words and build index_to_word and word_to_index vectors
+    vocab = word_freq.most_common(nvocab-1)
+    print('most common words',vocab)
+    index_to_word = [pair[0] for pair in vocab]
+    index_to_word.append(unknown_token)
+    print('index to word',index_to_word)
+    word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
+    print('word to index',word_to_index)
+
+    # Replace all words not in our vocabulary with the unknown token
+    print('replace unknown words with UNKNOWN token')
+    for i, sent in enumerate(tokenized_sentences):
+        tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
+    print(tokenized_sentences)
+
+    # Create the training data
+    print('Create training data:')
+    X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
+    y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
+    # print('X_train:',X_train[500])
+    # print('y_train:',y_train[500])
+    print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
+    print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
+
+
+    # --------------------------------------
+
     strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
-    stest = "the cat"
-    # stest = "the cat slept"
+    stest = "the dog"
+    # stest = "the dog slept"
     train_tokens = strain.split()
     test_tokens = stest.split()
 
     model = NgramModel(n=2)
     model.train(train_tokens)
-    token = model.get_random(test_tokens)
+    token = model.generate_token(test_tokens)
     print(test_tokens)
     print(token)
     tokens = model.generate(5)
@@ -202,10 +234,24 @@ if __name__ == '__main__':
 
     model = NgramModel(n=1)
     model.train(train_tokens)
-    token = model.get_random(test_tokens)
+    token = model.generate_token(test_tokens)
     print(test_tokens)
     print(token)
     tokens = model.generate(5)
     print(' '.join(tokens))
     print()
+
+
+
+    print('predictions')
+    predictions = model.predict(X_train[1], 3)
+    # print(predictions.shape)
+    print(predictions)
+    # s = [index_to_word[i] for i in predictions]
+    # print(s)
+    print('actual')
+    print(y_train[1])
+    s = [index_to_word[i] for i in y_train[1]]
+    print(s)
+
 
