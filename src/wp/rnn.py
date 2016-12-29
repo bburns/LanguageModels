@@ -111,12 +111,6 @@ class RnnModel(model.Model):
         self.trained = True
         return losses
 
-    def get_random(self, tokens):
-        """
-        Get a random token following the given sequence.
-        """
-        pass
-
     def generate(self):
         """
         Generate a sentence of random text.
@@ -125,53 +119,41 @@ class RnnModel(model.Model):
         end_token = "END"
         iunknown = self.word_to_index[unknown_token]
         iend = self.word_to_index[end_token]
-        # start the sentence with the END token
+        # start with the END token
         iwords = [iend]
-        # repeat until we get an end token
+        # repeat until we get another END token
         while True:
-            o, s = self.forward_propagation(iwords)
-            next_word_probs = o[-1]
+            output, state = self.forward_propagation(iwords)
+            next_word_probs = output[-1]
             iword = iunknown
-            # don't want to sample unknown words
+            # don't sample UNKNOWN words
             while iword == iunknown:
-                samples = np.random.multinomial(1, next_word_probs)
-                iword = np.argmax(samples)
+                sample = np.random.multinomial(1, next_word_probs)
+                iword = np.argmax(sample)
             iwords.append(iword)
             if iword == iend:
                 break
-        # s = [index_to_word[iword] for iword in iwords[1:-1]]
         s = [self.index_to_word[iword] for iword in iwords[1:-1]]
         return s
 
-    # def predict(self, tokens, k):
-    #     """
-    #     Get the most likely next k tokens following the given sequence.
-    #     """
-    #     pass
-    #. get k highest o values and their indices, translate to vocab words
-    # def predict(self, x, k):
+    #... get k highest o values and their indices, translate to vocab words
     def predict(self, tokens, k):
         """
-        Perform forward propagation and return index of highest score
+        Perform forward propagation and return index of highest score.
+        #. Get the most likely next k tokens following the given sequence.
         """
-        # x = [self.word_to_index[word] for word in tokens]
         x = [self.get_index(word) for word in tokens]
-        o, s = self.forward_propagation(x)
-        itokens = np.argmax(o, axis=1)
+        output, state = self.forward_propagation(x)
+        itokens = np.argmax(output, axis=1)
         # print(itokens)
         itoken = itokens[-1]
         word = self.index_to_word[itoken]
-        # word = self.get_word(itoken)
         return [[word,1]]
 
-    # def get_word(self, i):
-    #     try:
-    #         word = self.index_to_word[i]
-    #     except:
-    #         word = "UNKNOWN"
-    #     return word
-
     def get_index(self, word):
+        """
+        Convert word to integer representation.
+        """
         try:
             i = self.word_to_index[word]
         except:
@@ -325,71 +307,15 @@ class RnnModel(model.Model):
 
 if __name__=='__main__':
 
+    unknown_token = "UNKNOWN"
+    end_token = "END"
+
+
     s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
     print(s)
 
     nvocab = 10
     nhidden = 5
-
-    unknown_token = "UNKNOWN"
-    # end_token = "END"
-
-    # split text into sentences
-    sentences = nltk.sent_tokenize(s)
-    print(sentences)
-
-    # # append END tokens
-    # sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
-    # print(sentences)
-
-    # # Tokenize the sentences into words
-    # tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    # print(tokenized_sentences)
-
-    tokens = []
-    for sentence in sentences:
-        sentence = sentence.lower()
-        words = nltk.word_tokenize(sentence)
-        tokens.extend(words)
-        tokens.append('END') # add an END token to every sentence
-
-    # # Count the word frequencies
-    # word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
-    # print("Found %d unique words tokens." % len(word_freq.items()))
-
-    # # Get the most common words and build index_to_word and word_to_index vectors
-    # vocab = word_freq.most_common(nvocab-1)
-    # print('most common words',vocab)
-    # index_to_word = [pair[0] for pair in vocab]
-    # index_to_word.append(unknown_token)
-    # print('index to word',index_to_word)
-    # word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
-    # print('word to index',word_to_index)
-
-    # # print("Using vocabulary size %d." % nvocab)
-    # # print("The least frequent word in our vocabulary is '%s' and appeared %d times." % \
-    # #       (vocab[-1][0], vocab[-1][1]))
-
-    # # Replace all words not in our vocabulary with the unknown token
-    # print('replace unknown words with UNKNOWN token')
-    # for i, sent in enumerate(tokenized_sentences):
-    #     tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
-    # print(tokenized_sentences)
-
-    # # print('Example sentence:')
-    # # print(sentences[500])
-    # # print('Tokenized:')
-    # # print(tokenized_sentences[500])
-
-    # # Create the training data
-    # print('Create training data:')
-    # X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
-    # y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
-    # # print('X_train:',X_train[500])
-    # # print('y_train:',y_train[500])
-    # print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
-    # print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
-
 
     C = nvocab
     H = nhidden
@@ -397,35 +323,15 @@ if __name__=='__main__':
     print("nparams to learn %d." % nparams)
     print()
 
-    # print('Train model on one sentence')
-    # print('input matrix')
-    # print(X_train[1])
-    # s = [index_to_word[i] for i in X_train[1]]
-    # print(s)
-    # np.random.seed(0)
-    # model = RnnModel(nvocab=nvocab, nhidden=nhidden)
-    # o, s = model.forward_propagation(X_train[1])
-    # print('state matrix (hidden unit state, per time step)')
-    # print(s.shape)
-    # print(s)
-
-    # print('output matrix (softmax over vocabulary, per time step)')
-    # print(o.shape)
-    # print(o)
-
-    # print('predictions')
-    # predictions = model.predict(X_train[1])
-    # print(predictions.shape)
-    # print(predictions)
-    # s = [index_to_word[i] for i in predictions]
-    # print(s)
-    # print('actual')
-    # print(y_train[1])
-    # s = [index_to_word[i] for i in y_train[1]]
-    # print(s)
-
-    # print()
-
+    # split text into sentences and tokens
+    sentences = nltk.sent_tokenize(s)
+    print(sentences)
+    tokens = []
+    for sentence in sentences:
+        sentence = sentence.lower()
+        words = nltk.word_tokenize(sentence)
+        tokens.extend(words)
+        tokens.append(end_token) # add an END token to every sentence
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time
@@ -439,7 +345,6 @@ if __name__=='__main__':
     # model = RnnModel(nvocab=grad_check_vocab_size, nhidden=10, bptt_truncate=1000)
     # model.gradient_check([0,1,2,3], [1,2,3,4])
 
-
     # print('see how long one sgd step takes')
     # np.random.seed(0)
     # model = RnnModel(nvocab=nvocab, nhidden=nhidden)
@@ -450,17 +355,14 @@ if __name__=='__main__':
 
     # Train on data
     print('Train model on data')
-    np.random.seed(0)
     model = RnnModel(nvocab=nvocab, nhidden=nhidden)
     # nepochs = 2000
-    nepochs = 100
-    model.train(tokens, nepochs)
-    # losses = util.train_with_sgd(model, X_train[:100], y_train[:100], nepochs=10, evaluate_loss_after=1)
-    # losses = util.train_with_sgd(model, X_train, y_train, nepochs=10, evaluate_loss_after=1)
-    # losses = util.train_with_sgd(model, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
+    # nepochs = 5000
+    # nepochs = 100
+    nepochs = 1000
+    losses = model.train(tokens, nepochs)
     # print(losses)
     # print()
-
     # import matplotlib.pyplot as plt
     # plt.line(losses)
     # plt.show()
