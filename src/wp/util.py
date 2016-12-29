@@ -18,20 +18,6 @@ def softmax(x):
     xt = np.exp(x - np.max(x))
     return xt / np.sum(xt)
 
-def encode_params(params):
-    """
-    Encode a list of parameters as a string to be stored in a filename.
-    e.g. (('n',3),('b',1.2)) => '(n-3-b-1.2)'
-    """
-    s = str(params)
-    s = s.replace(",",'-')
-    s = s.replace("'",'')
-    s = s.replace('(','')
-    s = s.replace(')','')
-    s = s.replace(' ','')
-    s = '(' + s + ')'
-    return s
-
 def get_best_tokens(d, k):
     """
     Return the best k tokens with their probabilities from the given dictionary.
@@ -42,7 +28,6 @@ def get_best_tokens(d, k):
     ntotal = sum(d.values())
     best_pct = [(k,v/ntotal) for k,v in best]
     return best_pct
-
 
 def train_with_sgd(model, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
     """

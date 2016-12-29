@@ -15,14 +15,12 @@ def init_model_table(model_specs, model_folder, data, nchars_list):
     Initialize models
     """
     model_table = []
-    # model_table = {}
     for nchars in nchars_list:
         print('ntraining_chars', nchars)
         # load/train/save model
         models = init_models(model_specs, model_folder, data, nchars=nchars) # load/train models
         models = [nchars] + models
         model_table.append(models)
-        # model_table[nchars] = models
     return model_table
 
 def init_models(model_specs, model_folder, data, nchars=None):

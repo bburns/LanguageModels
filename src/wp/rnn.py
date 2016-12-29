@@ -43,23 +43,27 @@ class RnnModel(model.Model):
         bptt_truncate - backpropagate through time truncation
         """
         self.n = 5 # words of context #...
-        self.model_folder = model_folder
-        self.name = 'rnn'
         self.nchars = nchars
         self.nvocabmax = nvocabmax
         self.nhidden = nhidden
         self.bptt_truncate = bptt_truncate
         self.trained = False
+        # self.model_folder = model_folder
+        # self.name = 'rnn'
+        self.name = 'rnn-(nchars-%d-nvocabmax-%d-nhidden-%d)' % (nchars, nvocabmax, nhidden)
+        self.filename = model_folder + '/' + self.name + '.pickle'
 
-    def filename(self):
-        """
-        Get default filename for model.
-        """
-        classname = type(self).__name__ # ie 'RnnModel'
-        params = (('nchars',self.nchars),('nvocabmax',self.nvocabmax),('nhidden',self.nhidden))
-        sparams = util.encode_params(params) # eg 'nchars-1000'
-        filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
-        return filename
+    # def filename(self):
+    #     """
+    #     Get default filename for model.
+    #     """
+    #     # classname = type(self).__name__ # ie 'RnnModel'
+    #     typename = 'rnn'
+    #     params = (('nchars',self.nchars),('nvocabmax',self.nvocabmax),('nhidden',self.nhidden))
+    #     sparams = util.encode_params(params) # eg 'nchars-1000'
+    #     # filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
+    #     filename = "%s/%s-%s.pickle" % (self.model_folder, typename, sparams)
+    #     return filename
 
     def train(self, tokens, nepochs=10):
         """

@@ -30,21 +30,24 @@ class NgramModel(model.Model):
         Create an n-gram model.
         """
         self.n = n  # the n in n-gram
-        self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens eh?
-        self.model_folder = model_folder
-        self.name = "n-gram (n=%d)" % n
+        self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens?
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
+        # self.model_folder = model_folder
+        self.name = "n-gram-(nchars-%d-n-%d)" % (nchars, n)
+        self.filename = model_folder + '/' + self.name + '.pickle'
 
-    def filename(self):
-        """
-        Get default filename for model.
-        """
-        classname = type(self).__name__ # ie 'NgramModel'
-        params = (('nchars',self.nchars),('n',self.n))
-        sparams = util.encode_params(params) # eg 'nchars-1000-n-3'
-        filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
-        return filename
+    # def filename(self):
+    #     """
+    #     Get default filename for model.
+    #     """
+    #     # classname = type(self).__name__ # ie 'NgramModel'
+    #     typename = 'ngram'
+    #     params = (('nchars',self.nchars),('n',self.n))
+    #     sparams = util.encode_params(params) # eg 'nchars-1000-n-3'
+    #     # filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
+    #     filename = "%s/%s-%s.pickle" % (self.model_folder, typename, sparams)
+    #     return filename
 
     def train(self, tokens, nepochs='unused'):
         """

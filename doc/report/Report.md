@@ -215,8 +215,6 @@ gutenberg license at end, eg
 
 gutenberg header and footer markers - not consistent, but regexp should capture diffs. eg
 
-    "\*\*\*[ ]*START.*\*\*\*"
-    "\*\*\*[ ]*END.*\*\*\*"
 
     *** START OF THIS PROJECT GUTENBERG EBOOK PHANTASTES ***
     *** START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
