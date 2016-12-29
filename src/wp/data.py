@@ -4,6 +4,9 @@ Data module - wraps all data and handles processing.
 
 Usage:
 data = Data()
+data.clean()
+data.merge()
+data.split()
 
 """
 
@@ -32,9 +35,11 @@ class Data(object):
         """
         #. could pass some of these as parameters
         self.escape = '../../' # escape from the Experiment subfolder, where this is called from
-        self.rawfiles    = self.escape + 'data/raw/*.txt'
-        self.mergedfile  = self.escape + 'data/merged/all.txt'
-        self.splitfolder = self.escape + 'data/split/'
+        self.rawfiles      = self.escape + 'data/01-raw/*.txt'
+        self.cleanedfolder = self.escape + 'data/02-cleaned/'
+        self.cleanedfiles  = self.escape + 'data/02-cleaned/*.txt'
+        self.mergedfile    = self.escape + 'data/03-merged/all.txt'
+        self.splitfolder   = self.escape + 'data/04-split/'
         self.splitparts = ('train','validate','test')
 
         self.sourcefiles = {
@@ -46,24 +51,72 @@ class Data(object):
         }
 
 
+    def clean(self):
+        """
+        Clean raw files - remove Gutenberg header/footers, table of contents, nonascii chars.
+        """
+        for infile in glob.glob(self.rawfiles):
+            _, filetitle = os.path.split(infile)
+            outfile = self.cleanedfolder + filetitle
+            if not os.path.isfile(outfile):
+                print('cleaning %s to %s' % (infile, outfile))
+                with open(infile, 'rb') as f_in:
+                    s = f_in.read()
+                    s = s.replace('\r\n','\n') # dos2unix
+                    s = self.clean_header_footer(s)
+                    s = self.clean_table_of_contents(s)
+                    # strip out any non-ascii characters - nltk complains otherwise
+                    #. need better way to handle this - eg convert to miserables, not misrables
+                    #. use decode?
+                    s = re.sub(r'[^\x00-\x7f]',r'', s)
+                    with open(outfile, 'wb') as f_out:
+                        f_out.write(s)
+        print("The raw files have been cleaned.")
+
+    def clean_header_footer(self, s):
+        """
+        Remove the Gutenberg header and footer/license from the given string.
+        """
+        match = re.search(r"\*\*\*[ ]*START.*\*\*\*", s)
+        if match:
+            pos = match.span()[1]
+            s = s[pos:]
+        match = re.search(r"\*\*\*[ ]*END.*\*\*\*", s)
+        if match:
+            pos = match.span()[0]
+            s = s[:pos]
+        return s
+
+    def clean_table_of_contents(self, s):
+        """
+        Remove table of contents from specific texts.
+        """
+        match = re.search(r"List of Illustrations", s) # les miserables
+        if match: pos = match.span()[0]; s = s[pos:]
+        match = re.search(r"\[Sidenote\: _Down the Rabbit-Hole_\]", s) # alice
+        if match: pos = match.span()[1]; s = s[pos:]
+        match = re.search(r"PART ONE--The Old Buccaneer", s) # treasure island
+        if match: pos = match.span()[1]; s = s[pos:]
+        match = re.search(r"CANON ALBERIC'S SCRAP-BOOK", s) # mrjames1905
+        if match: pos = match.span()[1]; s = s[pos:]
+        match = re.search(r"I. THE RIVER BANK", s) # windinwillows
+        if match: pos = match.span()[1]; s = s[pos:]
+        return s
+
     def merge(self):
         """
-        Merge the raw files into one file if not done yet.
-        Converts files to plain ascii text.
+        Merge the cleaned files into one file if not done yet.
         """
         if os.path.isfile(self.mergedfile):
-            print("The raw files have already been merged.")
+            print("The cleaned files have already been merged.")
         else:
             with open(self.mergedfile, 'wb') as f_all:
-                for filename in glob.glob(self.rawfiles):
+                # for filename in glob.glob(self.rawfiles):
+                for filename in glob.glob(self.cleanedfiles):
                     with open(filename, 'rb') as f:
                         s = f.read()
-                        # strip out any non-ascii characters - nltk complains otherwise
-                        s = re.sub(r'[^\x00-\x7f]',r'', s)
-                        # s = str(s) # convert to plain string
-                        s = s.replace('\r\n','\n') # dos2unix
                         f_all.write(s)
-            print("The raw files have been merged.")
+            print("The cleaned files have been merged.")
 
     def split(self, ptrain=0.8, pvalidate=0.1, ptest=0.1):
         """
@@ -256,8 +309,17 @@ class Vocab(object):
 if __name__ == '__main__':
 
     data = Data()
+    data.clean()
     data.merge()
     data.split()
+
+    # s = "pokpok pokpok\n*** START of pok ***\n kjnkjnjhbjhb \n*** END of jhbjhb ***\n license blahlbahlblah"
+    # s = data.clean_header_footer(s)
+    # print(s)
+
+
+
+
 
     # tokens = data.tokens('train', 300)
     # print('train:',tokens)
@@ -280,10 +342,10 @@ if __name__ == '__main__':
     # print()
 
 
-    s = 'The dog barked. The cat slept.'
-    nvocab = 3
-    vocab = Vocab(s.split(), nvocab)
-    print(vocab)
-    print(vocab.index_to_word)
-    print(vocab.word_to_index)
+    # s = 'The dog barked. The cat slept.'
+    # nvocab = 3
+    # vocab = Vocab(s.split(), nvocab)
+    # print(vocab)
+    # print(vocab.index_to_word)
+    # print(vocab.word_to_index)
 
