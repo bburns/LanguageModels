@@ -3,6 +3,7 @@
 Base Model class for use by n-gram and RNN classes.
 """
 
+from __future__ import print_function, division
 import os
 import os.path
 import cPickle as pickle # faster version of pickle
@@ -34,7 +35,7 @@ class Model(object):
         if filename is None:
             filename = self.filename()
         if os.path.isfile(filename):
-            print("load model")
+            print("load model",filename)
             with open(filename, 'rb') as f:
                 model = pickle.load(f)
                 return model

@@ -18,15 +18,17 @@ import operator
 import time
 import cPickle as pickle # faster version of pickle
 from pprint import pprint, pformat
+# from collections import defaultdict
 
 import numpy as np
 import nltk
 from nltk import tokenize
 
+import model
 import util
 
 
-class RnnModel(object):
+class RnnModel(model.Model):
     """
     Recurrent neural network (RNN) model
     """
@@ -40,8 +42,10 @@ class RnnModel(object):
         nhidden       - number of units in the hidden layer
         bptt_truncate - backpropagate through time truncation
         """
+        self.n = 5 # words of context #...
         self.modelfolder = modelfolder
         self.name = 'rnn'
+        self.nchars = nchars
         self.nvocab = nvocab
         self.nhidden = nhidden
         self.bptt_truncate = bptt_truncate
@@ -77,12 +81,15 @@ class RnnModel(object):
         self.index_to_word = [wordcount[0] for wordcount in wordcounts]
         self.index_to_word.append(unknown_token)
         self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
+        # self.word_to_index = defaultdict(lambda: unknown_token)
+        # for i, word in enumerate(self.index_to_word):
+            # self.word_to_index[word] = i
         # replace words not in vocabulary with UNKNOWN
         tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-        print(tokens)
+        # print(tokens)
         # replace words with numbers
         itokens = [self.word_to_index[token] for token in tokens]
-        print(itokens)
+        # print(itokens)
         # X_train = itokens[:-1]
         # y_train = itokens[1:]
         # split x and y into sequences of 10 tokens. or rnd # tokens.
@@ -94,11 +101,11 @@ class RnnModel(object):
                 seqs.append(seq)
                 seq = []
         seqs.append(seq)
-        print(seqs)
+        # print(seqs)
         X_train = [seq[:-1] for seq in seqs]
         y_train = [seq[1:] for seq in seqs]
-        print(X_train)
-        print(y_train)
+        # print(X_train)
+        # print(y_train)
         # train model with stochastic gradient descent - learns U, V, W
         losses = util.train_with_sgd(self, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
         self.trained = True
@@ -136,19 +143,40 @@ class RnnModel(object):
         s = [self.index_to_word[iword] for iword in iwords[1:-1]]
         return s
 
+    # def predict(self, tokens, k):
+    #     """
+    #     Get the most likely next k tokens following the given sequence.
+    #     """
+    #     pass
+    #. get k highest o values and their indices, translate to vocab words
+    # def predict(self, x, k):
     def predict(self, tokens, k):
-        """
-        Get the most likely next k tokens following the given sequence.
-        """
-        pass
-    def predict(self, x):
         """
         Perform forward propagation and return index of highest score
         """
+        # x = [self.word_to_index[word] for word in tokens]
+        x = [self.get_index(word) for word in tokens]
         o, s = self.forward_propagation(x)
-        #. get k highest o values and their indices, translate to vocab words
-        itoken = np.argmax(o, axis=1)
-        return itoken
+        itokens = np.argmax(o, axis=1)
+        # print(itokens)
+        itoken = itokens[-1]
+        word = self.index_to_word[itoken]
+        # word = self.get_word(itoken)
+        return [[word,1]]
+
+    # def get_word(self, i):
+    #     try:
+    #         word = self.index_to_word[i]
+    #     except:
+    #         word = "UNKNOWN"
+    #     return word
+
+    def get_index(self, word):
+        try:
+            i = self.word_to_index[word]
+        except:
+            i = self.word_to_index["UNKNOWN"]
+        return i
 
     def __str__(self):
         """
