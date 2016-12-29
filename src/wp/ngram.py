@@ -25,13 +25,13 @@ class NgramModel(model.Model):
     The sparse array is implemented as a dict of dicts.
     """
 
-    def __init__(self, n, modelfolder='.', nchars=None):
+    def __init__(self, n, model_folder='.', nchars=None):
         """
         Create an n-gram model.
         """
         self.n = n  # the n in n-gram
         self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens eh?
-        self.modelfolder = modelfolder
+        self.model_folder = model_folder
         self.name = "n-gram (n=%d)" % n
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
@@ -43,7 +43,7 @@ class NgramModel(model.Model):
         classname = type(self).__name__ # ie 'NgramModel'
         params = (('nchars',self.nchars),('n',self.n))
         sparams = util.encode_params(params) # eg 'nchars-1000-n-3'
-        filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
+        filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
         return filename
 
     def train(self, tokens, nepochs='unused'):
@@ -106,9 +106,11 @@ class NgramModel(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    def generate(self, k=1):
+    # def generate(self, k=1):
+    def generate(self):
         """
-        Generate k sentences of random text.
+        # Generate k sentences of random text.
+        Generate sentence of random text.
         """
         start1 = 'END'
         output = []
@@ -121,14 +123,14 @@ class NgramModel(model.Model):
             start3 = random.choice(self._d[start1][start2].keys())
             input.append(start3)
             output.append(start3)
-        for i in range(k):
-            while True:
-                next = self.generate_token(input)
-                input.pop(0)
-                input.append(next)
-                output.append(next)
-                if next=='END':
-                    break
+        # for i in range(k):
+        while True:
+            next = self.generate_token(input)
+            input.pop(0)
+            input.append(next)
+            output.append(next)
+            if next=='END':
+                break
         return output
 
     def predict(self, tokens, k):
@@ -166,53 +168,53 @@ if __name__ == '__main__':
     import itertools
     import numpy as np
 
-    s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
-    print(s)
+    # unknown_token = "UNKNOWN"
+    # sentence_end_token = "END"
 
-    nvocab = 10
+    # s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
+    # print(s)
 
-    unknown_token = "UNKNOWN"
-    sentence_end_token = "END"
+    # # nvocab = 10
 
-    # split text into sentences
-    sentences = nltk.sent_tokenize(s)
-    print(sentences)
+    # # split text into sentences
+    # sentences = nltk.sent_tokenize(s)
+    # print(sentences)
 
-    # append END tokens
-    sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
-    print(sentences)
+    # # append END tokens
+    # sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
+    # print(sentences)
 
-    # Tokenize the sentences into words
-    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    print(tokenized_sentences)
+    # # Tokenize the sentences into words
+    # tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    # print(tokenized_sentences)
 
-    # Count the word frequencies
-    word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
-    print("Found %d unique words tokens." % len(word_freq.items()))
+    # # Count the word frequencies
+    # word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    # print("Found %d unique words tokens." % len(word_freq.items()))
 
     # Get the most common words and build index_to_word and word_to_index vectors
-    vocab = word_freq.most_common(nvocab-1)
-    print('most common words',vocab)
-    index_to_word = [pair[0] for pair in vocab]
-    index_to_word.append(unknown_token)
-    print('index to word',index_to_word)
-    word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
-    print('word to index',word_to_index)
+    # vocab = word_freq.most_common(nvocab-1)
+    # print('most common words',vocab)
+    # index_to_word = [pair[0] for pair in vocab]
+    # index_to_word.append(unknown_token)
+    # print('index to word',index_to_word)
+    # word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
+    # print('word to index',word_to_index)
 
-    # Replace all words not in our vocabulary with the unknown token
-    print('replace unknown words with UNKNOWN token')
-    for i, sent in enumerate(tokenized_sentences):
-        tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
-    print(tokenized_sentences)
+    # # Replace all words not in our vocabulary with the unknown token
+    # print('replace unknown words with UNKNOWN token')
+    # for i, sent in enumerate(tokenized_sentences):
+    #     tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
+    # print(tokenized_sentences)
 
-    # Create the training data
-    print('Create training data:')
-    X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
-    y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
-    # print('X_train:',X_train[500])
-    # print('y_train:',y_train[500])
-    print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
-    print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
+    # # Create the training data
+    # print('Create training data:')
+    # X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
+    # y_train = np.asarray([[word_to_index[w] for w in sent[1:]] for sent in tokenized_sentences])
+    # # print('X_train:',X_train[500])
+    # # print('y_train:',y_train[500])
+    # print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
+    # print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
 
 
     # --------------------------------------
@@ -223,35 +225,35 @@ if __name__ == '__main__':
     train_tokens = strain.split()
     test_tokens = stest.split()
 
-    model = NgramModel(n=2)
-    model.train(train_tokens)
-    token = model.generate_token(test_tokens)
-    print(test_tokens)
-    print(token)
-    tokens = model.generate(5)
-    print(' '.join(tokens))
-    print()
-
     model = NgramModel(n=1)
     model.train(train_tokens)
     token = model.generate_token(test_tokens)
     print(test_tokens)
-    print(token)
-    tokens = model.generate(5)
+    print('prediction:',token)
+    tokens = model.generate()
+    print(' '.join(tokens))
+    print()
+
+    model = NgramModel(n=2)
+    model.train(train_tokens)
+    token = model.generate_token(test_tokens)
+    print(test_tokens)
+    print('prediction:',token)
+    tokens = model.generate()
     print(' '.join(tokens))
     print()
 
 
 
-    print('predictions')
-    predictions = model.predict(X_train[1], 3)
-    # print(predictions.shape)
-    print(predictions)
-    # s = [index_to_word[i] for i in predictions]
+    # print('predictions')
+    # predictions = model.predict(X_train[1], 3)
+    # # print(predictions.shape)
+    # print(predictions)
+    # # s = [index_to_word[i] for i in predictions]
+    # # print(s)
+    # print('actual')
+    # print(y_train[1])
+    # s = [index_to_word[i] for i in y_train[1]]
     # print(s)
-    print('actual')
-    print(y_train[1])
-    s = [index_to_word[i] for i in y_train[1]]
-    print(s)
 
 

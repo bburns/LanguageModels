@@ -33,71 +33,60 @@ class RnnModel(model.Model):
     Recurrent neural network (RNN) model
     """
 
-    def __init__(self, modelfolder='.', nchars=None, nvocab=1000, nhidden=100, bptt_truncate=4):
+    def __init__(self, model_folder='.', nchars=None, nvocabmax=1000, nhidden=100, bptt_truncate=4):
         """
         Create an RNN model
-        modelfolder   - default location for model files
+        model_folder   - default location for model files
         nchars        - number of training characters to use - None means use all
-        nvocab        - number of vocabulary words to learn
+        nvocabmax     - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
         bptt_truncate - backpropagate through time truncation
         """
         self.n = 5 # words of context #...
-        self.modelfolder = modelfolder
+        self.model_folder = model_folder
         self.name = 'rnn'
         self.nchars = nchars
-        self.nvocab = nvocab
+        self.nvocabmax = nvocabmax
         self.nhidden = nhidden
         self.bptt_truncate = bptt_truncate
         self.trained = False
-        # parameters for the network that we need to learn
-        self.U = np.random.uniform(-1,1, (nhidden, nvocab))
-        self.V = np.random.uniform(-1,1, (nvocab, nhidden))
-        self.W = np.random.uniform(-1,1, (nhidden, nhidden))
 
     def filename(self):
         """
         Get default filename for model.
         """
         classname = type(self).__name__ # ie 'RnnModel'
-        params = (('nchars',self.nchars),('nvocab',self.nvocab),('nhidden',self.nhidden))
+        params = (('nchars',self.nchars),('nvocabmax',self.nvocabmax),('nhidden',self.nhidden))
         sparams = util.encode_params(params) # eg 'nchars-1000'
-        filename = "%s/%s-%s.pickle" % (self.modelfolder, classname, sparams)
+        filename = "%s/%s-%s.pickle" % (self.model_folder, classname, sparams)
         return filename
 
     def train(self, tokens, nepochs=10):
         """
         Train the model with the given tokens.
         """
-        #. could just go through text 10 tokens at a time?
-        # print("get ngrams, n=%d" % self.n)
-        # token_tuples = nltk.ngrams(tokens, self.n)
-        # print("add ngrams to model")
-        # for token_tuple in token_tuples:
-        #     self.increment(token_tuple)
+        # just go through text 10 tokens at a time
+        seqlength = 10 #..
         unknown_token = "UNKNOWN"
+        # get most common words for vocabulary
         word_freqs = nltk.FreqDist(tokens)
-        wordcounts = word_freqs.most_common(self.nvocab-1)
+        wordcounts = word_freqs.most_common(self.nvocabmax-1)
         self.index_to_word = [wordcount[0] for wordcount in wordcounts]
         self.index_to_word.append(unknown_token)
         self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-        # self.word_to_index = defaultdict(lambda: unknown_token)
-        # for i, word in enumerate(self.index_to_word):
-            # self.word_to_index[word] = i
+        self.nvocab = len(self.index_to_word)
         # replace words not in vocabulary with UNKNOWN
         tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
         # print(tokens)
         # replace words with numbers
         itokens = [self.word_to_index[token] for token in tokens]
         # print(itokens)
-        # X_train = itokens[:-1]
-        # y_train = itokens[1:]
-        # split x and y into sequences of 10 tokens. or rnd # tokens.
+        # split x and y into sequences of 10 tokens. or rnd # tokens?
         seqs = []
         seq = []
         for i, itoken in enumerate(itokens):
             seq.append(itoken)
-            if len(seq)>=10:
+            if len(seq)>=seqlength:
                 seqs.append(seq)
                 seq = []
         seqs.append(seq)
@@ -106,6 +95,10 @@ class RnnModel(model.Model):
         y_train = [seq[1:] for seq in seqs]
         # print(X_train)
         # print(y_train)
+        # parameters for the network that we need to learn
+        self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab))
+        self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
+        self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
         # train model with stochastic gradient descent - learns U, V, W
         losses = util.train_with_sgd(self, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
         self.trained = True
@@ -136,24 +129,35 @@ class RnnModel(model.Model):
         s = [self.index_to_word[iword] for iword in iwords[1:-1]]
         return s
 
-    #... get k highest o values and their indices, translate to vocab words
     def predict(self, tokens, k):
         """
-        Perform forward propagation and return index of highest score.
-        #. Get the most likely next k tokens following the given sequence.
+        Get the most likely next k tokens following the given sequence.
         """
-        x = [self.get_index(word) for word in tokens]
-        output, state = self.forward_propagation(x)
-        itokens = np.argmax(output, axis=1)
-        # print(itokens)
-        itoken = itokens[-1]
-        word = self.index_to_word[itoken]
-        return [[word,1]]
+        # print(tokens)
+        # print(len(self.word_to_index))
+        iwords = [self.get_index(word) for word in tokens]
+        # print(iwords)
+        output, state = self.forward_propagation(iwords)
+        next_word_probs = output[-1]
+        # print(next_word_probs[:20])
+        pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
+        # print(pairs[:20])
+        best_iwords = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
+        # print(best_iwords)
+        # print(self.nvocabmax)
+        # print(self.nvocab)
+        # print(len(self.index_to_word))
+        # print(self.index_to_word)
+        best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
+        return best_words
 
     def get_index(self, word):
         """
         Convert word to integer representation.
         """
+        # tried using a defaultdict to return UNKNOWN instead of a dict, but
+        # pickle wouldn't save an object with a lambda - would require defining
+        # a fn just to return UNKNOWN. so this'll do.
         try:
             i = self.word_to_index[word]
         except:
@@ -165,6 +169,7 @@ class RnnModel(model.Model):
         Return model as a string.
         """
         s = self.name
+        #. etc
         return s
 
     # ----------------------------
@@ -182,6 +187,7 @@ class RnnModel(model.Model):
         # We added one additional element for the initial hidden state, which we set to 0
         s[-1] = np.zeros(self.nhidden)
         # The outputs at each time step. Again, we save them for later.
+        # o = np.zeros((nsteps, self.nvocabmax))
         o = np.zeros((nsteps, self.nvocab))
         # For each time step...
         for t in np.arange(nsteps):
@@ -314,10 +320,10 @@ if __name__=='__main__':
     s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
     print(s)
 
-    nvocab = 10
+    nvocabmax = 10
     nhidden = 5
 
-    C = nvocab
+    C = nvocabmax
     H = nhidden
     nparams = 2*H*C + H**2
     print("nparams to learn %d." % nparams)
@@ -355,7 +361,7 @@ if __name__=='__main__':
 
     # Train on data
     print('Train model on data')
-    model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    model = RnnModel(nvocabmax=nvocabmax, nhidden=nhidden)
     # nepochs = 2000
     # nepochs = 5000
     # nepochs = 100
@@ -366,6 +372,15 @@ if __name__=='__main__':
     # import matplotlib.pyplot as plt
     # plt.line(losses)
     # plt.show()
+
+    # Sample predictions
+    tokens = "the dog".split()
+    k = 2
+    sample = model.predict(tokens, k)
+    print(sample)
+
+
+    # Test
 
     # generate sentences
     print("Generate sentences")

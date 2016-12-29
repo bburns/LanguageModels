@@ -35,9 +35,9 @@ class Model(object):
         if filename is None:
             filename = self.filename()
         if os.path.isfile(filename):
-            print("load model",filename)
             with open(filename, 'rb') as f:
                 model = pickle.load(f)
+                print("loaded model",model.name)
                 return model
         else:
             return self

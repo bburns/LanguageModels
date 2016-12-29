@@ -21,7 +21,7 @@ import nltk
 from nltk import tokenize
 
 
-class Data():
+class Data(object):
     """
     Wrapper around all data files, with splitter and tokenizers.
     """
@@ -143,6 +143,7 @@ class Data():
             if nchars: s = s[:nchars]
         return s
 
+    #. kill
     def find_vocabulary(self, source, nvocab):
         """
         Find most used words and generate indices.

@@ -2,8 +2,8 @@
 # Word Prediction using Recurrent Neural Networks
 
 Brian Burns  
-Udacity Machine Learning Engineer Nanodegree
-December 29, 2016
+Udacity Machine Learning Engineer Nanodegree  
+January 1, 2016  
 
 <!-- from https://review.udacity.com/#!/rubrics/108/view -->
 
@@ -15,15 +15,51 @@ December 29, 2016
 Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
-problem domain
-important in speech recognition to help resolve ambiguity.
-also _ and _.
+Word prediction is the task of predicting the most likely words following the
+preceding text. This has many applications, such as suggesting the next word as
+text is entered, or as an aid in resolving ambiguity in speech and handwriting
+recognition .
 
-project origin
-ie approaches to solve the problem, and what we'll use. 
+The generation of a likely word given prior words goes back to Claude Shannon's
+work on information theory [Shannon1948] based in part on Markov models
+introduced by Andrei Markov [Markov1913] - counts of encountered word tuples are
+used to estimate the conditional probability of seeing a word given the prior
+words. These so called n-grams formed the basis of commercial word prediction
+software in the 1980's, eventually supplemented with similar syntax and part of
+speech predictions [Carlberger1997]. More recently, distributed representations
+of words have been used in recurrent neural networks (RNNs), which can better
+handle data sparsity and allow more of the context to affect the prediction
+[Bengio2003].
 
-input data
-we'll use gutenberg 1m words of novels and stories. others use larger corpora, eg google's _, _, _. 
+The problem is basically a supervised learning task, and any text can be used to
+train and evaluate the models - we'll be using a simple story of ___ words for
+testing, and a million words from books digitized by the Gutenberg Project for
+more complete evaluation. Others use larger corpora, e.g. Google's __, __, __.
+[cite papers]
+
+
+### Problem Statement
+
+<!-- The problem which needs to be solved is clearly defined.
+A strategy for solving the problem,
+including discussion of the expected solution, has been made. -->
+
+Problem: Given a sequence of *n* words, predict the *k* most likely next words
+and their probabilities.
+
+For example, for the sequence "The dog", a solution might be ("barked" 10%,
+"slept" 9%, "was" 8%).
+
+
+
+The dog barked. The cat meowed. The dog ran. The dog caught a frisbee. The cat
+yawned. The cat slept. The dog barked at the cat. The cat woke up. The dog ran
+away. The cat chased the dog. The dog chased the cat. The cat ran up a tree. 
+
+
+
+strategy
+based on literature, expect rnn lstm gru to offer best performance for a given amount of computation [cite]
 
 
 until recently trigram was state of the art in word prediction.
@@ -41,27 +77,9 @@ was slightly worse than trigram
 since then have been improved considerably
 >how?
 >this was a plain rnn?
-
-then came lstm's in 1997
+lstm's came in 1997
 various types, incl gru 2014 - simpler
 then attention 2015
-
-
-
-### Problem Statement
-
-<!-- The problem which needs to be solved is clearly defined.
-A strategy for solving the problem, including discussion of the expected solution,
-has been made. -->
-
-Problem: given a sequence of n words, predict the k most likely next words and their probabilities. 
-
-eg n=9, give a choice of k=3 most likely next words
-eg "The dog ran down the field and caught the __"
-predictions - frisbee 10% ball 9% stick 8%
-
-strategy
-based on literature, expect rnn lstm gru to offer best performance for a given amount of computation
 
 
 
@@ -249,7 +267,7 @@ properly justified based on the characteristics of the problem. -->
 <!-- Student clearly defines a benchmark result or threshold for comparing
 performances of solutions obtained. -->
 
-n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)
+n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)?
 
 published results? 
 
@@ -265,7 +283,13 @@ corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
 
-cleanup gutenberg preface, titlepages, table of contents manually, or just leave in as noise - simpler.
+cleanup gutenberg preface, titlepages, table of contents with code, or just leave in as noise
+
+01-raw
+02-cleaned
+03-merged
+04-split
+
 
 
 
@@ -275,6 +299,8 @@ cleanup gutenberg preface, titlepages, table of contents manually, or just leave
 <!-- The process for which metrics, algorithms, and techniques were implemented
 with the given datasets or input data has been thoroughly documented.
 Complications that occurred during the coding process are discussed. -->
+
+
 
 
 ### Refinement
@@ -292,6 +318,11 @@ intermediate solutions, if necessary. -->
 <!-- The final model's qualities - such as parameters - are evaluated in detail.
 Some type of analysis is used to validate the robustness of the model's
 solution. -->
+
+for rnns show the Loss vs epoch graphs to show increasing accuracy
+
+
+
 
 ### Justification
 
@@ -355,6 +386,8 @@ difficult. -->
 <!-- Discussion is made as to how one aspect of the implementation could be
 improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
+
+
 
 
 --------------------------------------------------------------------------------
