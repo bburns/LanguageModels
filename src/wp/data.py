@@ -24,6 +24,8 @@ import pandas as pd
 import nltk
 from nltk import tokenize
 
+import util
+
 
 class Data(object):
     """
@@ -34,33 +36,34 @@ class Data(object):
         """
         Create a data object - contains little to no state - most is in predefined files.
         """
-        #. pass some of these as parameters?
-        self.dataset = dataset
         escape = '../../' # escape from the Experiment subfolder, where this is called from
-        folder = escape + 'data/' + dataset + '/'
-        self.rawfiles      = folder + '1-raw/*.txt'
-        self.cleanedfolder = folder + '2-cleaned/'
-        self.cleanedfiles  = folder + '2-cleaned/*.txt'
-        self.mergedfile    = folder + '3-merged/all.txt'
-        self.splitfolder   = folder + '4-split/'
+        dataset_folder = escape + 'data/' + dataset + '/'
+        self.dataset = dataset
+        self.model_folder   = dataset_folder + 'models/'
+        self.raw_folder     = dataset_folder + '1-raw/'
+        self.cleaned_folder = dataset_folder + '2-cleaned/'
+        self.merged_folder  = dataset_folder + '3-merged/'
+        self.split_folder   = dataset_folder + '4-split/'
+        self.raw_files      = self.raw_folder + '*.txt'
+        self.cleaned_files  = self.cleaned_folder + '*.txt'
+        self.merged_file    = self.merged_folder + 'all.txt'
         self.splitparts = ('train','validate','test')
-
-        self.sourcefiles = {
-            'raw': self.rawfiles,
-            'merged': self.mergedfile,
-            'train': self.splitfolder + 'all-train.txt',
-            'validate': self.splitfolder + 'all-validate.txt',
-            'test': self.splitfolder + 'all-test.txt',
+        self.source_files = {
+            'raw': self.raw_files,
+            'merged': self.merged_file,
+            'train': self.split_folder + 'all-train.txt',
+            'validate': self.split_folder + 'all-validate.txt',
+            'test': self.split_folder + 'all-test.txt',
         }
-
 
     def clean(self):
         """
         Clean raw files - remove Gutenberg header/footers, table of contents, nonascii chars.
         """
-        for infile in glob.glob(self.rawfiles):
+        util.mkdir(self.cleaned_folder)
+        for infile in glob.glob(self.raw_files):
             _, filetitle = os.path.split(infile)
-            outfile = self.cleanedfolder + filetitle
+            outfile = self.cleaned_folder + filetitle
             if not os.path.isfile(outfile):
                 print('cleaning %s to %s' % (infile, outfile))
                 with open(infile, 'rb') as f_in:
@@ -81,13 +84,9 @@ class Data(object):
         Remove the Gutenberg header and footer/license from the given string.
         """
         match = re.search(r"\*\*\*[ ]*START.*\*\*\*", s)
-        if match:
-            pos = match.span()[1]
-            s = s[pos:]
+        if match: pos = match.span()[1]; s = s[pos:]
         match = re.search(r"\*\*\*[ ]*END.*\*\*\*", s)
-        if match:
-            pos = match.span()[0]
-            s = s[:pos]
+        if match: pos = match.span()[0]; s = s[:pos]
         return s
 
     def clean_table_of_contents(self, s):
@@ -110,18 +109,19 @@ class Data(object):
         """
         Merge the cleaned files into one file if not done yet.
         """
-        if os.path.isfile(self.mergedfile):
+        util.mkdir(self.merged_folder)
+        if os.path.isfile(self.merged_file):
             print("The cleaned files have already been merged.")
         else:
-            with open(self.mergedfile, 'wb') as f_all:
+            with open(self.merged_file, 'wb') as f_all:
                 # for filename in glob.glob(self.rawfiles):
-                for filename in glob.glob(self.cleanedfiles):
+                for filename in glob.glob(self.cleaned_files):
                     with open(filename, 'rb') as f:
                         s = f.read()
                         f_all.write(s)
             print("The cleaned files have been merged.")
 
-    def split(self, ptrain=0.8, pvalidate=0.1, ptest=0.1):
+    def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2):
         """
         Split a textfile on sentences into train, validate, and test files.
         Will put resulting files in specified output folder with -train.txt etc appended.
@@ -131,9 +131,10 @@ class Data(object):
         """
         assert abs(ptrain + pvalidate + ptest - 1) < 1e-6 # must add to 1.0
         # initialize
+        util.mkdir(self.split_folder)
         proportions = (ptrain, pvalidate, ptest)
-        filetitle = os.path.basename(self.mergedfile)[:-4] # eg 'all'
-        output_filenames = [self.splitfolder + '/' + filetitle + '-' + splitpart
+        filetitle = os.path.basename(self.merged_file)[:-4] # eg 'all'
+        output_filenames = [self.split_folder + '/' + filetitle + '-' + splitpart
                             + '.txt' for splitpart in self.splitparts] # eg 'all-train.txt'
         # do the output files already exist?
         allexist = True
@@ -146,7 +147,7 @@ class Data(object):
             return
         # open output files for writing
         try:
-            os.mkdir(self.splitfolder)
+            os.mkdir(self.split_folder)
         except:
             pass
         output_files = []
@@ -194,7 +195,7 @@ class Data(object):
         """
         rows = []
         cols = ['Text','Characters','Words','Sentences']
-        for filepath in glob.glob(self.cleanedfiles):
+        for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
                 filename = os.path.basename(filepath)
@@ -202,32 +203,22 @@ class Data(object):
                 sentences = tokenize.sent_tokenize(s)
                 tokens = set(tokenize.word_tokenize(s))
                 row = [filetitle, len(s), len(tokens), len(sentences)]
-                # row = [filetitle, len(s), 0, 0]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
         return df
 
-    def text(self, source, nchars=None):
+    def text(self, source='merged', nchars=None):
         """
         Return contents of a data source up to nchars.
         """
         #. use generators
-        filename = self.sourcefiles[source]
+        filename = self.source_files[source]
         with open(filename, 'rb') as f:
             s = f.read()
             if nchars: s = s[:nchars]
         return s
 
-    #. kill
-    def find_vocabulary(self, source, nvocab):
-        """
-        Find most used words and generate indices.
-        """
-        tokens = self.tokens(source)
-        vocab = Vocab(tokens, nvocab)
-        return vocab
-
-    def sentences(self, source, nchars=None):
+    def sentences(self, source='merged', nchars=None):
         """
         Parse a data source into sentences up to nchars and return in a list.
         """
@@ -238,31 +229,31 @@ class Data(object):
         sentences = tokenize.sent_tokenize(s)
         return sentences
 
-    def tokenized_sentences(self, source, nchars=None):
-        """
-        Parse a data source into tokenized sentences up to nchars, return in list.
-        """
-        sentences = self.sentences(source, nchars)
-        tokenized_sentences = [tokenize.word_tokenize(sentence) for sentence in sentences]
-        #. trim vocab here, ie pass nvocab=None, use UNKNOWN where needed?
-        return tokenized_sentences
+    # def tokenized_sentences(self, source, nchars=None):
+    #     """
+    #     Parse a data source into tokenized sentences up to nchars, return in list.
+    #     """
+    #     sentences = self.sentences(source, nchars)
+    #     tokenized_sentences = [tokenize.word_tokenize(sentence) for sentence in sentences]
+    #     #. trim vocab here, ie pass nvocab=None, use UNKNOWN where needed?
+    #     return tokenized_sentences
 
-    def indexed_sentences(self, source, vocab, nchars=None):
-        """
-        Parse a data source into indexed sentences up to nchars, return in list.
-        """
-        # word_to_index = {'The':1,'dog':2,'cat':3,'slept':4,'barked':5,'UNKNOWN':6}
-        sentences = self.tokenized_sentences(source, nchars)
-        indexed_sentences = [[vocab.word_to_index[word] for word in sentence] for sentence in sentences]
-        # # replace all words not in vocabulary with UNKNOWN
-        # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-        # # replace words with numbers
-        # itokens = [self.word_to_index[token] for token in tokens]
-        # X_train = itokens[:-1]
-        # y_train = itokens[1:]
-        return indexed_sentences
+    # def indexed_sentences(self, source, vocab, nchars=None):
+    #     """
+    #     Parse a data source into indexed sentences up to nchars, return in list.
+    #     """
+    #     # word_to_index = {'The':1,'dog':2,'cat':3,'slept':4,'barked':5,'UNKNOWN':6}
+    #     sentences = self.tokenized_sentences(source, nchars)
+    #     indexed_sentences = [[vocab.word_to_index[word] for word in sentence] for sentence in sentences]
+    #     # # replace all words not in vocabulary with UNKNOWN
+    #     # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+    #     # # replace words with numbers
+    #     # itokens = [self.word_to_index[token] for token in tokens]
+    #     # X_train = itokens[:-1]
+    #     # y_train = itokens[1:]
+    #     return indexed_sentences
 
-    def tokens(self, source, nchars=None):
+    def tokens(self, source='merged', nchars=None):
         """
         Parse a data source into tokens up to nchars and return in a list.
         """
@@ -277,41 +268,41 @@ class Data(object):
             tokens.append('END') # add an END token to every sentence
         return tokens
 
-    def indexed_tokens(self, source, vocab, nchars=None):
-        """
-        Parse a data source into tokens up to nchars and return indices according to vocabulary.
-        """
-        tokens = self.tokens(source, nchars)
-        indexed_tokens = [vocab.word_to_index[token] for token in tokens]
-        return indexed_tokens
+    # def indexed_tokens(self, source, vocab, nchars=None):
+    #     """
+    #     Parse a data source into tokens up to nchars and return indices according to vocabulary.
+    #     """
+    #     tokens = self.tokens(source, nchars)
+    #     indexed_tokens = [vocab.word_to_index[token] for token in tokens]
+    #     return indexed_tokens
 
-    def tuples(self, source, ntokens_per_tuple, nchars=None):
-        """
-        Parse a data source into tokens up to nchars and return as tuples.
-        """
-        #. use generators!
-        tokens = self.tokens(source)
-        tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
-        tuples = zip(*tokenlists) # eg [['the','dog'], ['dog','barked'], ...]
-        return tuples
+    # def tuples(self, source, ntokens_per_tuple, nchars=None):
+    #     """
+    #     Parse a data source into tokens up to nchars and return as tuples.
+    #     """
+    #     #. use generators!
+    #     tokens = self.tokens(source)
+    #     tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
+    #     tuples = zip(*tokenlists) # eg [['the','dog'], ['dog','barked'], ...]
+    #     return tuples
 
 
-class Vocab(object):
-    """
-    """
-    def __init__(self, tokens, nvocab):
-        """
-        """
-        self.nvocab = nvocab
-        unknown_token = "UNKNOWN"
-        word_freqs = nltk.FreqDist(tokens)
-        wordcounts = word_freqs.most_common(nvocab-1)
-        self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-        self.index_to_word.append(unknown_token)
-        # self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-        self.word_to_index = defaultdict(lambda: unknown_token)
-        for i, word in enumerate(self.index_to_word):
-            self.word_to_index[word] = i
+# class Vocab(object):
+#     """
+#     """
+#     def __init__(self, tokens, nvocab):
+#         """
+#         """
+#         self.nvocab = nvocab
+#         unknown_token = "UNKNOWN"
+#         word_freqs = nltk.FreqDist(tokens)
+#         wordcounts = word_freqs.most_common(nvocab-1)
+#         self.index_to_word = [wordcount[0] for wordcount in wordcounts]
+#         self.index_to_word.append(unknown_token)
+#         # self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
+#         self.word_to_index = defaultdict(lambda: unknown_token)
+#         for i, word in enumerate(self.index_to_word):
+#             self.word_to_index[word] = i
 
 
 
@@ -331,16 +322,19 @@ class Vocab(object):
 if __name__ == '__main__':
 
     data = Data('animals')
-    # data.clean()
-    # data.merge()
-    # data.split()
+    data.clean()
+    data.merge()
+    data.split()
 
-    data.analyze()
+    print(data.analyze())
+    print(data.text())
+    print(data.sentences())
+    print(data.tokens())
+    print(data.text('train'))
 
-    # s = "pokpok pokpok\n*** START of pok ***\n kjnkjnjhbjhb \n*** END of jhbjhb ***\n license blahlbahlblah"
+    # s = "header\n*** START OF TEXT ***\n contents \n*** END OF TEXT ***\n license"
     # s = data.clean_header_footer(s)
     # print(s)
-
 
     # tokens = data.tokens('train', 300)
     # print('train:',tokens)

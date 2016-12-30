@@ -10,25 +10,30 @@ import os.path
 import pandas as pd
 
 
-def init_model_table(model_specs, model_folder, data, nchars_list):
+# def init_model_table(model_specs, model_folder, data, nchars_list=[None]):
+def init_model_table(model_specs, data, nchars_list=[None]):
     """
     Initialize models
     """
     model_table = []
+    # model_folder = data.model_folder
     for nchars in nchars_list:
         print('ntraining_chars', nchars)
         # load/train/save model
-        models = init_models(model_specs, model_folder, data, nchars=nchars) # load/train models
+        # models = init_models(model_specs, model_folder, data, nchars=nchars) # load/train models
+        models = init_models(model_specs, data, nchars=nchars) # load/train models
         models = [nchars] + models
         model_table.append(models)
     return model_table
 
-def init_models(model_specs, model_folder, data, nchars=None):
+# def init_models(model_specs, model_folder, data, nchars=None):
+def init_models(model_specs, data, nchars=None):
     """
     Initialize models from the given model list and data - load/train/save as needed.
     """
     train_tokens = None
     models = []
+    model_folder = data.model_folder
     for (model_class, model_params) in model_specs:
         # print("create model object")
         model = model_class(model_folder=model_folder, nchars=nchars, **model_params) # __init__ method
@@ -38,9 +43,9 @@ def init_models(model_specs, model_folder, data, nchars=None):
             if not train_tokens:
                 print("get complete stream of training tokens, nchars=%d" % nchars)
                 train_tokens = data.tokens('train', nchars)
-            print("train model")
+            print("train model",model.name)
             model.train(train_tokens)
-            print("save model")
+            print("save model",model.name)
             model.save()
         models.append(model)
     return models
@@ -101,6 +106,20 @@ def test_models(models, data, ntest_chars=None, npredictions_max=1000, k=3):
 
 
 if __name__ == '__main__':
-    pass
+
+    from data import Data
+    import rnn
+
+    data = Data('animals')
+    print(data.text())
+
+    model_specs = [
+        [rnn.RnnModel, {}]
+    ]
+
+    model_table = init_model_table(model_specs, data)
+    print(model_table)
+
+
 
 

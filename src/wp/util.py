@@ -6,9 +6,20 @@ Utility functions used by more than one module.
 import heapq
 from datetime import datetime
 import sys
+import os
 
 import numpy as np
 
+
+
+def mkdir(path):
+    """
+    Make a directory, ignoring errors
+    """
+    try:
+        os.mkdir(path)
+    except:
+        pass
 
 def softmax(x):
     """
