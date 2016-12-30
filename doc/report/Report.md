@@ -18,7 +18,7 @@ related data sets or input data is given. -->
 Word prediction is the task of predicting the most likely words following the
 preceding text. This has many applications, such as suggesting the next word as
 text is entered, or as an aid in resolving ambiguity in speech and handwriting
-recognition .
+recognition.
 
 The generation of a likely word given prior words goes back to Claude Shannon's
 work on information theory [Shannon1948] based in part on Markov models
@@ -31,11 +31,12 @@ of words have been used in recurrent neural networks (RNNs), which can better
 handle data sparsity and allow more of the context to affect the prediction
 [Bengio2003].
 
-The problem is basically a supervised learning task, and any text can be used to
-train and evaluate the models - we'll be using a simple story of ___ words for
-testing, and a million words from books digitized by the Gutenberg Project for
-more complete evaluation. Others use larger corpora, e.g. Google's __, __, __.
-[cite papers]
+The problem is a supervised learning task, and any text can be used to train and
+evaluate the models - we'll be using a million words from books digitized by the
+Gutenberg Project for evaluation. Others use larger corpora, e.g. Google's __,
+__, __. [cite papers] Depending on the problem domain, different corpora might
+be more appropriate, e.g. training on a chat/texting corpus would be good for a
+phone text entry application.
 
 
 ### Problem Statement
@@ -47,40 +48,16 @@ including discussion of the expected solution, has been made. -->
 Problem: Given a sequence of *n* words, predict the *k* most likely next words
 and their probabilities.
 
-For example, for the sequence "The dog", a solution might be ("barked" 10%,
-"slept" 9%, "was" 8%).
+For example, for the sequence "The dog", a solution might be
+(barked 10%, slept 9%, ran 8%).
 
+We'll use some different Recurrent Neural Network (RNN) architectures to find
+the most likely next words - a standard RNN, a Long Short-Term Memory (LSTM)
+RNN, and a GRU (Gated R__ Unit) RNN - and compare these against some baseline
+n-gram models. Based on the results in the literature, the GRU RNN is expected
+to offer the best performance for a given amount of computation [cite!].
 
-
-The dog barked. The cat meowed. The dog ran. The dog caught a frisbee. The cat
-yawned. The cat slept. The dog barked at the cat. The cat woke up. The dog ran
-away. The cat chased the dog. The dog chased the cat. The cat ran up a tree. 
-
-
-
-strategy
-based on literature, expect rnn lstm gru to offer best performance for a given amount of computation [cite]
-
-
-until recently trigram was state of the art in word prediction.
-can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
-have to back off to digrams when trigram counts are too small. 
-eg if prompt is "dinosaur pizza", and you've never seen that pair before, must backoff to the bigram "pizza ___". 
-but trigrams fail to use a lot of information that can be used to predict the next word.
-doesn't understand similarities between words, eg cat and dog
-so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
-allows us to use much larger context, eg previous 10 words.
-bengio pioneered this. (year?)
-huge softmax layer
-skipmax connections go straight from input to output words
-was slightly worse than trigram
-since then have been improved considerably
->how?
->this was a plain rnn?
-lstm's came in 1997
-various types, incl gru 2014 - simpler
-then attention 2015
-
+-->>>diagrams of rnn, lstm, gru - grab from good site?
 
 
 ### Metrics
@@ -89,7 +66,8 @@ then attention 2015
 defined. Metrics are justified based on the characteristics of the problem. -->
 
 will use accuracy or mean error rate
-see what is used in lit
+-->>>see what is used in lit
+
 
 
 ## Analysis
@@ -97,19 +75,47 @@ see what is used in lit
 ### Data Exploration
 
 <!-- If a dataset is present, features and calculated statistics relevant to the
-problem have been reported and discussed, along with a sampling of the data. In
-lieu of a dataset, a thorough description of the input space or input data has
-been made. Abnormalities or characteristics about the data or input that need to
+problem have been reported and discussed, along with a sampling of the data.
+Abnormalities or characteristics about the data or input that need to
 be addressed have been identified. -->
+
+The training and testing data are supplied by ten books from Project Gutenberg,
+totalling nearly a million words - the texts are cleaned up (headers and
+footers/licenses removed, non-ASCII characters removed, and table of contents
+removed where possible), and merged, then split into training, validation, and
+test sets.
 
 dataset
 ncharacters
 nletters/word
-nwords (crude, before preprocessing into sentences and tokens)
-<!-- ntokens (incl punctuation like , . " n't etc) -->
-<!-- nsentences -->
+nwords
 nsentences
 nwords/sentence, do histogram
+
+
+    | Author                 | Year | Title                         | Gutenberg # |  Words | 
+    |------------------------+------+-------------------------------+-------------+--------|
+    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |
+    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |
+    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |
+    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |
+    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |
+    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |
+    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |
+    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |
+    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |
+    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |
+    |------------------------+------+-------------------------------+-------------+--------|
+    | Total                  |      |                               |             | 989451 |
+
+
+The texts can be found at, for example http://www.gutenberg.org/etext/28885.
+
+
+
+
+
+
 
 
 samples
@@ -119,23 +125,9 @@ samples
     lost, and a silence which engulfed his voice.
     -lesmiserables
 
-    Either the well was very deep, or she fell very slowly, for she had
-    plenty of time as she went down to look about her, and to wonder what
-    was going to happen next. 
-    -alice
-
-    The story had held us, round the fire, sufficiently breathless, but
-    except the obvious remark that it was gruesome, as, on Christmas Eve
-    in an old house, a strange tale should essentially be, I remember no
-    comment uttered till somebody happened to say that it was the only case
-    he had met in which such a visitation had fallen on a child. 
-    -turnofthescrew
-
     Meantime the Rat, warm and comfortable, dozed by his fireside. His paper
     of half-finished verses slipped from his knee, his head fell back, his
-    mouth opened, and he wandered by the verdant banks of dream-rivers. Then
-    a coal slipped, the fire crackled and sent up a spurt of flame, and he
-    woke with a start. 
+    mouth opened, and he wandered by the verdant banks of dream-rivers. 
     -wind
 
 cleaning/abnormalities/characteristics
@@ -256,6 +248,25 @@ discussion. Visual cues are clearly defined. -->
 properly justified based on the characteristics of the problem. -->
 
 
+
+until recently [when?] trigram was state of the art in word prediction.
+can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
+have to back off to digrams when trigram counts are too small. 
+eg if prompt is "dinosaur pizza", and you've never seen that pair before, must backoff to the bigram "pizza ___". 
+but trigrams fail to use a lot of information that can be used to predict the next word.
+doesn't understand similarities between words, eg cat and dog
+so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
+allows us to use much larger context, eg previous 10 words.
+bengio pioneered this. (year?)
+huge softmax layer
+skipmax connections go straight from input to output words
+was slightly worse than trigram
+since then have been improved considerably
+>how?
+>this was a plain rnn?
+lstm's came in 1997
+various types, incl gru 2014 - simpler
+then attention 2015
 
 
 
