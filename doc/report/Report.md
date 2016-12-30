@@ -74,163 +74,47 @@ will use accuracy or mean error rate
 
 ### Data Exploration
 
-<!-- If a dataset is present, features and calculated statistics relevant to the
-problem have been reported and discussed, along with a sampling of the data.
-Abnormalities or characteristics about the data or input that need to
+<!-- If a dataset is present, _features_ and _calculated statistics_ relevant to the
+problem have been reported and discussed, along with a _sampling_ of the data.
+_Abnormalities_ or characteristics about the data or input that need to
 be addressed have been identified. -->
 
-The training and testing data are supplied by ten books from Project Gutenberg,
-totalling nearly a million words - the texts are cleaned up (headers and
-footers/licenses removed, non-ASCII characters removed, and table of contents
-removed where possible), and merged, then split into training, validation, and
-test sets.
+The training and testing data are obtained from ten books from Project
+Gutenberg, totalling nearly a million words -
 
-dataset
-ncharacters
-nletters/word
-nwords
-nsentences
-nwords/sentence, do histogram
-
-
-    | Author                 | Year | Title                         | Gutenberg # |  Words | 
-    |------------------------+------+-------------------------------+-------------+--------|
-    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |
-    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |
-    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |
-    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |
-    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |
-    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |
-    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |
-    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |
-    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |
-    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |
-    |------------------------+------+-------------------------------+-------------+--------|
-    | Total                  |      |                               |             | 989451 |
-
+    | Author                 | Year | Title                         | Gutenberg # |  Words | Chars/Word | Words/Sentence |
+    |------------------------+------+-------------------------------+-------------+--------+------------+----------------|
+    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |       5.70 |           15.8 |
+    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |       5.55 |           16.3 |
+    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |       5.31 |           18.1 |
+    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |       5.35 |           16.7 |
+    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |       5.51 |           15.5 |
+    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |       5.50 |           20.6 |
+    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |       5.52 |           27.8 |
+    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |       5.51 |           18.1 |
+    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |       5.38 |           10.8 |
+    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |       5.30 |           22.2 |
+    |------------------------+------+-------------------------------+-------------+--------+------------+----------------|
+    | Total                  |      |                               |             | 989451 |            |                |
 
 The texts can be found at, for example http://www.gutenberg.org/etext/28885.
 
-
-
-
-
-
-
-
-samples
+Some sample text:
 
     The landscape was gloomy and deserted. He was encompassed by space.
     There was nothing around him but an obscurity in which his gaze was
     lost, and a silence which engulfed his voice.
-    -lesmiserables
+    - Les Miserables
+
+    From the eminence of the lane, skirting the brow of a hill, he looked down
+    into deep valleys and dingles, and beyond, across the trees, to remoter
+    country, wild bare hills and dark wooded lands meeting the grey still sky.
+    - The Hill of Dreams
 
     Meantime the Rat, warm and comfortable, dozed by his fireside. His paper
     of half-finished verses slipped from his knee, his head fell back, his
     mouth opened, and he wandered by the verdant banks of dream-rivers. 
-    -wind
-
-cleaning/abnormalities/characteristics
-oddities like . . . . ., ***, * * * *, table of contents, gutenberg preface, hyphens, different quotation marks, unicode characters?
-how clean them up
-
-count occurrences of . . . . , ***, quotation mark types, non-ascii characters
-
-gutenberg preface, eg - 
-
-    The Project Gutenberg EBook of Les Misérables, by Victor Hugo
-
-    This eBook is for the use of anyone anywhere at no cost and with almost
-    no restrictions whatsoever. You may copy it, give it away or re-use
-    it under the terms of the Project Gutenberg License included with this
-    eBook or online at www.gutenberg.org
-
-    Title: Les Misérables Complete in Five Volumes
-    Author: Victor Hugo
-    Translator: Isabel F. Hapgood
-    Release Date: June 22, 2008 [EBook #135]
-    Last Updated: January 18, 2016
-    Language: English
-    Character set encoding: UTF-8
-    *** START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
-    Produced by Judith Boss and David Widger
-
-title page, eg
-
-    LES MISÉRABLES
-    By Victor Hugo
-    Translated by Isabel F. Hapgood
-    Thomas Y. Crowell & Co. No. 13, Astor Place New York
-    Copyright 1887
-    Enlarge
-    Enlarge
-    Enlarge
-    Enlarge
-    Enlarge
-    Enlarge
-
-table of contents, eg
-
-    Contents
-    LES MISÉRABLES
-    VOLUME I.--FANTINE.
-    PREFACE
-    BOOK FIRST--A JUST MAN
-    CHAPTER I--M. MYRIEL
-    CHAPTER II--M. MYRIEL BECOMES M. WELCOME
-    CHAPTER III--A HARD BISHOPRIC FOR A GOOD BISHOP
-    CHAPTER IV--WORKS CORRESPONDING TO WORDS
-    CHAPTER V--MONSEIGNEUR BIENVENU MADE HIS CASSOCKS LAST TOO LONG
-    CHAPTER VI--WHO GUARDED HIS HOUSE FOR HIM
-    CHAPTER VII--CRAVATTE
-    CHAPTER VIII--PHILOSOPHY AFTER DRINKING
-    CHAPTER IX--THE BROTHER AS DEPICTED BY THE SISTER
-    CHAPTER X--THE BISHOP IN THE PRESENCE OF AN UNKNOWN LIGHT
-    CHAPTER XI--A RESTRICTION
-    CHAPTER XII--THE SOLITUDE OF MONSEIGNEUR WELCOME
-    CHAPTER XIII--WHAT HE BELIEVED
-    CHAPTER XIV--WHAT HE THOUGHT
-
-gutenberg license at end, eg
-
-    End of the Project Gutenberg EBook of My Man Jeeves, by P. G. Wodehouse
-    *** END OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
-    ***** This file should be named 8164-8.txt or 8164-8.zip *****
-    This and all associated files of various formats will be found in:
-    http://www.gutenberg.org/8/1/6/8164/
-    Produced by Suzanne L. Shell, Charles Franks and the Online
-    Distributed Proofreading Team
-    Updated editions will replace the previous one--the old editions
-    will be renamed.
-    [and 15 page license...]
-
-
-gutenberg header and footer markers - not consistent, but regexp should capture diffs. eg
-
-
-    *** START OF THIS PROJECT GUTENBERG EBOOK PHANTASTES ***
-    *** START OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
-    *** START OF THIS PROJECT GUTENBERG EBOOK ALICE'S ADVENTURES IN WONDERLAND ***
-    *** START OF THIS PROJECT GUTENBERG EBOOK TREASURE ISLAND ***
-    *** START OF THIS PROJECT GUTENBERG EBOOK THE TURN OF THE SCREW ***
-    *** START OF THE PROJECT GUTENBERG EBOOK GHOST STORIES OF AN ANTIQUARY ***
-    ***START OF THE PROJECT GUTENBERG EBOOK THE HILL OF DREAMS***
-    *** START OF THIS PROJECT GUTENBERG EBOOK THE WIND IN THE WILLOWS ***
-    *** START OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
-    ***START OF THE PROJECT GUTENBERG EBOOK A THIN GHOST AND OTHERS***
-    
-    *** END OF THIS PROJECT GUTENBERG EBOOK PHANTASTES ***
-    *** END OF THIS PROJECT GUTENBERG EBOOK LES MISÉRABLES ***
-    *** END OF THIS PROJECT GUTENBERG EBOOK ALICE'S ADVENTURES IN WONDERLAND ***
-    *** END OF THIS PROJECT GUTENBERG EBOOK TREASURE ISLAND ***
-    *** END OF THIS PROJECT GUTENBERG EBOOK THE TURN OF THE SCREW ***
-    *** END OF THE PROJECT GUTENBERG EBOOK GHOST STORIES OF AN ANTIQUARY ***
-    ***END OF THE PROJECT GUTENBERG EBOOK THE HILL OF DREAMS***
-    *** END OF THIS PROJECT GUTENBERG EBOOK THE WIND IN THE WILLOWS ***
-    *** END OF THIS PROJECT GUTENBERG EBOOK MY MAN JEEVES ***
-    ***END OF THE PROJECT GUTENBERG EBOOK A THIN GHOST AND OTHERS***
-
-
+    - The Wind in the Willows
 
 
 ### Exploratory Visualization
@@ -238,6 +122,21 @@ gutenberg header and footer markers - not consistent, but regexp should capture 
 <!-- A visualization has been provided that summarizes or extracts a relevant
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
+
+->make a histogram of sentence length, with contributions by each text in color?
+but why?
+
+keyword is relevant - what vis would be relevant for this problem?
+
+we're doing word prediction
+maybe something more like information content?
+ie how compressible the text is?
+ie how predictable it is?
+cf pure randomness (log2 26 ~ (log 26 2) ~ 4.7bits?)
+how calculate? ngrams? 
+
+->> information content of english - shannon paper
+use to compare texts?
 
 
 
@@ -249,21 +148,28 @@ properly justified based on the characteristics of the problem. -->
 
 
 
+
+
+
+
+
 until recently [when?] trigram was state of the art in word prediction.
 can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
 have to back off to digrams when trigram counts are too small. 
 eg if prompt is "dinosaur pizza", and you've never seen that pair before, must backoff to the bigram "pizza ___". 
+
 but trigrams fail to use a lot of information that can be used to predict the next word.
 doesn't understand similarities between words, eg cat and dog
 so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
 allows us to use much larger context, eg previous 10 words.
-bengio pioneered this. (year?)
-huge softmax layer
-skipmax connections go straight from input to output words
+bengio pioneered this. (year? 2003?)
+
+have huge softmax layer
+skipmax connections go straight from input to output words ?
 was slightly worse than trigram
 since then have been improved considerably
->how?
->this was a plain rnn?
+(how?)
+(this was a plain rnn?)
 lstm's came in 1997
 various types, incl gru 2014 - simpler
 then attention 2015
@@ -278,7 +184,7 @@ performances of solutions obtained. -->
 
 n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)?
 
-published results? 
+-> find published results, history
 
 
 
@@ -291,16 +197,19 @@ characteristics about the data or input that needed to be addressed have been
 corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
+The raw Gutenberg files are downloaded, then cleaned, merged, and split into
+training, validation, and test sets.
 
-cleanup gutenberg preface, titlepages, table of contents with code, or just leave in as noise
+To clean the files, headers and footers with Project Gutenberg and license
+information are removed via regular expression searches for the delimiter
+strings. Some texts contain titlepages and tables of contents also, which are
+removed similarly where possible. All non-ASCII characters are removed, as they
+caused problems for NLTK in Python 2.7.
 
-01-raw
-02-cleaned
-03-merged
-04-split
-
-
-
+Once the files are cleaned, they are merged into a single file, which is then
+split into the training, validation, and test files. This is done by parsing the
+text into sentences, and apportioning them to the different files based on the
+desired proportions (e.g. 80% training, 10% validation, 10% testing).
 
 
 ### Implementation
@@ -398,6 +307,10 @@ and compared/contrasted to the current solution. -->
 
 
 
+## References
+
+
+
 
 --------------------------------------------------------------------------------
 
@@ -407,13 +320,14 @@ and compared/contrasted to the current solution. -->
 
 <!-- Project report follows a well-organized structure and would be readily
 understood by its intended audience. Each section is written in a clear, concise
-and specific manner. Few grammatical and spelling mistakes are present. All
-resources used to complete the project are cited and referenced. -->
+and specific manner. Few grammatical and spelling mistakes are present.
+All resources used to complete the project are cited and referenced. -->
 
 ### Functionality
 
 <!-- Code is formatted neatly with comments that effectively explain complex
-implementations. Output produces similar results and solutions as to those
+implementations.
+Output produces similar results and solutions as to those
 discussed in the project. -->
 
 

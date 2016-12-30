@@ -3,7 +3,7 @@
 Data module - wraps all data and handles processing.
 
 Usage:
-data = Data()
+data = Data('gutenbergs')
 data.clean()
 data.merge()
 data.split()
@@ -20,6 +20,7 @@ import re
 from pprint import pprint
 from collections import defaultdict
 
+import pandas as pd
 import nltk
 from nltk import tokenize
 
@@ -29,17 +30,19 @@ class Data(object):
     Wrapper around all data files, with splitter and tokenizers.
     """
 
-    def __init__(self):
+    def __init__(self, dataset):
         """
         Create a data object - contains little to no state - most is in predefined files.
         """
-        #. could pass some of these as parameters
-        self.escape = '../../' # escape from the Experiment subfolder, where this is called from
-        self.rawfiles      = self.escape + 'data/01-raw/*.txt'
-        self.cleanedfolder = self.escape + 'data/02-cleaned/'
-        self.cleanedfiles  = self.escape + 'data/02-cleaned/*.txt'
-        self.mergedfile    = self.escape + 'data/03-merged/all.txt'
-        self.splitfolder   = self.escape + 'data/04-split/'
+        #. pass some of these as parameters?
+        self.dataset = dataset
+        escape = '../../' # escape from the Experiment subfolder, where this is called from
+        folder = escape + 'data/' + dataset + '/'
+        self.rawfiles      = folder + '1-raw/*.txt'
+        self.cleanedfolder = folder + '2-cleaned/'
+        self.cleanedfiles  = folder + '2-cleaned/*.txt'
+        self.mergedfile    = folder + '3-merged/all.txt'
+        self.splitfolder   = folder + '4-split/'
         self.splitparts = ('train','validate','test')
 
         self.sourcefiles = {
@@ -185,6 +188,25 @@ class Data(object):
                 return output_files[i] # return the first under-appreciated file
         return output_files[0] # otherwise just return the first file
 
+    def analyze(self):
+        """
+        Gather some statistics on the datafiles.
+        """
+        rows = []
+        cols = ['Text','Characters','Words','Sentences']
+        for filepath in glob.glob(self.cleanedfiles):
+            with open(filepath, 'rb') as f:
+                s = f.read()
+                filename = os.path.basename(filepath)
+                filetitle = os.path.splitext(filename)[0]
+                sentences = tokenize.sent_tokenize(s)
+                tokens = set(tokenize.word_tokenize(s))
+                row = [filetitle, len(s), len(tokens), len(sentences)]
+                # row = [filetitle, len(s), 0, 0]
+                rows.append(row)
+        df = pd.DataFrame(rows, columns=cols)
+        return df
+
     def text(self, source, nchars=None):
         """
         Return contents of a data source up to nchars.
@@ -308,17 +330,16 @@ class Vocab(object):
 
 if __name__ == '__main__':
 
-    data = Data()
-    data.clean()
-    data.merge()
-    data.split()
+    data = Data('animals')
+    # data.clean()
+    # data.merge()
+    # data.split()
+
+    data.analyze()
 
     # s = "pokpok pokpok\n*** START of pok ***\n kjnkjnjhbjhb \n*** END of jhbjhb ***\n license blahlbahlblah"
     # s = data.clean_header_footer(s)
     # print(s)
-
-
-
 
 
     # tokens = data.tokens('train', 300)
