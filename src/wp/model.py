@@ -8,41 +8,42 @@ import os
 import os.path
 import cPickle as pickle # faster version of pickle
 
+from benchmark import benchmark
+import util
+
 
 class Model(object):
     """
     Base model for n-gram and RNN classes.
     """
 
-    def save(self, filename=None):
+    def save(self):
         """
-        Save the model to the given or default filename.
+        Save the model to the default filename.
         """
-        if filename is None:
-            filename = self.filename
-        try:
-            folder = os.path.dirname(filename)
-            os.mkdir(folder)
-        except:
-            pass
-        with open(filename, 'wb') as f:
-            pickle.dump(self, f)
+        #. time this? but can't save it with the object
+        folder = os.path.dirname(self.filename)
+        util.mkdir(folder)
+        with benchmark("Save model " + self.name) as b:
+            with open(self.filename, 'wb') as f:
+                # pickle.dump(self, f)
+                pickle.dump(self.__dict__, f, 2)
+        # self.save_time = b.time
+        # return self.save_time
 
-    def load(self, filename=None):
+    def load(self):
         """
-        Load model from the given or default filename.
+        Load model from the default filename.
         """
-        if filename is None:
-            filename = self.filename
-        if os.path.isfile(filename):
-            with open(filename, 'rb') as f:
-                model = pickle.load(f)
-                print("loaded model",model.name)
-                return model
+        if os.path.isfile(self.filename):
+            with benchmark("Load model " + self.name) as b:
+                with open(self.filename, 'rb') as f:
+                    d = pickle.load(f)
+                    self.__dict__.update(d)
+            self.load_time = b.time
         else:
-            return self
-
-
+            self.load_time = None
+        return self.load_time
 
 
 

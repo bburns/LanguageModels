@@ -6,14 +6,17 @@ Basic version - no backoff or smoothing.
 """
 
 from __future__ import print_function, division
+import os
 import random
 from pprint import pprint, pformat
 
 import nltk
 from nltk import tokenize
+import tabulate
 
 import model
 import util
+from benchmark import benchmark
 
 
 class Ngram(model.Model):
@@ -25,35 +28,40 @@ class Ngram(model.Model):
     The sparse array is implemented as a dict of dicts.
     """
 
-    # def __init__(self, n, model_folder='.', nchars=None):
-    def __init__(self, data, n=3, train_amount=1.0):
+    def __init__(self, data, n, train_amount=1.0):
         """
         Create an n-gram model.
         """
-        self.data = data
+        self.data = data # lightweight interface for data files
         self.n = n  # the n in n-gram
         self.train_amount = train_amount
-        # self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens?
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
-        # self.model_folder = model_folder
-        # self.name = "n-gram-(nchars-%d-n-%d)" % (nchars, n)
         self.name = "ngram (n=%d)" % n
-        # self.filename = model_folder + '/' + self.name + '.pickle'
         self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
+        self.load_time = None
+        self.save_time = None
+        self.train_time = None
+        self.test_time = None
+        print("Create model " + self.name)
 
-    def train(self):
+    def train(self, load_if_available=True):
         """
-        Train the ngram model.
+        Train the ngram model and save it, or load from file if available.
         """
-        # print("get ngrams, n=%d" % self.n)
-        #. is this a generator? will want n=10+ for rnn. if not make one
-        tokens = self.data.tokens('train', self.train_amount)
-        token_tuples = nltk.ngrams(tokens, self.n)
-        # print("add ngrams to model")
-        for token_tuple in token_tuples:
-            self._increment_count(token_tuple)
-        self.trained = True
+        if load_if_available and os.path.isfile(self.filename):
+            self.load()
+        else:
+            with benchmark("Train " + self.name) as b:
+                tokens = self.data.tokens('train', self.train_amount)
+                token_tuples = nltk.ngrams(tokens, self.n)
+                # train by adding ngram counts to model
+                for token_tuple in token_tuples:
+                    self._increment_count(token_tuple)
+            self.train_time = b.time
+            self.trained = True
+            # save the model
+            self.save()
 
     def _increment_count(self, token_tuple):
         """
@@ -84,7 +92,6 @@ class Ngram(model.Model):
             tokens = [] # no context - will just return a random token from vocabulary
         else:
             tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
-        # print(tokens)
         # get the final dictionary, which contains the subsequent tokens and their counts
         d = self._d
         for token in tokens:
@@ -103,27 +110,32 @@ class Ngram(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    def test(self, k=3):
+    # def test(self, k=3):
+    def test(self, k=3, amount=1.0): #. use all data by default?
         """
-        Test the model
+        Test the model and return the accuracy score.
         """
         # get the test tokens
-        tokens = self.data.tokens('test', 1.0)
+        tokens = self.data.tokens('test', amount)
+        # print(tokens)
         ntokens = len(tokens)
         # run test on the models
-        scores = []
         nright = 0
-        for i in range(ntokens-self.n):
-            prompt = tokens[i:i+self.n-1]
-            actual = tokens[i+self.n]
-            tokenprobs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
-            if tokenprobs: # can be None
-                predicted_tokens = [tokenprob[0] for tokenprob in tokenprobs]
-                if actual in predicted_tokens:
-                    nright += 1
-        npredictions = i
-        accuracy = nright / npredictions
-        print("%s: accuracy = nright/total = %d/%d = %f" % (self.name, nright, npredictions, accuracy))
+        with benchmark("Test model " + self.name) as b:
+            for i in range(ntokens-self.n):
+                prompt = tokens[i:i+self.n-1]
+                actual = tokens[i+self.n-1]
+                token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
+                print('prompt',prompt,'actual',actual,'token_probs',token_probs)
+                if token_probs: # can be None
+                    predicted_tokens = [token_prob[0] for token_prob in token_probs]
+                    if actual in predicted_tokens:
+                        nright += 1
+            npredictions = i+1
+            accuracy = nright / npredictions
+        # print("%s: accuracy = nright/total = %d/%d = %f" % (self.name, nright, npredictions, accuracy))
+        self.test_time = b.time
+        self.test_score = accuracy
         return accuracy
 
     def generate(self):
@@ -148,7 +160,6 @@ class Ngram(model.Model):
             output.append(next)
             if next=='END': #. magic
                 break
-        # return output
         sentence = ' '.join(output)
         return sentence
 
@@ -173,19 +184,33 @@ class Ngram(model.Model):
 
     def __str__(self):
         """
-        Return description of model.
+        Return string representation of model.
         """
-        # return pformat(self._d) # from pprint module
-        s = ''
-        s += self.name + '\n'
-        s += 'vocab size %d\n' % len(self._d)
+        propnames = "name data n train_amount trained train_time \
+                     load_time save_time test_time test_score filename".split()
+        rows = []
+        for propname in propnames:
+            propvalue = self.__dict__[propname]
+            row = [propname, propvalue]
+            rows.append(row)
+        s = tabulate.tabulate(rows, ['Property', 'Value'])
+        # s = str(rows)
+        # s =
+        # s = self.name + '\n'
+        # s +=
+        # self.data = data # lightweight interface for data files
+        # self.n = n  # the n in n-gram
+        # self.train_amount = train_amount
+        # self._d = {} # dictionary of dictionary of ... of counts
+        # self.trained = False
+        # self.name = "ngram (n=%d)" % n
+        # self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
+        # print("Create model " + self.name)
         return s
 
 
-if __name__ == '__main__':
 
-    import itertools
-    import numpy as np
+if __name__ == '__main__':
 
     # unknown_token = "UNKNOWN"
     # sentence_end_token = "END"
@@ -207,19 +232,6 @@ if __name__ == '__main__':
     # tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
     # print(tokenized_sentences)
 
-    # # Count the word frequencies
-    # word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
-    # print("Found %d unique words tokens." % len(word_freq.items()))
-
-    # Get the most common words and build index_to_word and word_to_index vectors
-    # vocab = word_freq.most_common(nvocab-1)
-    # print('most common words',vocab)
-    # index_to_word = [pair[0] for pair in vocab]
-    # index_to_word.append(unknown_token)
-    # print('index to word',index_to_word)
-    # word_to_index = dict([(w,i) for i,w in enumerate(index_to_word)])
-    # print('word to index',word_to_index)
-
     # # Replace all words not in our vocabulary with the unknown token
     # print('replace unknown words with UNKNOWN token')
     # for i, sent in enumerate(tokenized_sentences):
@@ -238,40 +250,35 @@ if __name__ == '__main__':
 
     # --------------------------------------
 
-    # strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
-    stest = "the dog"
-    # # stest = "the dog slept"
-    # train_tokens = strain.split()
-    test_tokens = stest.split()
-
     from data import Data
     data = Data('animals')
+    print('text', data.text())
 
     model = Ngram(data, n=1)
-    print(model)
     model.train()
     accuracy = model.test()
-    print(accuracy)
+    print('accuracy', accuracy)
     # token = model.generate_token(test_tokens)
     # print(test_tokens)
     # print('prediction:',token)
     # print(model._d)
-    # tokens = model.generate()
-    # print(' '.join(tokens))
-    # print()
+    s = model.generate()
+    print('generate', s)
+    print(model)
+    print()
 
     model = Ngram(data, n=2)
-    print(model)
     model.train()
     accuracy = model.test()
-    print(accuracy)
+    print('accuracy', accuracy)
     # token = model.generate_token(test_tokens)
     # print(test_tokens)
     # print('prediction:',token)
     # print(model._d)
-    # tokens = model.generate()
-    # print(' '.join(tokens))
-    # print()
+    s = model.generate()
+    print('generate', s)
+    print(model)
+    print()
 
     # print('predictions')
     # predictions = model.predict(X_train[1], 3)

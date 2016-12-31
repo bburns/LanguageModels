@@ -50,22 +50,36 @@ class Data(object):
         self.splitparts = ('train','validate','test')
         self.source_files = {
             'raw': self.raw_files,
+            'cleaned': self.cleaned_files,
             'merged': self.merged_file,
             'train': self.split_folder + 'all-train.txt',
             'validate': self.split_folder + 'all-validate.txt',
             'test': self.split_folder + 'all-test.txt',
         }
 
+    def prepare(self):
+        """
+        Clean, merge, and split raw data files into train, validate, test sets.
+        """
+        print('Prepare dataset:', self.dataset)
+        print()
+        self.clean()
+        self.merge()
+        self.split()
+        print('Dataset ready.')
+        print()
+
     def clean(self):
         """
         Clean raw files - remove Gutenberg header/footers, table of contents, nonascii chars.
         """
+        print('Clean raw files...')
         util.mkdir(self.cleaned_folder)
         for infile in glob.glob(self.raw_files):
             _, filetitle = os.path.split(infile)
             outfile = self.cleaned_folder + filetitle
             if not os.path.isfile(outfile):
-                print('cleaning %s to %s' % (infile, outfile))
+                print('Cleaning %s to %s' % (infile, filetitle))
                 with open(infile, 'rb') as f_in:
                     s = f_in.read()
                     s = s.replace('\r\n','\n') # dos2unix
@@ -77,7 +91,8 @@ class Data(object):
                     s = re.sub(r'[^\x00-\x7f]',r'', s)
                     with open(outfile, 'wb') as f_out:
                         f_out.write(s)
-        print("The raw files have been cleaned.")
+        print("done.")
+        print()
 
     def clean_header_footer(self, s):
         """
@@ -109,17 +124,17 @@ class Data(object):
         """
         Merge the cleaned files into one file if not done yet.
         """
+        print('Merge cleaned files...')
         util.mkdir(self.merged_folder)
-        if os.path.isfile(self.merged_file):
-            print("The cleaned files have already been merged.")
-        else:
+        if not os.path.isfile(self.merged_file):
             with open(self.merged_file, 'wb') as f_all:
-                # for filename in glob.glob(self.rawfiles):
                 for filename in glob.glob(self.cleaned_files):
+                    print('Adding', filename)
                     with open(filename, 'rb') as f:
                         s = f.read()
                         f_all.write(s)
-            print("The cleaned files have been merged.")
+        print('done.')
+        print()
 
     def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2):
         """
@@ -130,6 +145,7 @@ class Data(object):
         artificial word tuples.
         """
         assert abs(ptrain + pvalidate + ptest - 1) < 1e-6 # must add to 1.0
+        print('Split merged file...')
         # initialize
         util.mkdir(self.split_folder)
         proportions = (ptrain, pvalidate, ptest)
@@ -142,29 +158,30 @@ class Data(object):
             if not os.path.isfile(output_filename):
                 allexist = False
                 break
-        if allexist:
-            print("The merged file has already been split.")
-            return
-        # open output files for writing
-        try:
-            os.mkdir(self.split_folder)
-        except:
-            pass
-        output_files = []
-        for output_filename in output_filenames:
-            f = open(output_filename, 'wb')
-            output_files.append(f)
-        # parse merged file into sentences
-        sentences = self.sentences('merged')
-        # walk over sentences, outputting to the different output files
-        for sentence in sentences:
-            f = self._get_next_file(output_files, proportions)
-            f.write(sentence)
-            f.write('\n\n')
-        # close all files
-        for f in output_files:
-            f.close()
-        print("The merged file has been split into train, validate, and test files.")
+        if not allexist:
+            try:
+                os.mkdir(self.split_folder)
+            except:
+                pass
+            output_files = []
+            # open output files for writing
+            for output_filename in output_filenames:
+                f = open(output_filename, 'wb')
+                output_files.append(f)
+            # parse merged file into sentences
+            print('Splitting merged file into sentences')
+            sentences = self.sentences('merged')
+            # walk over sentences, outputting to the different output files
+            print('Distributing sentences over output files')
+            for sentence in sentences:
+                f = self._get_next_file(output_files, proportions)
+                f.write(sentence)
+                f.write('\n\n')
+            # close all files
+            for f in output_files:
+                f.close()
+        print('done.')
+        print()
 
     def _get_next_file(self, output_files, proportions):
         """
@@ -207,26 +224,27 @@ class Data(object):
         df = pd.DataFrame(rows, columns=cols)
         return df
 
-    # def text(self, source='merged', nchars=None):
     def text(self, source='merged', amount=1.0):
         """
-        Return contents of a data source up to given amount (percentage).
+        Return contents of a data source up to given amount (percentage or nchars).
         """
         #. use generators
         filename = self.source_files[source]
         ntotal = os.path.getsize(filename)
-        nchars = int(ntotal * amount)
+        # if amount <= 1.0, treat it as a percentage, else nchars
+        if amount <= 1.0:
+            nchars = int(ntotal * amount)
+        else:
+            nchars = int(amount)
         with open(filename, 'rb') as f:
             s = f.read(nchars)
         return s
 
-    # def sentences(self, source='merged', nchars=None):
     def sentences(self, source='merged', amount=1.0):
         """
         Parse a data source into sentences and return in a list.
         """
         #. use generators
-        # s = self.text(source, nchars)
         s = self.text(source, amount)
         s = s.replace('\r\n',' ')
         s = s.replace('\n',' ')
@@ -257,14 +275,12 @@ class Data(object):
     #     # y_train = itokens[1:]
     #     return indexed_sentences
 
-    # def tokens(self, source='merged', nchars=None):
     def tokens(self, source='merged', amount=1.0):
         """
         Parse a data source into tokens and return in a list.
         """
         #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
-        # sentences = self.sentences(source, nchars)
         sentences = self.sentences(source, amount)
         tokens = []
         for sentence in sentences:
@@ -273,6 +289,15 @@ class Data(object):
             tokens.extend(words)
             tokens.append('END') # add an END token to every sentence
         return tokens
+
+    def __str__(self):
+        """
+        Return text representation of data object.
+        """
+        s = "Dataset %s" % self.dataset
+        # self.source_files
+        return s
+
 
     # def indexed_tokens(self, source, vocab, nchars=None):
     #     """
@@ -328,41 +353,34 @@ class Data(object):
 if __name__ == '__main__':
 
     data = Data('animals')
-    data.clean()
-    data.merge()
-    data.split()
+    data.prepare()
 
     print(data.analyze())
+    print()
+
     print(data.text())
     print(data.sentences())
     print(data.tokens())
-    print(data.text('train'))
-    print(data.text('train',0.5))
+    print()
+
+    print(data)
+
+    # print(data.text('train'))
+    # print(data.text('train',0.5))
+    # print(data.text('train',20))
 
     # s = "header\n*** START OF TEXT ***\n contents \n*** END OF TEXT ***\n license"
     # s = data.clean_header_footer(s)
     # print(s)
-
     # tokens = data.tokens('train', 300)
     # print('train:',tokens)
     # print()
-
     # tokens = data.tokens('test', 300)
     # print('test:',tokens)
     # print()
-
     # sentences = data.sentences('train', 300)
-    # print('train:',sentences)
+    # print('train sentences:',sentences)
     # print()
-
-    # tokenized_sentences = data.tokenized_sentences('train', 300)
-    # print('train:',tokenized_sentences)
-    # print()
-
-    # indexed_sentences = data.indexed_sentences('train', 300)
-    # print('train:',indexed_sentences)
-    # print()
-
 
     # s = 'The dog barked. The cat slept.'
     # nvocab = 3
@@ -370,4 +388,11 @@ if __name__ == '__main__':
     # print(vocab)
     # print(vocab.index_to_word)
     # print(vocab.word_to_index)
+
+    # tokenized_sentences = data.tokenized_sentences('train', 300)
+    # print('train:',tokenized_sentences)
+    # print()
+    # indexed_sentences = data.indexed_sentences('train', 300)
+    # print('train:',indexed_sentences)
+    # print()
 

@@ -7,8 +7,11 @@ Load/train/save/test/time models with given data.
 from __future__ import print_function, division
 import os
 import os.path
+from datetime import datetime
 
 import pandas as pd
+
+from benchmark import benchmark
 
 
 class Experiment(object):
@@ -21,20 +24,42 @@ class Experiment(object):
         self.data = data
         self.params = params
         assert(len(params)==1) # only handles one param at a time
+        self.data.prepare() # make sure the data is cleaned and split up
 
     def run(self):
         """
         Train and test the models with different parameters.
         """
+        stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print('-'*80)
+        print('Experiment', stime)
+        print('-'*80)
+        print()
         param_name = self.params.keys()[0]
         param_values = self.params[param_name]
+        scores = []
+        times = []
         for param_value in param_values:
+            print('Parameter:', param_name, param_value)
+            print()
+            score_row = []
+            time_row = []
             for (model_class, model_params) in self.model_specs:
                 model = model_class(self.data, **model_params)
-                #. time
-                model.train_or_load()
-                #. time
-                model.test()
+                print(model.name)
+                with benchmark("Train model") as b:
+                    model.train()
+                # print(b)
+                with benchmark("Test model") as b:
+                    accuracy = model.test()
+                print('Accuracy', accuracy)
+                row.append(accuracy)
+                print()
+            rows.append(row)
+            print()
+        print(rows)
+        self.results = rows
+                
 
     # def test(self):
     #     """
@@ -49,10 +74,10 @@ class Experiment(object):
     #             model.load()
     #             model.test()
 
-    def __str__(self):
-        """
-        """
-        return "pokpok"
+    # def __str__(self):
+    #     """
+    #     """
+    #     return "pokpok"
 
 
     # # def init_model_table(model_specs, model_folder, data, nchars_list=[None]):
@@ -162,18 +187,18 @@ if __name__ == '__main__':
     import rnn
 
     specs = [
-        [ngram.NgramModel, {'n':2}],
-        [ngram.NgramModel, {'n':3}],
-        # [rnn.RnnModel, {}],
+        [ngram.Ngram, {'n':1}],
+        [ngram.Ngram, {'n':2}],
+        [ngram.Ngram, {'n':3}],
+        # [rnn.Rnn, {}],
     ]
     data = Data('animals')
-    # print(data.text())
-    # params = {'train_amount':[0.0001, 0.001, 0.01, 0.1, 1.0]}
+    print('text',data.text())
     params = {'train_amount':[0.5, 1.0]}
 
     exper = Experiment(specs, data, params)
     exper.run()
-    print(exper)
+    print(exper.results)
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
     # params = {'nhidden':[5,10,20,100]}
