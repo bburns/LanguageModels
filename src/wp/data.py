@@ -207,23 +207,27 @@ class Data(object):
         df = pd.DataFrame(rows, columns=cols)
         return df
 
-    def text(self, source='merged', nchars=None):
+    # def text(self, source='merged', nchars=None):
+    def text(self, source='merged', amount=1.0):
         """
-        Return contents of a data source up to nchars.
+        Return contents of a data source up to given amount (percentage).
         """
         #. use generators
         filename = self.source_files[source]
+        ntotal = os.path.getsize(filename)
+        nchars = int(ntotal * amount)
         with open(filename, 'rb') as f:
-            s = f.read()
-            if nchars: s = s[:nchars]
+            s = f.read(nchars)
         return s
 
-    def sentences(self, source='merged', nchars=None):
+    # def sentences(self, source='merged', nchars=None):
+    def sentences(self, source='merged', amount=1.0):
         """
-        Parse a data source into sentences up to nchars and return in a list.
+        Parse a data source into sentences and return in a list.
         """
         #. use generators
-        s = self.text(source, nchars)
+        # s = self.text(source, nchars)
+        s = self.text(source, amount)
         s = s.replace('\r\n',' ')
         s = s.replace('\n',' ')
         sentences = tokenize.sent_tokenize(s)
@@ -253,13 +257,15 @@ class Data(object):
     #     # y_train = itokens[1:]
     #     return indexed_sentences
 
-    def tokens(self, source='merged', nchars=None):
+    # def tokens(self, source='merged', nchars=None):
+    def tokens(self, source='merged', amount=1.0):
         """
-        Parse a data source into tokens up to nchars and return in a list.
+        Parse a data source into tokens and return in a list.
         """
         #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
-        sentences = self.sentences(source, nchars)
+        # sentences = self.sentences(source, nchars)
+        sentences = self.sentences(source, amount)
         tokens = []
         for sentence in sentences:
             # sentence = sentence.lower() # reduces vocab space
@@ -331,6 +337,7 @@ if __name__ == '__main__':
     print(data.sentences())
     print(data.tokens())
     print(data.text('train'))
+    print(data.text('train',0.5))
 
     # s = "header\n*** START OF TEXT ***\n contents \n*** END OF TEXT ***\n license"
     # s = data.clean_header_footer(s)

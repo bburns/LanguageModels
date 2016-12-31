@@ -19,7 +19,6 @@ class Model(object):
         Save the model to the given or default filename.
         """
         if filename is None:
-            # filename = self.filename()
             filename = self.filename
         try:
             folder = os.path.dirname(filename)
@@ -34,7 +33,6 @@ class Model(object):
         Load model from the given or default filename.
         """
         if filename is None:
-            # filename = self.filename()
             filename = self.filename
         if os.path.isfile(filename):
             with open(filename, 'rb') as f:

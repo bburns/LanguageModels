@@ -16,35 +16,41 @@ import model
 import util
 
 
-class NgramModel(model.Model):
+class Ngram(model.Model):
     """
     n-gram model - initialize with n.
-    Inherits some code from Model class.
+    Inherits load and save from Model class.
 
     Stores a sparse multidimensional array of token counts.
     The sparse array is implemented as a dict of dicts.
     """
 
-    def __init__(self, n, model_folder='.', nchars=None):
+    # def __init__(self, n, model_folder='.', nchars=None):
+    def __init__(self, data, n=3, train_amount=1.0):
         """
         Create an n-gram model.
         """
+        self.data = data
         self.n = n  # the n in n-gram
-        self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens?
+        self.train_amount = train_amount
+        # self.nchars = nchars  # number of characters trained on #. should be ntrain_tokens?
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
         # self.model_folder = model_folder
-        self.name = "n-gram-(nchars-%d-n-%d)" % (nchars, n)
-        self.filename = model_folder + '/' + self.name + '.pickle'
+        # self.name = "n-gram-(nchars-%d-n-%d)" % (nchars, n)
+        self.name = "ngram (n=%d)" % n
+        # self.filename = model_folder + '/' + self.name + '.pickle'
+        self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
 
-    def train(self, tokens, nepochs='unused'):
+    def train(self):
         """
-        Train the ngram model with the given token stream.
+        Train the ngram model.
         """
-        print("get ngrams, n=%d" % self.n)
+        # print("get ngrams, n=%d" % self.n)
         #. is this a generator? will want n=10+ for rnn. if not make one
+        tokens = self.data.tokens('train', self.train_amount)
         token_tuples = nltk.ngrams(tokens, self.n)
-        print("add ngrams to model")
+        # print("add ngrams to model")
         for token_tuple in token_tuples:
             self._increment_count(token_tuple)
         self.trained = True
@@ -97,13 +103,34 @@ class NgramModel(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    # def generate(self, k=1):
+    def test(self, k=3):
+        """
+        Test the model
+        """
+        # get the test tokens
+        tokens = self.data.tokens('test', 1.0)
+        ntokens = len(tokens)
+        # run test on the models
+        scores = []
+        nright = 0
+        for i in range(ntokens-self.n):
+            prompt = tokens[i:i+self.n-1]
+            actual = tokens[i+self.n]
+            tokenprobs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
+            if tokenprobs: # can be None
+                predicted_tokens = [tokenprob[0] for tokenprob in tokenprobs]
+                if actual in predicted_tokens:
+                    nright += 1
+        npredictions = i
+        accuracy = nright / npredictions
+        print("%s: accuracy = nright/total = %d/%d = %f" % (self.name, nright, npredictions, accuracy))
+        return accuracy
+
     def generate(self):
         """
-        # Generate k sentences of random text.
         Generate sentence of random text.
         """
-        start1 = 'END'
+        start1 = 'END' #. magic
         output = []
         input = [start1]
         if self.n>=3:
@@ -114,15 +141,16 @@ class NgramModel(model.Model):
             start3 = random.choice(self._d[start1][start2].keys())
             input.append(start3)
             output.append(start3)
-        # for i in range(k):
         while True:
             next = self.generate_token(input)
             input.pop(0)
             input.append(next)
             output.append(next)
-            if next=='END':
+            if next=='END': #. magic
                 break
-        return output
+        # return output
+        sentence = ' '.join(output)
+        return sentence
 
     def predict(self, tokens, k):
         """
@@ -210,31 +238,40 @@ if __name__ == '__main__':
 
     # --------------------------------------
 
-    strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
+    # strain = "the dog barked . END the cat meowed . END the dog ran away . END the cat slept ."
     stest = "the dog"
-    # stest = "the dog slept"
-    train_tokens = strain.split()
+    # # stest = "the dog slept"
+    # train_tokens = strain.split()
     test_tokens = stest.split()
 
-    model = NgramModel(n=1)
-    model.train(train_tokens)
-    token = model.generate_token(test_tokens)
-    print(test_tokens)
-    print('prediction:',token)
-    tokens = model.generate()
-    print(' '.join(tokens))
-    print()
+    from data import Data
+    data = Data('animals')
 
-    model = NgramModel(n=2)
-    model.train(train_tokens)
-    token = model.generate_token(test_tokens)
-    print(test_tokens)
-    print('prediction:',token)
-    tokens = model.generate()
-    print(' '.join(tokens))
-    print()
+    model = Ngram(data, n=1)
+    print(model)
+    model.train()
+    accuracy = model.test()
+    print(accuracy)
+    # token = model.generate_token(test_tokens)
+    # print(test_tokens)
+    # print('prediction:',token)
+    # print(model._d)
+    # tokens = model.generate()
+    # print(' '.join(tokens))
+    # print()
 
-
+    model = Ngram(data, n=2)
+    print(model)
+    model.train()
+    accuracy = model.test()
+    print(accuracy)
+    # token = model.generate_token(test_tokens)
+    # print(test_tokens)
+    # print('prediction:',token)
+    # print(model._d)
+    # tokens = model.generate()
+    # print(' '.join(tokens))
+    # print()
 
     # print('predictions')
     # predictions = model.predict(X_train[1], 3)

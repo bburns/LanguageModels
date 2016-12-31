@@ -28,12 +28,13 @@ import model
 import util
 
 
-class RnnModel(model.Model):
+class Rnn(model.Model):
     """
     Recurrent neural network (RNN) model
     """
 
-    def __init__(self, model_folder='.', nchars=None, nvocabmax=1000, nhidden=100, bptt_truncate=4):
+    # def __init__(self, model_folder='.', nchars=None, nvocabmax=1000, nhidden=100, bptt_truncate=4):
+    def __init__(self, model_folder='.', nchars=None, nvocabmax=1000, nhidden=100, bptt_truncate=4, nepochs=10):
         """
         Create an RNN model
         model_folder   - default location for model files
@@ -41,12 +42,14 @@ class RnnModel(model.Model):
         nvocabmax     - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
         bptt_truncate - backpropagate through time truncation
+        nepochs       - number of times to run through training data
         """
         self.n = 5 # words of context #...
         self.nchars = nchars
         self.nvocabmax = nvocabmax
         self.nhidden = nhidden
         self.bptt_truncate = bptt_truncate
+        self.nepochs = nepochs
         self.trained = False
         # self.model_folder = model_folder
         # self.name = 'rnn'
@@ -65,7 +68,8 @@ class RnnModel(model.Model):
     #     filename = "%s/%s-%s.pickle" % (self.model_folder, typename, sparams)
     #     return filename
 
-    def train(self, tokens, nepochs=10):
+    # def train(self, tokens, nepochs=10):
+    def train(self, tokens):
         """
         Train the model with the given tokens.
         """
@@ -104,7 +108,8 @@ class RnnModel(model.Model):
         self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
         self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
         # train model with stochastic gradient descent - learns U, V, W
-        losses = util.train_with_sgd(self, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
+        # losses = util.train_with_sgd(self, X_train, y_train, nepochs=nepochs, evaluate_loss_after=int(nepochs/10))
+        losses = util.train_with_sgd(self, X_train, y_train, nepochs=self.nepochs, evaluate_loss_after=int(self.nepochs/10))
         self.trained = True
         return losses
 
@@ -317,9 +322,9 @@ class RnnModel(model.Model):
 
 if __name__=='__main__':
 
+    #. magic
     unknown_token = "UNKNOWN"
     end_token = "END"
-
 
     s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
     print(s)
@@ -357,7 +362,7 @@ if __name__=='__main__':
 
     # print('see how long one sgd step takes')
     # np.random.seed(0)
-    # model = RnnModel(nvocab=nvocab, nhidden=nhidden)
+    # model = Rnn(nvocab=nvocab, nhidden=nhidden)
     # t = time.time()
     # # model.sgd_step(X_train[500], y_train[500], 0.005)
     # model.sgd_step(X_train[1], y_train[1], 0.005)
@@ -365,23 +370,40 @@ if __name__=='__main__':
 
     # Train on data
     print('Train model on data')
-    model = RnnModel(nvocabmax=nvocabmax, nhidden=nhidden)
-    # nepochs = 2000
-    # nepochs = 5000
-    # nepochs = 100
     nepochs = 1000
-    losses = model.train(tokens, nepochs)
+    model = Rnn(nvocabmax=nvocabmax, nhidden=nhidden, nepochs=nepochs)
+    losses = model.train()
     # print(losses)
     # print()
     # import matplotlib.pyplot as plt
     # plt.line(losses)
     # plt.show()
 
+    model.test()
+
     # Sample predictions
     tokens = "the dog".split()
     k = 2
     sample = model.predict(tokens, k)
     print(sample)
+
+
+
+    # from data import Data
+    # data = Data('animals')
+    # stest = "the dog"
+    # test_tokens = stest.split()
+    # model = Ngram(data, n=1)
+    # print(model)
+    # model.train()
+    # token = model.generate_token(test_tokens)
+    # print(test_tokens)
+    # print('prediction:',token)
+    # print(model._d)
+    # tokens = model.generate()
+    # print(' '.join(tokens))
+    # print()
+
 
 
     # Test
@@ -395,3 +417,5 @@ if __name__=='__main__':
         while len(tokens) < nwordsmin:
             tokens = model.generate()
         print(' '.join(tokens))
+
+
