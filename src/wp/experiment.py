@@ -16,9 +16,11 @@ from benchmark import benchmark
 
 class Experiment(object):
     """
+    Run an experiment on a set of models across a set of parameters.
     """
     def __init__(self, model_specs, data, params):
         """
+        Construct experiment
         """
         self.model_specs = model_specs
         self.data = data
@@ -37,69 +39,42 @@ class Experiment(object):
         print()
         param_name = self.params.keys()[0]
         param_values = self.params[param_name]
-        scores = []
-        times = []
+        train_times = []
+        test_times = []
+        test_scores = []
         for param_value in param_values:
             print('Parameter:', param_name, param_value)
             print()
-            score_row = []
-            time_row = []
+            train_time_row = []
+            test_time_row = []
+            test_score_row = []
             for (model_class, model_params) in self.model_specs:
                 model = model_class(self.data, **model_params)
                 print(model.name)
-                with benchmark("Train model") as b:
-                    model.train()
-                # print(b)
-                with benchmark("Test model") as b:
-                    accuracy = model.test()
-                print('Accuracy', accuracy)
-                row.append(accuracy)
+                # with benchmark("Train model") as b:
+                #     model.train()
+                # with benchmark("Test model") as b:
+                #     accuracy = model.test()
+                model.train()
+                model.test()
+                print('Score', model.test_score)
+                train_time_row.append(model.train_time)
+                test_time_row.append(model.test_time)
+                test_score_row.append(model.test_score)
                 print()
-            rows.append(row)
+            train_times.append(train_time_row)
+            test_times.append(test_time_row)
+            test_scores.append(test_score_row)
             print()
-        print(rows)
-        self.results = rows
+        print(train_times)
+        print(test_times)
+        print(test_scores)
+        #. these need to be pandas tables, can output with tabulate
+        self.train_times = train_times
+        self.test_times = test_times
+        self.test_scores = test_scores
                 
 
-    # def test(self):
-    #     """
-    #     Test the models against held-out test data.
-    #     """
-    #     #. time
-    #     param_name = self.params.keys()[0]
-    #     param_values = self.params[param_name]
-    #     for param_value in param_values:
-    #         for (model_class, model_params) in self.model_specs:
-    #             model = model_class(**model_params)
-    #             model.load()
-    #             model.test()
-
-    # def __str__(self):
-    #     """
-    #     """
-    #     return "pokpok"
-
-
-    # # def init_model_table(model_specs, model_folder, data, nchars_list=[None]):
-    # # def init_model_table(model_specs, data, nchars_list=[None]):
-    # def init_model_table(model_specs, data, train_amounts=[1.0]):
-    #     """
-    #     Initialize models
-    #     """
-    #     model_table = []
-    #     # model_folder = data.model_folder
-    #     for nchars in nchars_list:
-    #         print('ntraining_chars', nchars)
-    #         # load/train/save model
-    #         # models = init_models(model_specs, model_folder, data, nchars=nchars) # load/train models
-    #         models = init_models(model_specs, data, nchars=nchars) # load/train models
-    #         models = [nchars] + models
-    #         model_table.append(models)
-    #     return model_table
-
-    # # def init_models(model_specs, model_folder, data, nchars=None):
-    # # def init_models(model_specs, data, nchars=None):
-    # # def train_models(specs, data, train_amounts=[1.0]):
     # def train_models(self):
     #     """
     #     Train models on different amounts of data.
@@ -198,14 +173,11 @@ if __name__ == '__main__':
 
     exper = Experiment(specs, data, params)
     exper.run()
-    print(exper.results)
+    # print(exper.test_scores)
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
     # params = {'nhidden':[5,10,20,100]}
     # exper = Experiment(specs, data, params)
     # exper.run()
-
-
-
 
 

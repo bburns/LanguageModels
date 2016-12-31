@@ -50,7 +50,7 @@ class Ngram(model.Model):
         Train the ngram model and save it, or load from file if available.
         """
         if load_if_available and os.path.isfile(self.filename):
-            self.load()
+            self.load() # see model.py - will set self.load_time
         else:
             with benchmark("Train " + self.name) as b:
                 tokens = self.data.tokens('train', self.train_amount)
@@ -131,11 +131,12 @@ class Ngram(model.Model):
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
                     if actual in predicted_tokens:
                         nright += 1
-            npredictions = i+1
+            npredictions = i + 1
             accuracy = nright / npredictions
         # print("%s: accuracy = nright/total = %d/%d = %f" % (self.name, nright, npredictions, accuracy))
         self.test_time = b.time
         self.test_score = accuracy
+        # return accuracy, self.test_time
         return accuracy
 
     def generate(self):
