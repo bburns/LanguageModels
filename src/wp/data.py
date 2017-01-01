@@ -3,11 +3,11 @@
 Data module - wraps all data and handles processing.
 
 Usage:
-data = Data('gutenbergs')
-data.clean()
-data.merge()
-data.split()
-
+data = Data('animals')
+data.prepare()
+data.text()
+data.sentences()
+data.tokens()
 """
 
 from __future__ import print_function, division
@@ -20,6 +20,7 @@ import re
 from pprint import pprint
 from collections import defaultdict
 
+import numpy as np
 import pandas as pd
 import nltk
 from nltk import tokenize
@@ -62,7 +63,7 @@ class Data(object):
         Clean, merge, and split raw data files into train, validate, test sets.
         """
         print('Prepare dataset:', self.dataset)
-        print()
+        # print()
         self.clean()
         self.merge()
         self.split()
@@ -73,13 +74,14 @@ class Data(object):
         """
         Clean raw files - remove Gutenberg header/footers, table of contents, nonascii chars.
         """
-        print('Clean raw files...')
+        # print('Clean raw files...')
+        print('Clean raw files... ',end='')
         util.mkdir(self.cleaned_folder)
         for infile in glob.glob(self.raw_files):
             _, filetitle = os.path.split(infile)
             outfile = self.cleaned_folder + filetitle
             if not os.path.isfile(outfile):
-                print('Cleaning %s to %s' % (infile, filetitle))
+                # print('Cleaning %s to %s' % (infile, filetitle))
                 with open(infile, 'rb') as f_in:
                     s = f_in.read()
                     s = s.replace('\r\n','\n') # dos2unix
@@ -92,7 +94,7 @@ class Data(object):
                     with open(outfile, 'wb') as f_out:
                         f_out.write(s)
         print("done.")
-        print()
+        # print()
 
     def clean_header_footer(self, s):
         """
@@ -124,17 +126,18 @@ class Data(object):
         """
         Merge the cleaned files into one file if not done yet.
         """
-        print('Merge cleaned files...')
+        # print('Merge cleaned files...')
+        print('Merge cleaned files... ', end='')
         util.mkdir(self.merged_folder)
         if not os.path.isfile(self.merged_file):
             with open(self.merged_file, 'wb') as f_all:
                 for filename in glob.glob(self.cleaned_files):
-                    print('Adding', filename)
+                    # print('Adding', filename)
                     with open(filename, 'rb') as f:
                         s = f.read()
                         f_all.write(s)
         print('done.')
-        print()
+        # print()
 
     def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2):
         """
@@ -145,7 +148,8 @@ class Data(object):
         artificial word tuples.
         """
         assert abs(ptrain + pvalidate + ptest - 1) < 1e-6 # must add to 1.0
-        print('Split merged file...')
+        # print('Split merged file...')
+        print('Split merged file... ', end='')
         # initialize
         util.mkdir(self.split_folder)
         proportions = (ptrain, pvalidate, ptest)
@@ -169,10 +173,10 @@ class Data(object):
                 f = open(output_filename, 'wb')
                 output_files.append(f)
             # parse merged file into sentences
-            print('Splitting merged file into sentences')
+            # print('Splitting merged file into sentences')
             sentences = self.sentences('merged')
             # walk over sentences, outputting to the different output files
-            print('Distributing sentences over output files')
+            # print('Distributing sentences over output files')
             for sentence in sentences:
                 f = self._get_next_file(output_files, proportions)
                 f.write(sentence)
@@ -181,14 +185,14 @@ class Data(object):
             for f in output_files:
                 f.close()
         print('done.')
-        print()
+        # print()
 
     def _get_next_file(self, output_files, proportions):
         """
         Get next output file to write to based on specified proportions.
         This is used by split method to split a file into train, validate, test files.
-        output_files: a list of file handles
-        proportions: a list of floating point numbers that add up to one,
+        output_files - a list of file handles
+        proportions  - a list of floating point numbers that add up to one,
           representing the proportion of text to be sent to each file.
         Returns a file handle.
         """
@@ -215,13 +219,40 @@ class Data(object):
         for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
-                filename = os.path.basename(filepath)
-                filetitle = os.path.splitext(filename)[0]
+                filetitle = util.filetitle(filepath)
                 sentences = tokenize.sent_tokenize(s)
                 tokens = set(tokenize.word_tokenize(s))
                 row = [filetitle, len(s), len(tokens), len(sentences)]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
+        return df
+
+    def histogram(self, nsentences=100, nwordsmax=100):
+        """
+        Get histogram data of sentence length for the different cleaned texts.
+        nsentences - limit to sample of this many sentences, for speed (eg lesmis has 35k sentences).
+        nwordsmax  - set wordcounts greater than this to NaN (ignore giant outlier sentences).
+        """
+        lengths = []
+        filetitles = []
+        # weights = []
+        for filepath in glob.glob(self.cleaned_files):
+            with open(filepath, 'rb') as f:
+                s = f.read()
+                sentences = tokenize.sent_tokenize(s)
+                # sentences = sentences[:nsentences] # sample sentences
+                sentences = random.sample(sentences, nsentences) # sample sentences
+                nwords = [len(sentence.split()) for sentence in sentences]
+                lengths.append(nwords)
+                filetitle = util.filetitle(filepath)
+                filetitles.append(filetitle)
+                # factor = 1/len(nwords)
+                # weight = [factor for nword in nwords] # must be same size as nwords
+                # weights.append(weight)
+        # return lengths, filetitles, weights
+        df = pd.DataFrame(lengths, index=filetitles)
+        df = df.applymap(lambda x: x if x < nwordsmax else np.NaN)
+        # df = df.transpose()
         return df
 
     def text(self, source='merged', amount=1.0):
@@ -250,6 +281,8 @@ class Data(object):
         s = s.replace('\n',' ')
         sentences = tokenize.sent_tokenize(s)
         return sentences
+
+
 
     # def tokenized_sentences(self, source, nchars=None):
     #     """
@@ -364,6 +397,21 @@ if __name__ == '__main__':
     print()
 
     print(data)
+
+
+    # histogram
+    data = Data('gutenbergs')
+    df = data.histogram(100, 100)
+    print(df)
+    # import matplotlib.pyplot as plt
+    # plt.figure(figsize=(12,7))
+    # # plt.hist(lengths, range=(1,40), bins=40, stacked=True, label=filetitles, alpha=0.5, weights=weights)
+    # plt.hist(lengths, range=(2,30), bins=28, stacked=True, label=filetitles, alpha=0.5, weights=weights)
+    # plt.legend(loc=(1.1,0.5))
+    # plt.grid()
+    # plt.subplots_adjust(left=0.01,right=0.5)
+    # plt.show()
+
 
     # print(data.text('train'))
     # print(data.text('train',0.5))

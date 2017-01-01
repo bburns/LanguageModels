@@ -22,7 +22,7 @@ from benchmark import benchmark
 class Ngram(model.Model):
     """
     n-gram model - initialize with n.
-    Inherits load and save from Model class.
+    For load, save, test methods, see model.py
 
     Stores a sparse multidimensional array of token counts.
     The sparse array is implemented as a dict of dicts.
@@ -35,10 +35,10 @@ class Ngram(model.Model):
         self.data = data # lightweight interface for data files
         self.n = n  # the n in n-gram
         self.train_amount = train_amount
-        self._d = {} # dictionary of dictionary of ... of counts
-        self.trained = False
         self.name = "ngram (n=%d)" % n
         self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
+        self._d = {} # dictionary of dictionary of ... of counts
+        self.trained = False
         self.load_time = None
         self.save_time = None
         self.train_time = None
@@ -47,7 +47,7 @@ class Ngram(model.Model):
 
     def train(self, load_if_available=True):
         """
-        Train the ngram model and save it, or load from file if available.
+        Train the model and save it, or load from file if available.
         """
         if load_if_available and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
@@ -110,34 +110,32 @@ class Ngram(model.Model):
                 return token
         return d.keys()[-1] # right? #. test
 
-    # def test(self, k=3):
-    def test(self, k=3, amount=1.0): #. use all data by default?
-        """
-        Test the model and return the accuracy score.
-        """
-        # get the test tokens
-        tokens = self.data.tokens('test', amount)
-        # print(tokens)
-        ntokens = len(tokens)
-        # run test on the models
-        nright = 0
-        with benchmark("Test model " + self.name) as b:
-            for i in range(ntokens-self.n):
-                prompt = tokens[i:i+self.n-1]
-                actual = tokens[i+self.n-1]
-                token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
-                print('prompt',prompt,'actual',actual,'token_probs',token_probs)
-                if token_probs: # can be None
-                    predicted_tokens = [token_prob[0] for token_prob in token_probs]
-                    if actual in predicted_tokens:
-                        nright += 1
-            npredictions = i + 1
-            accuracy = nright / npredictions
-        # print("%s: accuracy = nright/total = %d/%d = %f" % (self.name, nright, npredictions, accuracy))
-        self.test_time = b.time
-        self.test_score = accuracy
-        # return accuracy, self.test_time
-        return accuracy
+    # def test(self, k=3, test_amount=1.0): #. use all data by default?
+    #     """
+    #     Test the model and return the accuracy score.
+    #     """
+    #     # get the test tokens
+    #     tokens = self.data.tokens('test', test_amount)
+    #     # print(tokens)
+    #     ntokens = len(tokens)
+    #     # run test on the models
+    #     nright = 0
+    #     with benchmark("Test model " + self.name) as b:
+    #         for i in range(ntokens-self.n):
+    #             prompt = tokens[i:i+self.n-1]
+    #             actual = tokens[i+self.n-1]
+    #             token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
+    #             #. add selection to samples
+    #             print('prompt',prompt,'actual',actual,'token_probs',token_probs)
+    #             if token_probs: # can be None
+    #                 predicted_tokens = [token_prob[0] for token_prob in token_probs]
+    #                 if actual in predicted_tokens:
+    #                     nright += 1
+    #         npredictions = i + 1
+    #         accuracy = nright / npredictions
+    #     self.test_time = b.time
+    #     self.test_score = accuracy
+    #     return accuracy
 
     def generate(self):
         """
@@ -278,6 +276,8 @@ if __name__ == '__main__':
     # print(model._d)
     s = model.generate()
     print('generate', s)
+    print()
+
     print(model)
     print()
 

@@ -3,6 +3,8 @@
 Utility functions used by more than one module.
 """
 
+from __future__ import print_function, division
+
 import heapq
 from datetime import datetime
 import sys
@@ -11,6 +13,14 @@ import os
 import numpy as np
 
 
+
+def filetitle(filepath):
+    """
+    Return the file title for the given path, eg "a/path/foo.txt" -> "foo".
+    """
+    filename = os.path.basename(filepath)
+    filetitle = os.path.splitext(filename)[0]
+    return filetitle
 
 def mkdir(path):
     """

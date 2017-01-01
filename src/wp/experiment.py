@@ -42,21 +42,28 @@ class Experiment(object):
         train_times = []
         test_times = []
         test_scores = []
+        cols = []
+        rows = []
         for param_value in param_values:
             print('Parameter:', param_name, param_value)
             print()
+            row_name = param_name + '=' + str(param_value)
+            rows.append(row_name)
             train_time_row = []
             test_time_row = []
             test_score_row = []
+            cols = []
             for (model_class, model_params) in self.model_specs:
                 model = model_class(self.data, **model_params)
                 print(model.name)
+                cols.append(model.name)
+                #. should timing be handled in experiment with benchmark? or return them from fns? 
                 # with benchmark("Train model") as b:
                 #     model.train()
                 # with benchmark("Test model") as b:
                 #     accuracy = model.test()
-                model.train()
-                model.test()
+                model.train() # loads/saves model as needed
+                model.test() #. should this return score, or access it as with time? 
                 print('Score', model.test_score)
                 train_time_row.append(model.train_time)
                 test_time_row.append(model.test_time)
@@ -66,13 +73,25 @@ class Experiment(object):
             test_times.append(test_time_row)
             test_scores.append(test_score_row)
             print()
-        print(train_times)
-        print(test_times)
-        print(test_scores)
-        #. these need to be pandas tables, can output with tabulate
-        self.train_times = train_times
-        self.test_times = test_times
-        self.test_scores = test_scores
+        # print(train_times)
+        # print(test_times)
+        # print(test_scores)
+        #. these need to be pandas tables
+        # self.train_times = train_times
+        # self.test_times = test_times
+        # self.test_scores = test_scores
+        self.train_times = pd.DataFrame(train_times, index=rows, columns=cols)
+        self.test_times = pd.DataFrame(test_times, index=rows, columns=cols)
+        self.test_scores = pd.DataFrame(test_scores, index=rows, columns=cols)
+        print('Train Times')
+        print(self.train_times)
+        print()
+        print('Test Times')
+        print(self.test_times)
+        print()
+        print('Test Scores')
+        print(self.test_scores)
+        print()
                 
 
     # def train_models(self):
@@ -165,7 +184,7 @@ if __name__ == '__main__':
         [ngram.Ngram, {'n':1}],
         [ngram.Ngram, {'n':2}],
         [ngram.Ngram, {'n':3}],
-        # [rnn.Rnn, {}],
+        [rnn.Rnn, {}],
     ]
     data = Data('animals')
     print('text',data.text())

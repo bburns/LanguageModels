@@ -123,10 +123,15 @@ Some sample text:
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
-->make a histogram of sentence length, with contributions by each text in color?
+make a histogram of sentence lengths
 but why?
 
-keyword is relevant - what vis would be relevant for this problem?
+![Sentence length distributions][1]
+
+[1]: images/sentence_lengths.png
+
+
+keyword is *relevant* - what vis would be relevant for this problem?
 
 we're doing word prediction
 maybe something more like information content?
@@ -298,6 +303,10 @@ lstm
 <!-- Student adequately summarizes the end-to-end problem solution and discusses
 one or two particular aspects of the project they found interesting or
 difficult. -->
+
+it took a while to set up a good test harness and data preprocessing pipeline.
+
+
 
 ### Improvement
 

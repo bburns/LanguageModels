@@ -34,7 +34,8 @@ help:
 
 report: doc/report/report.pdf
 doc/report/report.pdf: doc/report/report.md
-	pandoc doc/report/report.md -o doc/report/report.pdf
+	cd doc/report && pandoc report.md -o report.pdf
+#  && cmd /c "start report.pdf" # nowork
 
 # --------------------------------------------------------------------------------
 # * Data

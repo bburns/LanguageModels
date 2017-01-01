@@ -46,4 +46,30 @@ class Model(object):
         return self.load_time
 
 
+    def test(self, k=3, test_amount=1.0): #. use all data by default?
+        """
+        Test the model and return the accuracy score.
+        """
+        # get the test tokens
+        tokens = self.data.tokens('test', test_amount)
+        ntokens = len(tokens)
+        # run test on the models
+        nright = 0
+        with benchmark("Test model " + self.name) as b: # time it
+            for i in range(ntokens-self.n): # iterate over all test tokens
+                prompt = tokens[i:i+self.n-1]
+                actual = tokens[i+self.n-1]
+                token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
+                #. add selection to samples
+                print('prompt',prompt,'actual',actual,'token_probs',token_probs)
+                if token_probs: # can be None
+                    predicted_tokens = [token_prob[0] for token_prob in token_probs]
+                    if actual in predicted_tokens:
+                        nright += 1
+            npredictions = i + 1
+            accuracy = nright / npredictions
+        self.test_time = b.time
+        self.test_score = accuracy
+        return accuracy
+
 
