@@ -5,9 +5,9 @@ Data module - wraps all data and handles processing.
 Usage:
 data = Data('animals')
 data.prepare()
-data.text()
-data.sentences()
-data.tokens()
+s = data.text('train')
+sentences = data.sentences('train')
+tokens = data.tokens('test')
 """
 
 from __future__ import print_function, division
@@ -63,7 +63,6 @@ class Data(object):
         Clean, merge, and split raw data files into train, validate, test sets.
         """
         print('Prepare dataset:', self.dataset)
-        # print()
         self.clean()
         self.merge()
         self.split()
@@ -74,7 +73,6 @@ class Data(object):
         """
         Clean raw files - remove Gutenberg header/footers, table of contents, nonascii chars.
         """
-        # print('Clean raw files...')
         print('Clean raw files... ',end='')
         util.mkdir(self.cleaned_folder)
         for infile in glob.glob(self.raw_files):
@@ -94,32 +92,24 @@ class Data(object):
                     with open(outfile, 'wb') as f_out:
                         f_out.write(s)
         print("done.")
-        # print()
 
     def clean_header_footer(self, s):
         """
         Remove the Gutenberg header and footer/license from the given string.
         """
-        match = re.search(r"\*\*\*[ ]*START.*\*\*\*", s)
-        if match: pos = match.span()[1]; s = s[pos:]
-        match = re.search(r"\*\*\*[ ]*END.*\*\*\*", s)
-        if match: pos = match.span()[0]; s = s[:pos]
+        s = util.remove_text(r"\*\*\*[ ]*START OF.*\*\*\*", s, 0)
+        s = util.remove_text(r"\*\*\*[ ]*END.*\*\*\*", s, -1)
         return s
 
     def clean_table_of_contents(self, s):
         """
         Remove table of contents from specific texts.
         """
-        match = re.search(r"List of Illustrations", s) # les miserables
-        if match: pos = match.span()[0]; s = s[pos:]
-        match = re.search(r"\[Sidenote\: _Down the Rabbit-Hole_\]", s) # alice
-        if match: pos = match.span()[1]; s = s[pos:]
-        match = re.search(r"PART ONE--The Old Buccaneer", s) # treasure island
-        if match: pos = match.span()[1]; s = s[pos:]
-        match = re.search(r"CANON ALBERIC'S SCRAP-BOOK", s) # mrjames1905
-        if match: pos = match.span()[1]; s = s[pos:]
-        match = re.search(r"I. THE RIVER BANK", s) # windinwillows
-        if match: pos = match.span()[1]; s = s[pos:]
+        s = util.remove_text(r"List of Illustrations", s, 0) # les miserables
+        s = util.remove_text(r"\[Sidenote\: _Down the Rabbit-Hole_\]", s, 0) # alice
+        s = util.remove_text(r"PART ONE--The Old Buccaneer", s, 0) # treasure island
+        s = util.remove_text(r"CANON ALBERIC'S SCRAP-BOOK", s, 0) # mrjames1905
+        s = util.remove_text(r"I. THE RIVER BANK", s, 0) # windinwillows
         return s
 
     def merge(self):

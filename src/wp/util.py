@@ -9,10 +9,26 @@ import heapq
 from datetime import datetime
 import sys
 import os
+import re
 
 import numpy as np
 
 
+
+
+
+def remove_text(regexp, s, to_char=0):
+    """
+    Remove text matching regular expression from given string.
+    """
+    match = re.search(regexp, s, re.MULTILINE)
+    if match:
+        start, end = match.span()
+        if to_char==0:
+            s = s[end:]
+        elif to_char==-1:
+            s = s[:start]
+    return s
 
 def filetitle(filepath):
     """
@@ -80,4 +96,18 @@ def train_with_sgd(model, X_train, y_train, learning_rate=0.005, nepochs=100, ev
             model.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
             nexamples_seen += 1
     return losses
+
+
+
+if __name__=='__main__':
+
+    s = """header
+---start of thing---
+contents
+---end of thing---
+footer
+"""
+    print(remove_text(r"^---start.*---", s, 0))
+    print(remove_text(r"^---end", s, -1))
+
 
