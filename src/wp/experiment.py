@@ -10,6 +10,7 @@ import os.path
 from datetime import datetime
 
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from benchmark import benchmark
 
@@ -18,14 +19,18 @@ class Experiment(object):
     """
     Run an experiment on a set of models across a set of parameters.
     """
-    def __init__(self, model_specs, data, params, test_amount=1.0):
+    def __init__(self, name, model_specs, data, params, test_amount=1.0):
         """
         Construct an experiment.
+        name        - name of experiment
         model_specs - a list of model classes and parameters to train and test
         data        - a data object (eg Data('gutenbergs'))
         params      - additional params for the models (eg {'train_amount':1000})
         test_amount - amount of test text to use (percent or nchars)
         """
+        self.name = name
+        self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.caption = 'Experiment %s: %s' % (self.time, self.name)
         self.model_specs = model_specs
         self.data = data
         self.params = params
@@ -37,9 +42,8 @@ class Experiment(object):
         """
         Train and test the models with different parameters.
         """
-        stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print('-'*80)
-        print('Experiment', stime)
+        print('* ' + self.caption)
         print('-'*80)
         print()
         param_name = self.params.keys()[0]
@@ -50,7 +54,7 @@ class Experiment(object):
         cols = []
         rows = []
         for param_value in param_values:
-            print('Parameter:', param_name, param_value)
+            print('** Parameter:', param_name, param_value)
             print()
             # row_name = param_name + '=' + str(param_value)
             # rows.append(row_name)
@@ -90,6 +94,13 @@ class Experiment(object):
         self.train_times = pd.DataFrame(train_times, index=rows, columns=cols)
         self.test_times = pd.DataFrame(test_times, index=rows, columns=cols)
         self.test_scores = pd.DataFrame(test_scores, index=rows, columns=cols)
+        # print and plot results
+        self.print_results()
+        self.plot_results()
+
+    def print_results(self):
+        print('** Results')
+        print()
         print('Train Times')
         print(self.train_times)
         print()
@@ -100,10 +111,36 @@ class Experiment(object):
         print(self.test_scores)
         print()
 
+    def plot_results(self):
+
+        param_name = self.params.keys()[0]
+        plt.style.use('ggplot') # nicer style
+        line_styles = ['-', '--', '-.', ':']
+
+        self.test_scores.plot(kind='line', style=line_styles)
+        # plt.suptitle(self.caption)
+        plt.title('Accuracy vs ' + param_name)
+        plt.xlabel(param_name)
+        plt.ylabel('accuracy')
+        plt.show()
+
+        self.train_times.plot(kind='line', style=line_styles)
+        # plt.suptitle(self.caption)
+        plt.title('Train time vs ' + param_name)
+        plt.xlabel(param_name)
+        plt.ylabel('train_time (sec)')
+        plt.show()
+
+        self.test_times.plot(kind='line', style=line_styles)
+        # plt.suptitle(self.caption)
+        plt.title('Test time vs ' + param_name)
+        plt.xlabel(param_name)
+        plt.ylabel('test_time (sec)')
+        plt.show()
+
+
 
 if __name__ == '__main__':
-
-    import matplotlib.pyplot as plt
 
     # need to import the same way we load/save models in the notebook for pickle to work
     import sys; sys.path.append('../')
@@ -119,11 +156,6 @@ if __name__ == '__main__':
     # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
     # exper = Experiment(specs, data, params, test_amount=1000)
     # exper.run()
-    # exper.test_scores.plot()
-    # plt.suptitle('Model accuracy comparison')
-    # plt.xlabel('train_amount')
-    # plt.ylabel('accuracy')
-    # plt.show()
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
     # params = {'nhidden':[5,10,20,100]}
@@ -139,12 +171,8 @@ if __name__ == '__main__':
     # params = {'nhidden':[10,20,50,100]}
     # exper = Experiment(specs, data, params, test_amount=1000)
     # exper.run()
-    # exper.test_scores.plot()
-    # plt.suptitle('Model accuracy comparison')
-    # plt.xlabel('nhidden')
-    # plt.ylabel('accuracy')
-    # plt.show()
 
+    name = 'RNN hidden layer sizes'
     specs = [
         [wp.rnn.Rnn, {'nhidden':10}],
         [wp.rnn.Rnn, {'nhidden':20}],
@@ -154,20 +182,6 @@ if __name__ == '__main__':
     params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
     # params = {'nvocabmax':[100,200,500,1000,2000,5000]}
     # params = {'nhidden':[10,20,50,100]}
-    exper = Experiment(specs, data, params, test_amount=1000)
+    exper = Experiment(name, specs, data, params, test_amount=1000)
     exper.run()
-
-    #. combine all plots in one page
-    #. use pandas default scheme?
-    # import seaborn as sns
-    # pd.set_option('display.mpl_style', 'default')
-    # pd.options.display.mpl_style = 'default'
-    # plt.style.use('default')
-    # plt.style.use('fivethirtyeight')
-    plt.style.use('ggplot')
-    exper.test_scores.plot()
-    plt.suptitle('Model accuracy comparison')
-    plt.xlabel('train_amount')
-    plt.ylabel('accuracy')
-    plt.show()
 

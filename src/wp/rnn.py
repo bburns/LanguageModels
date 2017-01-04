@@ -43,6 +43,7 @@ class Rnn(model.Model):
         nhidden       - number of units in the hidden layer
         nepochs       - number of times to run through training data
         bptt_truncate - backpropagate through time truncation
+        name_includes - list of properties to include in model name, eg ['nhidden']
         """
         self.data = data
         self.train_amount = train_amount
@@ -51,7 +52,7 @@ class Rnn(model.Model):
         self.nepochs = nepochs
         self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
-        self.name = "rnn-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes])
+        self.name = "rnn-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'rnn-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
         self.trained = False
@@ -61,14 +62,12 @@ class Rnn(model.Model):
         self.test_time = None
         print("Create model " + self.name)
 
-    # def train(self, load_if_available=True):
     def train(self, force_training=False):
         """
         Train the model and save it, or load from file if available.
         force_training - pass True to retrain model (ie don't load from file)
         # Pass False to force training (or just delete the model files).
         """
-        # if load_if_available and os.path.isfile(self.filename):
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
