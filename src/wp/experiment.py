@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from benchmark import benchmark
+import transcript
 
 
 class Experiment(object):
@@ -35,6 +36,7 @@ class Experiment(object):
         self.data = data
         self.params = params
         self.test_amount = test_amount
+        self.logfile = "../../logs/experiments.org"
         assert(len(params)==1) # only handles one param at a time
         # self.data.prepare() # make sure the data is cleaned and split up
 
@@ -42,6 +44,7 @@ class Experiment(object):
         """
         Train and test the models with different parameters.
         """
+        transcript.start(self.logfile)
         print('-'*80)
         print('* ' + self.caption)
         print('-'*80)
@@ -97,6 +100,7 @@ class Experiment(object):
         # print and plot results
         self.print_results()
         self.plot_results()
+        transcript.stop()
 
     def print_results(self):
         print('** Results')
@@ -180,7 +184,7 @@ if __name__ == '__main__':
     ]
     data = wp.data.Data('gutenbergs')
     params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    # params = {'nvocabmax':[100,200,500,1000,2000,5000]}
+    # params = {'nvocab':[100,200,500,1000,2000,5000]}
     # params = {'nhidden':[10,20,50,100]}
     exper = Experiment(name, specs, data, params, test_amount=1000)
     exper.run()

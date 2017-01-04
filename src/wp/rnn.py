@@ -52,7 +52,7 @@ class Rnn(model.Model):
         self.nepochs = nepochs
         self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
-        self.name = "rnn-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'rnn-nhidden-10'
+        self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
         self.trained = False
