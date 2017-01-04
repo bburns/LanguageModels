@@ -34,26 +34,26 @@ class Rnn(model.Model):
     For load, save, test methods, see model.py
     """
 
-    def __init__(self, data, train_amount=1.0, nvocabmax=1000, nhidden=100, nepochs=10, bptt_truncate=4):
+    def __init__(self, data, train_amount=1.0, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
         """
         Create an RNN model
         data          - source of training and testing data
         train_amount  - percent or number of training characters to use
-        nvocabmax     - max number of vocabulary words to learn
+        nvocab        - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
         nepochs       - number of times to run through training data
         bptt_truncate - backpropagate through time truncation
         """
         self.data = data
         self.train_amount = train_amount
-        self.nvocabmax = nvocabmax
+        self.nvocab = nvocab
         self.nhidden = nhidden
         self.nepochs = nepochs
         self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
-        self.name = "rnn"
-        self.filename = '%s/rnn-(train_amount-%.4f-nvocabmax-%d-nhidden-%d-nepochs-%d).pickle' \
-                         % (data.model_folder, train_amount, nvocabmax, nhidden, nepochs)
+        self.name = "rnn-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes])
+        self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
+                         % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
         self.trained = False
         self.load_time = None
         self.save_time = None
@@ -82,7 +82,7 @@ class Rnn(model.Model):
                 tokens = self.data.tokens('train', self.train_amount)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
-                wordcounts = word_freqs.most_common(self.nvocabmax-1)
+                wordcounts = word_freqs.most_common(self.nvocab-1)
                 self.index_to_word = [wordcount[0] for wordcount in wordcounts]
                 self.index_to_word.append(unknown_token)
                 self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
@@ -139,7 +139,7 @@ class Rnn(model.Model):
         # print(pairs[:20])
         best_iwords = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
         # print(best_iwords)
-        # print(self.nvocabmax)
+        # print(self.nvocab)
         # print(self.nvocab)
         # print(len(self.index_to_word))
         # print(self.index_to_word)
@@ -206,7 +206,7 @@ class Rnn(model.Model):
         state = np.zeros((nsteps + 1, self.nhidden))
         state[-1] = np.zeros(self.nhidden)
         # The outputs at each time step. Again, we save them for later.
-        # output = np.zeros((nsteps, self.nvocabmax))
+        # output = np.zeros((nsteps, self.nvocab))
         output = np.zeros((nsteps, self.nvocab))
         # For each time step...
         for t in np.arange(nsteps):
@@ -347,17 +347,24 @@ if __name__=='__main__':
 
     # print('see how long one sgd step takes')
     # np.random.seed(0)
-    # model = Rnn(nvocabmax=nvocabmax, nhidden=nhidden)
+    # model = Rnn(nvocab=nvocab, nhidden=nhidden)
     # with benchmark("Time for one sgd step"):
     #     model.sgd_step(X_train[1], y_train[1], 0.005)
+
+
 
 
     from data import Data
 
     # data = Data('animals')
-    # model = Rnn(data, nvocabmax=10, nhidden=4, nepochs=1000)
+    # model = Rnn(data, nvocab=10, nhidden=4, nepochs=1000)
     data = Data('gutenbergs')
-    model = Rnn(data, nvocabmax=1000, nhidden=10, nepochs=10, train_amount=10000)
+
+    # m = Rnn(data,train_amount=1000)
+    # print(m.filename)
+    # stop
+
+    model = Rnn(data, nvocab=1000, nhidden=10, nepochs=10, train_amount=10000)
     # model.train()
     model.train(True)
     # accuracy = model.test()

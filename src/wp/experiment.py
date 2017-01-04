@@ -60,12 +60,15 @@ class Experiment(object):
             test_score_row = []
             cols = []
             for (model_class, model_params) in self.model_specs:
+                # get a dict with all parameter names and values
+                name_includes = model_params.keys() # eg ['train_amount']
                 params = model_params.copy()
                 params[param_name] = param_value
-                # model = model_class(self.data, **model_params)
                 print(params)
-                model = model_class(self.data, **params)
-                print(model.name)
+                # model = model_class(self.data, **model_params)
+                # model = model_class(self.data, **params)
+                model = model_class(self.data, name_includes=name_includes, **params)
+                # print(model.name)
                 cols.append(model.name)
                 #. should timing be handled in experiment with benchmark? or return them from fns?
                 # with benchmark("Train model") as b:
@@ -106,25 +109,65 @@ if __name__ == '__main__':
     import sys; sys.path.append('../')
     import wp
 
-    specs = [
-        [wp.ngram.Ngram, {'n':1}],
-        [wp.ngram.Ngram, {'n':2}],
-        [wp.ngram.Ngram, {'n':3}],
-        [wp.rnn.Rnn, {}],
-    ]
-    data = wp.data.Data('gutenbergs')
-    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-
-    exper = Experiment(specs, data, params, test_amount=1000)
-    exper.run()
-    exper.test_scores.plot()
-    plt.suptitle('Model accuracy comparison')
-    plt.xlabel('train_amount')
-    plt.ylabel('accuracy')
-    plt.show()
+    # specs = [
+    #     [wp.ngram.Ngram, {'n':1}],
+    #     [wp.ngram.Ngram, {'n':2}],
+    #     [wp.ngram.Ngram, {'n':3}],
+    #     [wp.rnn.Rnn, {}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    # exper = Experiment(specs, data, params, test_amount=1000)
+    # exper.run()
+    # exper.test_scores.plot()
+    # plt.suptitle('Model accuracy comparison')
+    # plt.xlabel('train_amount')
+    # plt.ylabel('accuracy')
+    # plt.show()
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
     # params = {'nhidden':[5,10,20,100]}
     # exper = Experiment(specs, data, params)
     # exper.run()
+
+    # specs = [
+    #     [wp.rnn.Rnn, {'train_amount':50000}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    # # params = {'nvocabmax':[100,200,500,1000,2000,5000]}
+    # params = {'nhidden':[10,20,50,100]}
+    # exper = Experiment(specs, data, params, test_amount=1000)
+    # exper.run()
+    # exper.test_scores.plot()
+    # plt.suptitle('Model accuracy comparison')
+    # plt.xlabel('nhidden')
+    # plt.ylabel('accuracy')
+    # plt.show()
+
+    specs = [
+        [wp.rnn.Rnn, {'nhidden':10}],
+        [wp.rnn.Rnn, {'nhidden':20}],
+        [wp.rnn.Rnn, {'nhidden':50}],
+    ]
+    data = wp.data.Data('gutenbergs')
+    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    # params = {'nvocabmax':[100,200,500,1000,2000,5000]}
+    # params = {'nhidden':[10,20,50,100]}
+    exper = Experiment(specs, data, params, test_amount=1000)
+    exper.run()
+
+    #. combine all plots in one page
+    #. use pandas default scheme?
+    # import seaborn as sns
+    # pd.set_option('display.mpl_style', 'default')
+    # pd.options.display.mpl_style = 'default'
+    # plt.style.use('default')
+    # plt.style.use('fivethirtyeight')
+    plt.style.use('ggplot')
+    exper.test_scores.plot()
+    plt.suptitle('Model accuracy comparison')
+    plt.xlabel('train_amount')
+    plt.ylabel('accuracy')
+    plt.show()
 
