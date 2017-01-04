@@ -1,5 +1,5 @@
 
-# Word Prediction using Neural Networks
+# Word Prediction using Recurrent Neural Networks
 
 Brian Burns  
 Udacity Machine Learning Engineer Nanodegree  
@@ -17,8 +17,8 @@ related data sets or input data is given. -->
 
 Word prediction is the task of predicting the most likely words following the
 preceding text. This has many applications, such as suggesting the next word as
-text is entered, or as an aid in resolving ambiguity in speech and handwriting
-recognition.
+text is entered, as an aid in resolving ambiguity in speech and handwriting
+recognition, or machine translation.
 
 The generation of a likely word given prior words goes back to Claude Shannon's
 work on information theory [Shannon1948] based in part on Markov models
@@ -59,7 +59,7 @@ Unit) RNN - and compare these against some baseline n-gram models. Based on the
 results in the literature, the GRU RNN is expected to offer the best performance
 for a given amount of computation [cite!].
 
--->>>diagrams of fnn, rnn, lstm, gru - grab from good site
+-->>>diagrams of fnn, rnn, lstm, gru - grab from good site?
 
 
 ### Metrics
@@ -74,12 +74,24 @@ gives rough idea of how well the model has narrowed down the possible choices -
 eg PPL of 250 means ~ uniform choice from 250 words
 
 how does this compare to accuracy though? or is accuracy too noisy in some way? 
-eh do both
+but we're averaging the accuracy over lots of test examples
 
-how calculate perplexity?
+do both?
+but how calculate perplexity?
+it's complicated...
 
 
+For evaluation of both approaches, the accuracy score will be reported, for
+increasing training set sizes. The dataset will be split into training and test
+sets - after training, a sequence of words from the test set will be chosen at
+random, then fed to the predictor, and the most likely *k* words compared to the
+actual following word.
 
+Accuracy: # correct predictions / # total predictions
+
+A prediction will be considered *correct* if the actual word is in the list of
+*k* most likely words - this is relevant to the task of presenting the user with
+a list of most likely next words as they are entering text.
 
 
 
@@ -165,6 +177,12 @@ use to compare texts?
 properly justified based on the characteristics of the problem. -->
 
 
+A Recurrent Neural Network (RNN) will be used to predict the next word in a
+sequence. In such networks, a sequence of words is encoded as a set of word
+vectors in a high-dimensional space (e.g. 300), and the network is trained until
+the output is within a certain distance of the actual word. Then on testing, a
+sequence of words will be fed into the network and the output used to search the
+vector space for the closest *k* words.
 
 
 
@@ -199,6 +217,14 @@ then attention 2015
 
 <!-- Student clearly defines a benchmark result or threshold for comparing
 performances of solutions obtained. -->
+
+For the benchmark model a simple n-gram model will be used - this is a standard
+approach for next word prediction. A nested dictionary is created based on the
+training data, which counts occurrences of n-tuples of words. These are then
+normalized to get a probability distribution, which can be used to predict the
+most likely words following a sequence.
+
+
 
 n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)?
 
@@ -236,6 +262,23 @@ desired proportions (e.g. 80% training, 10% validation, 10% testing).
 with the given datasets or input data has been thoroughly documented.
 Complications that occurred during the coding process are discussed. -->
 
+
+The texts will first be preprocessed to remove punctuation and converted to
+lowercase.
+
+For the training step, the baseline trigram predictor will be fed all word
+triples, which will be accumulated in the nested dictionaries and converted to
+probabilities. For the RNN predictor, all word sequences or skip-grams will be
+fed to the network and trained until its output is close to the correct final
+word.
+
+For the testing step, the baseline predictor will be fed random tuples of words,
+and the top *k* predicted words will be compared against the actual word, and an
+accuracy score tallied. For the RNN predictor, the same process will be used.
+
+Training sets of increasing sizes will be used - 1k, 10k, 100k, 1 million words,
+and the results recorded for comparison. Timing and memory information will also
+be recorded for all processes for later analysis.
 
 
 
@@ -330,6 +373,17 @@ and compared/contrasted to the current solution. -->
 
 
 ## References
+
+
+[Bengio2003] Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of Machine Learning Research, Feb 2003.
+
+[Carlberger1997] Carlberger, Alice, et al. "Profet, a new generation of word prediction: An evaluation study." Proceedings, ACL Workshop on Natural Language Processing for Communication Aids, 1997.
+
+[Gutenberg2016] Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
+
+[Markov1913] Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
+
+[Shannon1948] Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
 
 
 

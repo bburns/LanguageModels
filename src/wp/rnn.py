@@ -2,8 +2,8 @@
 """
 Recurrent neural network (RNN) model
 
-The RNN is effectively a network with any number of hidden layers,
-all with the same weights.
+The RNN is effectively a deep network with any number of hidden layers,
+all with the same parameters.
 """
 
 from __future__ import print_function, division
@@ -49,7 +49,7 @@ class Rnn(model.Model):
         self.nvocabmax = nvocabmax
         self.nhidden = nhidden
         self.nepochs = nepochs
-        self.bptt_truncate = bptt_truncate
+        self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
         self.name = "rnn"
         self.filename = '%s/rnn-(amount-%.4f-nvocabmax-%d-nhidden-%d-nepochs-%d).pickle' \
@@ -107,13 +107,15 @@ class Rnn(model.Model):
                 self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
                 self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
                 # train model with stochastic gradient descent - learns U, V, W
-                losses = util.train_with_sgd(self, X_train, y_train, nepochs=self.nepochs, evaluate_loss_after=int(self.nepochs/10))
+                losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, evaluate_loss_after=int(self.nepochs/10))
             self.train_time = b.time
             self.trained = True
             # save the model
             self.save()
             #. save the losses info with the model?
             # self.train_losses = losses
+
+    # see model.py for test()
 
     def predict(self, tokens, k):
         """
@@ -172,8 +174,9 @@ class Rnn(model.Model):
             iwords.append(iword)
             if iword == iend:
                 break
-        s = [self.index_to_word[iword] for iword in iwords[1:-1]]
-        return s
+        tokens = [self.index_to_word[iword] for iword in iwords[1:-1]]
+        sentence = ' '.join(tokens)
+        return sentence
 
     def __str__(self):
         """
@@ -227,11 +230,10 @@ class Rnn(model.Model):
 
     def average_loss(self, x, y):
         """
-        Return average value of loss function per training example (?)
+        Return average value of loss function per training example.
         """
-        # Divide the total loss by the number of training examples
-        nexamples = np.sum((len(y_i) for y_i in y))
         total_loss = self.total_loss(x, y)
+        nexamples = np.sum((len(y_i) for y_i in y))
         avg_loss = total_loss / nexamples
         return avg_loss
 
@@ -342,14 +344,14 @@ if __name__=='__main__':
     # with benchmark("Time for one sgd step"):
     #     model.sgd_step(X_train[1], y_train[1], 0.005)
 
-    # Train on data
-    # print('Train model on data')
+
     from data import Data
     data = Data('animals')
     model = Rnn(data, nvocabmax=10, nhidden=4, nepochs=10)
     model.train()
     accuracy = model.test()
     print('accuracy',accuracy)
+    print()
 
     # plot losses per epoch of training
     # plt.line(model.train_losses)
@@ -360,12 +362,14 @@ if __name__=='__main__':
     # k = 2
     # sample = model.predict(tokens, k)
     # print(sample)
+    # print()
 
-    # # generate sentences
-    # print("Generate sentences")
-    # nsentences = 10
-    # for i in range(nsentences):
-        # s = model.generate()
-        # print(s)
+    # generate sentences
+    print("Generate sentences")
+    nsentences = 10
+    for i in range(nsentences):
+        s = model.generate()
+        print(s)
+    print()
 
 
