@@ -1,5 +1,5 @@
 
-# Word Prediction using Recurrent Neural Networks
+# Word Prediction using Neural Networks
 
 Brian Burns  
 Udacity Machine Learning Engineer Nanodegree  
@@ -26,10 +26,11 @@ introduced by Andrei Markov [Markov1913] - counts of encountered word tuples are
 used to estimate the conditional probability of seeing a word given the prior
 words. These so called n-grams formed the basis of commercial word prediction
 software in the 1980's, eventually supplemented with similar syntax and part of
-speech predictions [Carlberger1997]. More recently, distributed representations
-of words have been used in recurrent neural networks (RNNs), which can better
-handle data sparsity and allow more of the context to affect the prediction
-[Bengio2003].
+speech predictions [Carlberger1997].
+
+More recently, distributed representations of words have been used in recurrent
+neural networks (RNNs), which can better handle data sparsity and allow more of
+the context to affect the prediction [Bengio2003].
 
 The problem is a supervised learning task, and any text can be used to train and
 evaluate the models - we'll be using a million words from books digitized by the
@@ -51,13 +52,14 @@ and their probabilities.
 For example, for the sequence "The dog", a solution might be
 (barked 10%, slept 9%, ran 8%).
 
-We'll use some different Recurrent Neural Network (RNN) architectures to find
-the most likely next words - a standard RNN, a Long Short-Term Memory (LSTM)
-RNN, and a GRU (Gated R__ Unit) RNN - and compare these against some baseline
-n-gram models. Based on the results in the literature, the GRU RNN is expected
-to offer the best performance for a given amount of computation [cite!].
+We'll use some different neural network architectures to find the most likely
+next words - a Feedforward Neural Network (FNN), a standard Recurrent Neural
+Network (RNN), a Long Short-Term Memory (LSTM) RNN, and a GRU (Gated Recurrent
+Unit) RNN - and compare these against some baseline n-gram models. Based on the
+results in the literature, the GRU RNN is expected to offer the best performance
+for a given amount of computation [cite!].
 
--->>>diagrams of rnn, lstm, gru - grab from good site?
+-->>>diagrams of fnn, rnn, lstm, gru - grab from good site
 
 
 ### Metrics
@@ -65,8 +67,19 @@ to offer the best performance for a given amount of computation [cite!].
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-will use accuracy or mean error rate
+will use accuracy or mean error rate or perplexity
 -->>>see what is used in lit
+perplexity!
+gives rough idea of how well the model has narrowed down the possible choices -
+eg PPL of 250 means ~ uniform choice from 250 words
+
+how does this compare to accuracy though? or is accuracy too noisy in some way? 
+eh do both
+
+how calculate perplexity?
+
+
+
 
 
 

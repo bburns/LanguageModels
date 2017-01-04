@@ -205,14 +205,20 @@ class Data(object):
         Gather some statistics on the datafiles.
         """
         rows = []
-        cols = ['Text','Characters','Words','Sentences']
+        cols = ['Text','Characters','Words','Sentences', 'Chars/Word', 'Words/Sentence']
         for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
                 filetitle = util.filetitle(filepath)
                 sentences = tokenize.sent_tokenize(s)
-                tokens = set(tokenize.word_tokenize(s))
-                row = [filetitle, len(s), len(tokens), len(sentences)]
+                # tokens = set(tokenize.word_tokenize(s))
+                # nwords = len(tokens = set(tokenize.word_tokenize(s))
+                nchars = len(s)
+                nwords = len(s.split(' '))
+                nsentences = len(sentences)
+                ncharsword = nchars/nwords
+                nwordssentence = nwords/nsentences
+                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
         return df

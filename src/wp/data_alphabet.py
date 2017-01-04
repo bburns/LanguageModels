@@ -3,41 +3,23 @@
 """
 
 
-
 from __future__ import print_function, division
 
-from nltk import tokenize
 
-
-class DataString(object):
+class DataAlphabet(object):
     """
     """
-    def __init__(self, s):
-        self.sources = {}
-        self.sources['raw'] = s
+    def __init__(self):
+        self.tokens = list("abcdefghijklmnopqrstuvwxyz")
 
     def merge(self):
-        self.sources['merged'] = s
+        pass
 
     def split(self, ptrain=0.8, pvalidate=0.1, ptest=0.1):
-        proportions = (ptrain, pvalidate, ptest)
-        sentences = self.sentences('merged')
-        nsentences = len(sentences)
-        ntrain = int(nsentences * ptrain)
-        nvalidate = int(nsentences * pvalidate)
-        ntest = nsentences - ntrain - nvalidate
-        strain = ' '.join(sentences[0:ntrain])
-        svalidate = ' '.join(sentences[ntrain:ntrain+nvalidate])
-        stest = ' '.join(sentences[ntrain+nvalidate:])
-        self.sources['train'] = strain
-        self.sources['validate'] = svalidate
-        self.sources['test'] = stest
+        pass
 
     def text(self, source, nchars=None):
-        s = self.sources[source]
-        if nchars:
-            s = s[:nchars]
-        return s
+        return self.tokens
 
     def sentences(self, source, nchars=None):
         s = self.text(source, nchars)
@@ -69,10 +51,5 @@ away. The cat chased the dog. The dog chased the cat. The cat ran up a tree."""
     print(s)
     s = data.tokens('test')
     print(s)
-
-
-
-
-
 
 

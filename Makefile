@@ -35,7 +35,21 @@ help:
 report: doc/report/report.pdf
 doc/report/report.pdf: doc/report/report.md
 	cd doc/report && pandoc report.md -o report.pdf
-#  && cmd /c "start report.pdf" # nowork
+#	cd doc/report && pandoc report.md -o report.pdf && \
+
+# repo:
+# 	start "repo" cmd /c report.pdf
+
+
+# --------------------------------------------------------------------------------
+# * Notebook server
+# --------------------------------------------------------------------------------
+server:
+#	start \"foo\" /MAX dir
+#	start \"foo\" dir
+	start jupyter notebook
+
+
 
 # --------------------------------------------------------------------------------
 # * Data

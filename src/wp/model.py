@@ -56,7 +56,8 @@ class Model(object):
         # run test on the models
         nright = 0
         with benchmark("Test model " + self.name) as b: # time it
-            for i in range(ntokens-self.n): # iterate over all test tokens
+            npredictions = ntokens - self.n
+            for i in range(npredictions): # iterate over all test tokens
                 prompt = tokens[i:i+self.n-1]
                 actual = tokens[i+self.n-1]
                 token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
@@ -66,8 +67,7 @@ class Model(object):
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
                     if actual in predicted_tokens:
                         nright += 1
-            npredictions = i + 1
-            accuracy = nright / npredictions
+            accuracy = nright / npredictions if npredictions>0 else 0
         self.test_time = b.time
         self.test_score = accuracy
         return accuracy

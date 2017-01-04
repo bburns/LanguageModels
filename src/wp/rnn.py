@@ -37,19 +37,20 @@ class Rnn(model.Model):
     def __init__(self, data, train_amount=1.0, nvocabmax=1000, nhidden=100, nepochs=10, bptt_truncate=4):
         """
         Create an RNN model
+        data          - source of training and testing data
         train_amount  - percent or number of training characters to use
         nvocabmax     - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
         nepochs       - number of times to run through training data
         bptt_truncate - backpropagate through time truncation
         """
-        self.n = 2 #... for now - used in test()
         self.data = data
         self.train_amount = train_amount
         self.nvocabmax = nvocabmax
         self.nhidden = nhidden
         self.nepochs = nepochs
         self.bptt_truncate = bptt_truncate
+        self.n = 2 #... for now - used in test()
         self.name = "rnn"
         self.filename = '%s/rnn-(amount-%.4f-nvocabmax-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, train_amount, nvocabmax, nhidden, nepochs)
@@ -63,10 +64,12 @@ class Rnn(model.Model):
     def train(self, load_if_available=True):
         """
         Train the model and save it, or load from file if available.
+        Pass False to force training (or delete the model files).
         """
         if load_if_available and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
+            # time the training session
             with benchmark("Train " + self.name) as b:
                 #. just go through text 10 tokens at a time
                 seqlength = 10 #...
@@ -184,27 +187,27 @@ class Rnn(model.Model):
         """
         Do forward propagation for sequence x and return output values and hidden states.
         x should be a list of numbers, eg [2, 4, 5, 1], referring to words in the vocabulary.
-        o is the softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
-        s is the internal state of the hidden layer for each time step.
+        output is the softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
+        sstate is the internal state of the hidden layer for each time step.
         """
         nsteps = len(x)
         # During forward propagation we save all hidden states in s because need them later.
-        s = np.zeros((nsteps + 1, self.nhidden))
-        # We added one additional element for the initial hidden state, which we set to 0
-        s[-1] = np.zeros(self.nhidden)
+        # We add one additional element for the initial hidden state, which we set to 0
+        state = np.zeros((nsteps + 1, self.nhidden))
+        state[-1] = np.zeros(self.nhidden)
         # The outputs at each time step. Again, we save them for later.
-        # o = np.zeros((nsteps, self.nvocabmax))
-        o = np.zeros((nsteps, self.nvocab))
+        # output = np.zeros((nsteps, self.nvocabmax))
+        output = np.zeros((nsteps, self.nvocab))
         # For each time step...
         for t in np.arange(nsteps):
             # Note that we are indexing U by x[nstep] -
             # this is the same as multiplying U with a one-hot vector.
             # ie picks out a column from the matrix U.
-            s[t] = np.tanh(self.U[:,x[t]] + self.W.dot(s[t-1])) # note how t-1=-1 for t=0
-            o[t] = util.softmax(self.V.dot(s[t]))
+            state[t] = np.tanh(self.U[:,x[t]] + self.W.dot(state[t-1])) # note how t-1=-1 for t=0
+            output[t] = util.softmax(self.V.dot(state[t]))
         # We not only return the calculated outputs, but also the hidden states.
         # We will use them later to calculate the gradients.
-        return [o, s]
+        return [output, state]
 
     def total_loss(self, x, y):
         """
@@ -215,9 +218,9 @@ class Rnn(model.Model):
         total_loss = 0
         # For each sentence...
         for i in np.arange(len(y)):
-            o, s = self.forward_propagation(x[i])
+            output, state = self.forward_propagation(x[i])
             # We only care about our prediction of the "correct" words
-            correct_word_predictions = o[np.arange(len(y[i])), y[i]]
+            correct_word_predictions = output[np.arange(len(y[i])), y[i]]
             # Add to the loss based on how off we were
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
         return total_loss
@@ -232,118 +235,94 @@ class Rnn(model.Model):
         avg_loss = total_loss / nexamples
         return avg_loss
 
-    def backpropagation(self, x, y):
+    def bptt(self, x, y):
         """
         Backpropagation through time
         """
         nsteps = len(y)
         # perform forward propagation
-        o, s = self.forward_propagation(x)
+        output, state = self.forward_propagation(x)
         # accumulate the gradients in these variables
         dLdU = np.zeros(self.U.shape)
         dLdV = np.zeros(self.V.shape)
         dLdW = np.zeros(self.W.shape)
-        delta_o = o
-        delta_o[np.arange(nsteps), y] -= 1.0
+        delta_output = output
+        delta_output[np.arange(nsteps), y] -= 1.0
         # for each output backwards...
         for t in np.arange(nsteps)[::-1]:
-            dLdV += np.outer(delta_o[t], s[t].T)
+            dLdV += np.outer(delta_output[t], state[t].T)
             # initial delta calculation
-            delta_t = self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
+            delta_t = self.V.T.dot(delta_output[t]) * (1 - (state[t] ** 2))
             # backpropagation through time (for at most self.bptt_truncate steps)
-            for backpropagation_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
-                # print("Backpropagation step t=%d backpropagation step=%d " % (t, backpropagation_step))
-                dLdW += np.outer(delta_t, s[backpropagation_step-1])
-                dLdU[:,x[backpropagation_step]] += delta_t
+            for bptt_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
+                # print("Backpropagation step t=%d bptt step=%d " % (t, bptt_step))
+                dLdW += np.outer(delta_t, state[bptt_step-1])
+                dLdU[:, x[bptt_step]] += delta_t
                 # update delta for next step
-                delta_t = self.W.T.dot(delta_t) * (1 - s[backpropagation_step-1] ** 2)
+                delta_t = self.W.T.dot(delta_t) * (1 - state[bptt_step-1] ** 2)
         return [dLdU, dLdV, dLdW]
-
-    def gradient_check(self, x, y, h=0.001, error_threshold=0.01):
-        """
-        Calculate the gradients using backpropagation. We want to check if these are correct.
-        """
-        backpropagation_gradients = self.backpropagation(x, y)
-        # List of all parameters we want to check.
-        model_parameters = ['U', 'V', 'W']
-        # Gradient check for each parameter
-        for pidx, pname in enumerate(model_parameters):
-            # Get the actual parameter value from the mode, e.g. model.W
-            parameter = operator.attrgetter(pname)(self)
-            print("Performing gradient check for parameter %s with size %d." % \
-                  (pname, np.prod(parameter.shape)))
-            # Iterate over each element of the parameter matrix, e.g. (0,0), (0,1), ...
-            it = np.nditer(parameter, flags=['multi_index'], op_flags=['readwrite'])
-            while not it.finished:
-                ix = it.multi_index
-                # Save the original value so we can reset it later
-                original_value = parameter[ix]
-                # Estimate the gradient using (f(x+h) - f(x-h))/(2*h)
-                parameter[ix] = original_value + h
-                gradplus = self.total_loss([x],[y])
-                parameter[ix] = original_value - h
-                gradminus = self.total_loss([x],[y])
-                estimated_gradient = (gradplus - gradminus)/(2*h)
-                # Reset parameter to original value
-                parameter[ix] = original_value
-                # The gradient for this parameter calculated using backpropagation
-                backprop_gradient = backpropagation_gradients[pidx][ix]
-                # calculate The relative error: (|x - y|/(|x| + |y|))
-                relative_error = np.abs(backprop_gradient - estimated_gradient) / \
-                                 (np.abs(backprop_gradient) + np.abs(estimated_gradient))
-                # If the error is to large fail the gradient check
-                if relative_error > error_threshold:
-                    print("Gradient Check ERROR: parameter=%s ix=%s" % (pname, ix))
-                    print("+h Loss: %f" % gradplus)
-                    print("-h Loss: %f" % gradminus)
-                    print("Estimated_gradient: %f" % estimated_gradient)
-                    print("Backpropagation gradient: %f" % backprop_gradient)
-                    print("Relative Error: %f" % relative_error)
-                    return
-                it.iternext()
-            print("Gradient check for parameter %s passed." % (pname))
 
     def sgd_step(self, x, y, learning_rate):
         """
         Perform one step of stochastic gradient descent (SGD).
-        Adjusts parameters U, V, W based on backpropagation gradients.
+        Adjust parameters U, V, W based on backpropagation gradients.
         """
-        # calculate the gradients
-        dLdU, dLdV, dLdW = self.backpropagation(x, y)
-        # change parameters according to gradients and learning rate
+        # calculate the gradients of the loss L with respect to parameters
+        dLdU, dLdV, dLdW = self.bptt(x, y)
+        # adjust parameters according to gradients and learning rate
         self.U -= learning_rate * dLdU
         self.V -= learning_rate * dLdV
         self.W -= learning_rate * dLdW
+
+    # def gradient_check(self, x, y, h=0.001, error_threshold=0.01):
+    #     """
+    #     Calculate the gradients using backpropagation. We want to check if these are correct.
+    #     """
+    #     bptt_gradients = self.bptt(x, y)
+    #     # List of all parameters we want to check.
+    #     model_parameters = ['U', 'V', 'W']
+    #     # Gradient check for each parameter
+    #     for pidx, pname in enumerate(model_parameters):
+    #         # Get the actual parameter value from the mode, e.g. model.W
+    #         parameter = operator.attrgetter(pname)(self)
+    #         print("Performing gradient check for parameter %s with size %d." % \
+    #               (pname, np.prod(parameter.shape)))
+    #         # Iterate over each element of the parameter matrix, e.g. (0,0), (0,1), ...
+    #         it = np.nditer(parameter, flags=['multi_index'], op_flags=['readwrite'])
+    #         while not it.finished:
+    #             ix = it.multi_index
+    #             # Save the original value so we can reset it later
+    #             original_value = parameter[ix]
+    #             # Estimate the gradient using (f(x+h) - f(x-h))/(2*h)
+    #             parameter[ix] = original_value + h
+    #             gradplus = self.total_loss([x],[y])
+    #             parameter[ix] = original_value - h
+    #             gradminus = self.total_loss([x],[y])
+    #             estimated_gradient = (gradplus - gradminus)/(2*h)
+    #             # Reset parameter to original value
+    #             parameter[ix] = original_value
+    #             # The gradient for this parameter calculated using bptt
+    #             bptt_gradient = bptt_gradients[pidx][ix]
+    #             # calculate The relative error: (|x - y|/(|x| + |y|))
+    #             relative_error = np.abs(bptt_gradient - estimated_gradient) / \
+    #                              (np.abs(bptt_gradient) + np.abs(estimated_gradient))
+    #             # If the error is to large fail the gradient check
+    #             if relative_error > error_threshold:
+    #                 print("Gradient Check ERROR: parameter=%s ix=%s" % (pname, ix))
+    #                 print("+h Loss: %f" % gradplus)
+    #                 print("-h Loss: %f" % gradminus)
+    #                 print("Estimated_gradient: %f" % estimated_gradient)
+    #                 print("Bptt gradient: %f" % bptt_gradient)
+    #                 print("Relative Error: %f" % relative_error)
+    #                 return
+    #             it.iternext()
+    #         print("Gradient check for parameter %s passed." % (pname))
 
 
 
 if __name__=='__main__':
 
-    # #. magic
-    # unknown_token = "UNKNOWN"
-    # end_token = "END"
-
-    # s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
-    # print(s)
-
-    # nvocabmax = 10
-    # nhidden = 5
-
-    # C = nvocabmax
-    # H = nhidden
-    # nparams = 2*H*C + H**2
-    # print("nparams to learn %d." % nparams)
-    # print()
-
-    # # split text into sentences and tokens
-    # sentences = nltk.sent_tokenize(s)
-    # print(sentences)
-    # tokens = []
-    # for sentence in sentences:
-    #     sentence = sentence.lower()
-    #     words = nltk.word_tokenize(sentence)
-    #     tokens.extend(words)
-    #     tokens.append(end_token) # add an END token to every sentence
+    import matplotlib.pyplot as plt
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time
@@ -351,7 +330,7 @@ if __name__=='__main__':
     # print("Actual loss: %f" % model.average_loss(X_train[:1000], y_train[:1000]))
 
     # # Check gradient calculations
-    # # To avoid performing millions of expensive calculations we use a smaller vocabulary size for checking.
+    # # use a smaller vocabulary size for speed
     # grad_check_vocab_size = 100
     # np.random.seed(10)
     # model = RnnModel(nvocab=grad_check_vocab_size, nhidden=10, bptt_truncate=1000)
@@ -359,25 +338,22 @@ if __name__=='__main__':
 
     # print('see how long one sgd step takes')
     # np.random.seed(0)
-    # model = Rnn(nvocab=nvocab, nhidden=nhidden)
-    # t = time.time()
-    # # model.sgd_step(X_train[500], y_train[500], 0.005)
-    # model.sgd_step(X_train[1], y_train[1], 0.005)
-    # print('time for one sgd step: %f sec' % (time.time() - t))
+    # model = Rnn(nvocabmax=nvocabmax, nhidden=nhidden)
+    # with benchmark("Time for one sgd step"):
+    #     model.sgd_step(X_train[1], y_train[1], 0.005)
 
     # Train on data
     # print('Train model on data')
-
     from data import Data
     data = Data('animals')
     model = Rnn(data, nvocabmax=10, nhidden=4, nepochs=10)
-    # losses = model.train()
     model.train()
-    # import matplotlib.pyplot as plt
-    # plt.line(model.losses)
-    # plt.show()
     accuracy = model.test()
     print('accuracy',accuracy)
+
+    # plot losses per epoch of training
+    # plt.line(model.train_losses)
+    # plt.show()
 
     # # Sample predictions
     # tokens = "the dog".split()

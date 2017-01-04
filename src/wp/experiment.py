@@ -26,7 +26,7 @@ class Experiment(object):
         self.data = data
         self.params = params
         assert(len(params)==1) # only handles one param at a time
-        self.data.prepare() # make sure the data is cleaned and split up
+        # self.data.prepare() # make sure the data is cleaned and split up
 
     def run(self):
         """
