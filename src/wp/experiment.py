@@ -18,13 +18,14 @@ class Experiment(object):
     """
     Run an experiment on a set of models across a set of parameters.
     """
-    def __init__(self, model_specs, data, params):
+    def __init__(self, model_specs, data, params, test_amount=1.0):
         """
         Construct experiment
         """
         self.model_specs = model_specs
         self.data = data
         self.params = params
+        self.test_amount = test_amount
         assert(len(params)==1) # only handles one param at a time
         # self.data.prepare() # make sure the data is cleaned and split up
 
@@ -55,7 +56,11 @@ class Experiment(object):
             test_score_row = []
             cols = []
             for (model_class, model_params) in self.model_specs:
-                model = model_class(self.data, **model_params)
+                params = model_params.copy()
+                params[param_name] = param_value
+                # model = model_class(self.data, **model_params)
+                print(params)
+                model = model_class(self.data, **params)
                 print(model.name)
                 cols.append(model.name)
                 #. should timing be handled in experiment with benchmark? or return them from fns? 
@@ -64,7 +69,7 @@ class Experiment(object):
                 # with benchmark("Test model") as b:
                 #     accuracy = model.test()
                 model.train() # loads/saves model as needed
-                model.test() #. should this return score, or access it as with time? 
+                model.test(test_amount=self.test_amount) #. should this return score, or access it as with time? 
                 print('Score', model.test_score)
                 train_time_row.append(model.train_time)
                 test_time_row.append(model.test_time)
@@ -182,17 +187,20 @@ if __name__ == '__main__':
     import wp
 
     specs = [
-        [wp.ngram.Ngram, {'n':1}],
+        # [wp.ngram.Ngram, {'n':1}],
         [wp.ngram.Ngram, {'n':2}],
         [wp.ngram.Ngram, {'n':3}],
         [wp.rnn.Rnn, {}],
     ]
-    data = wp.data.Data('animals')
-    print('text', data.text())
-    params = {'train_amount':[0.5, 1.0]}
+    # data = wp.data.Data('animals')
+    data = wp.data.Data('gutenbergs')
+    # print('text', data.text())
+    # params = {'train_amount':[0.5, 1.0]}
+    params = {'train_amount':[1000,2000,5000,10000]}
 
-    exper = Experiment(specs, data, params)
+    exper = Experiment(specs, data, params, test_amount=1000)
     exper.run()
+    # exper.run(test_amount=1000)
     # print(exper.test_scores)
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
@@ -202,5 +210,9 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     plt.plot(exper.test_scores)
+    plt.suptitle('Model accuracy comparison')
+    plt.xlabel('train_amount')
+    plt.ylabel('accuracy')
+    plt.legend()
     plt.show()
 

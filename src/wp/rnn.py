@@ -72,12 +72,13 @@ class Rnn(model.Model):
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
-            print("Training model " + self.name + "...")
+            print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             with benchmark("Trained model " + self.name) as b:
                 #. just go through text 10 tokens at a time
                 seqlength = 10 #...
                 unknown_token = "UNKNOWN" #.
+                print("Getting training tokens")
                 tokens = self.data.tokens('train', self.train_amount)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
@@ -111,6 +112,8 @@ class Rnn(model.Model):
                 self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
                 self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
                 # train model with stochastic gradient descent - learns U, V, W
+                # see model.py for fn
+                print("Starting gradient descent")
                 losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, evaluate_loss_after=int(self.nepochs/10))
             self.train_time = b.time
             self.trained = True
