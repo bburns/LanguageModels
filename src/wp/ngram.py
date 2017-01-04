@@ -28,14 +28,18 @@ class Ngram(model.Model):
     The sparse array is implemented as a dict of dicts.
     """
 
-    def __init__(self, data, n, train_amount=1.0):
+    def __init__(self, data, n, train_amount=1.0, name_includes=[]):
         """
         Create an n-gram model.
+        data          - source of training and testing data
+        train_amount  - percent or number of training characters to use
+        name_includes - list of properties to include in model name
         """
         self.data = data # lightweight interface for data files
         self.n = n  # the n in n-gram
         self.train_amount = train_amount
-        self.name = "ngram (n=%d)" % n
+        # self.name = "ngram (n=%d)" % n
+        self.name = "ngram-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'n-3'
         self.filename = "%s/ngram-(n-%d-train_amount-%.4f).pickle" % (data.model_folder, n, train_amount)
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False

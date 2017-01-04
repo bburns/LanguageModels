@@ -158,16 +158,17 @@ if __name__ == '__main__':
     import sys; sys.path.append('../')
     import wp
 
-    # specs = [
-    #     [wp.ngram.Ngram, {'n':1}],
-    #     [wp.ngram.Ngram, {'n':2}],
-    #     [wp.ngram.Ngram, {'n':3}],
-    #     [wp.rnn.Rnn, {}],
-    # ]
-    # data = wp.data.Data('gutenbergs')
-    # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    # exper = Experiment(specs, data, params, test_amount=1000)
-    # exper.run()
+    name = "ngrams vs rnn"
+    specs = [
+        [wp.ngram.Ngram, {'n':1}],
+        [wp.ngram.Ngram, {'n':2}],
+        [wp.ngram.Ngram, {'n':3}],
+        [wp.rnn.Rnn, {}],
+    ]
+    data = wp.data.Data('gutenbergs')
+    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    exper = Experiment(name, specs, data, params, test_amount=1000)
+    exper.run()
 
     # specs = [[rnn.Rnn, {'nvocab':100}] ]
     # params = {'nhidden':[5,10,20,100]}
@@ -185,7 +186,7 @@ if __name__ == '__main__':
     # exper.run()
 
 
-    # 2017-01-04 1031
+    # # 2017-01-04 1031
     # name = 'RNN hidden layer sizes'
     # specs = [
     #     [wp.rnn.Rnn, {'nhidden':10}],
@@ -198,16 +199,17 @@ if __name__ == '__main__':
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
 
-    # 2017-01-04 1035
-    name = 'RNN vocab sizes'
-    specs = [
-        [wp.rnn.Rnn, {'nhidden':10, 'train_amount':40000}],
-        [wp.rnn.Rnn, {'nhidden':20, 'train_amount':40000}],
-        [wp.rnn.Rnn, {'nhidden':50, 'train_amount':40000}],
-        [wp.rnn.Rnn, {'nhidden':100, 'train_amount':40000}],
-    ]
-    data = wp.data.Data('gutenbergs')
-    params = {'nvocab':[100,200,500,1000,2000]}
-    exper = Experiment(name, specs, data, params, test_amount=1000)
-    exper.run()
+    # # 2017-01-04 1035
+    # # surprisingly, accuracy went down as vocab went up, even with 40k training chars
+    # name = 'RNN vocab sizes'
+    # specs = [
+    #     [wp.rnn.Rnn, {'nhidden':10, 'train_amount':40000}],
+    #     [wp.rnn.Rnn, {'nhidden':20, 'train_amount':40000}],
+    #     [wp.rnn.Rnn, {'nhidden':50, 'train_amount':40000}],
+    #     [wp.rnn.Rnn, {'nhidden':100, 'train_amount':40000}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'nvocab':[100,200,500,1000,2000]}
+    # exper = Experiment(name, specs, data, params, test_amount=1000)
+    # exper.run()
 
