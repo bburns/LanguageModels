@@ -52,7 +52,7 @@ class Rnn(model.Model):
         self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
         self.name = "rnn"
-        self.filename = '%s/rnn-(amount-%.4f-nvocabmax-%d-nhidden-%d-nepochs-%d).pickle' \
+        self.filename = '%s/rnn-(train_amount-%.4f-nvocabmax-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, train_amount, nvocabmax, nhidden, nepochs)
         self.trained = False
         self.load_time = None

@@ -36,7 +36,7 @@ class Ngram(model.Model):
         self.n = n  # the n in n-gram
         self.train_amount = train_amount
         self.name = "ngram (n=%d)" % n
-        self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
+        self.filename = "%s/ngram-(n-%d-train_amount-%.4f).pickle" % (data.model_folder, n, train_amount)
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
         self.load_time = None
