@@ -7,6 +7,8 @@ from __future__ import print_function, division
 import os
 import os.path
 import cPickle as pickle # faster version of pickle
+from datetime import datetime
+import sys
 
 from benchmark import benchmark
 import util
@@ -36,7 +38,8 @@ class Model(object):
         Load model from the default filename.
         """
         if os.path.isfile(self.filename):
-            with benchmark("Load model " + self.name) as b:
+            print("Loading model " + self.name + "...")
+            with benchmark("Loaded model " + self.name) as b:
                 with open(self.filename, 'rb') as f:
                     d = pickle.load(f)
                     self.__dict__.update(d)
@@ -57,14 +60,15 @@ class Model(object):
         ntokens = len(tokens)
         # run test on the models
         nright = 0
-        with benchmark("Test model " + self.name) as b: # time it
+        print("Testing model " + self.name + "...")
+        with benchmark("Tested model " + self.name) as b: # time it
             npredictions = ntokens - self.n
             for i in range(npredictions): # iterate over all test tokens
                 prompt = tokens[i:i+self.n-1]
                 actual = tokens[i+self.n-1]
                 token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
                 #. add selection to samples
-                print('prompt',prompt,'actual',actual,'token_probs',token_probs)
+                # print('prompt',prompt,'actual',actual,'token_probs',token_probs)
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
                     if actual in predicted_tokens:

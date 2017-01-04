@@ -61,16 +61,20 @@ class Rnn(model.Model):
         self.test_time = None
         print("Create model " + self.name)
 
-    def train(self, load_if_available=True):
+    # def train(self, load_if_available=True):
+    def train(self, force_training=False):
         """
         Train the model and save it, or load from file if available.
-        Pass False to force training (or delete the model files).
+        force_training - pass True to retrain model (ie don't load from file)
+        # Pass False to force training (or just delete the model files).
         """
-        if load_if_available and os.path.isfile(self.filename):
+        # if load_if_available and os.path.isfile(self.filename):
+        if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
+            print("Training model " + self.name + "...")
             # time the training session
-            with benchmark("Train " + self.name) as b:
+            with benchmark("Trained model " + self.name) as b:
                 #. just go through text 10 tokens at a time
                 seqlength = 10 #...
                 unknown_token = "UNKNOWN" #.
@@ -346,10 +350,15 @@ if __name__=='__main__':
 
 
     from data import Data
-    data = Data('animals')
-    model = Rnn(data, nvocabmax=10, nhidden=4, nepochs=10)
-    model.train()
-    accuracy = model.test()
+
+    # data = Data('animals')
+    # model = Rnn(data, nvocabmax=10, nhidden=4, nepochs=1000)
+    data = Data('gutenbergs')
+    model = Rnn(data, nvocabmax=1000, nhidden=10, nepochs=10, train_amount=10000)
+    # model.train()
+    model.train(True)
+    # accuracy = model.test()
+    accuracy = model.test(test_amount=10000)
     print('accuracy',accuracy)
     print()
 

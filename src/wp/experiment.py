@@ -47,8 +47,9 @@ class Experiment(object):
         for param_value in param_values:
             print('Parameter:', param_name, param_value)
             print()
-            row_name = param_name + '=' + str(param_value)
-            rows.append(row_name)
+            # row_name = param_name + '=' + str(param_value)
+            # rows.append(row_name)
+            rows.append(param_value)
             train_time_row = []
             test_time_row = []
             test_score_row = []
@@ -176,18 +177,18 @@ class Experiment(object):
 
 if __name__ == '__main__':
 
-    from data import Data
-    import ngram
-    import rnn
+    # need to import the same way we load/save models in the notebook for pickle to work
+    import sys; sys.path.append('../')
+    import wp
 
     specs = [
-        [ngram.Ngram, {'n':1}],
-        [ngram.Ngram, {'n':2}],
-        [ngram.Ngram, {'n':3}],
-        [rnn.Rnn, {}],
+        [wp.ngram.Ngram, {'n':1}],
+        [wp.ngram.Ngram, {'n':2}],
+        [wp.ngram.Ngram, {'n':3}],
+        [wp.rnn.Rnn, {}],
     ]
-    data = Data('animals')
-    print('text',data.text())
+    data = wp.data.Data('animals')
+    print('text', data.text())
     params = {'train_amount':[0.5, 1.0]}
 
     exper = Experiment(specs, data, params)
@@ -199,4 +200,7 @@ if __name__ == '__main__':
     # exper = Experiment(specs, data, params)
     # exper.run()
 
+    import matplotlib.pyplot as plt
+    plt.plot(exper.test_scores)
+    plt.show()
 
