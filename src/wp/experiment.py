@@ -31,12 +31,14 @@ class Experiment(object):
         """
         self.name = name
         self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.logfolder = '../../logs'
         self.caption = 'Experiment %s: %s' % (self.time, self.name)
+        self.plotfile_prefix = self.logfolder + '/' + self.caption.replace(':','')
         self.model_specs = model_specs
         self.data = data
         self.params = params
         self.test_amount = test_amount
-        self.logfile = "../../logs/experiments.org"
+        self.logfile = self.logfolder + "/experiments.org"
         assert(len(params)==1) # only handles one param at a time
         # self.data.prepare() # make sure the data is cleaned and split up
 
@@ -126,21 +128,27 @@ class Experiment(object):
         plt.title('Accuracy vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('accuracy')
-        plt.show()
+        # plt.show()
+        plt.savefig(self.plotfile_prefix + ' accuracy.png')
+        plt.close()
 
         self.train_times.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
         plt.title('Train time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('train_time (sec)')
-        plt.show()
+        # plt.show()
+        plt.savefig(self.plotfile_prefix + ' train_time.png')
+        plt.close()
 
         self.test_times.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
         plt.title('Test time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('test_time (sec)')
-        plt.show()
+        # plt.show()
+        plt.savefig(self.plotfile_prefix + ' test_time.png')
+        plt.close()
 
 
 
@@ -176,16 +184,30 @@ if __name__ == '__main__':
     # exper = Experiment(specs, data, params, test_amount=1000)
     # exper.run()
 
-    name = 'RNN hidden layer sizes'
+
+    # 2017-01-04 1031
+    # name = 'RNN hidden layer sizes'
+    # specs = [
+    #     [wp.rnn.Rnn, {'nhidden':10}],
+    #     [wp.rnn.Rnn, {'nhidden':20}],
+    #     [wp.rnn.Rnn, {'nhidden':50}],
+    #     [wp.rnn.Rnn, {'nhidden':100}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    # exper = Experiment(name, specs, data, params, test_amount=1000)
+    # exper.run()
+
+    # 2017-01-04 1035
+    name = 'RNN vocab sizes'
     specs = [
-        [wp.rnn.Rnn, {'nhidden':10}],
-        [wp.rnn.Rnn, {'nhidden':20}],
-        [wp.rnn.Rnn, {'nhidden':50}],
+        [wp.rnn.Rnn, {'nhidden':10, 'train_amount':40000}],
+        [wp.rnn.Rnn, {'nhidden':20, 'train_amount':40000}],
+        [wp.rnn.Rnn, {'nhidden':50, 'train_amount':40000}],
+        [wp.rnn.Rnn, {'nhidden':100, 'train_amount':40000}],
     ]
     data = wp.data.Data('gutenbergs')
-    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    # params = {'nvocab':[100,200,500,1000,2000,5000]}
-    # params = {'nhidden':[10,20,50,100]}
+    params = {'nvocab':[100,200,500,1000,2000]}
     exper = Experiment(name, specs, data, params, test_amount=1000)
     exper.run()
 
