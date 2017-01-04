@@ -23,13 +23,12 @@ class Model(object):
         """
         Save the model to the default filename.
         """
-        #. time this? but can't save it with the object
         folder = os.path.dirname(self.filename)
         util.mkdir(folder)
         with benchmark("Save model " + self.name) as b:
             with open(self.filename, 'wb') as f:
-                # pickle.dump(self, f)
                 pickle.dump(self.__dict__, f, 2)
+        #. time this? but can't save it with the object
         # self.save_time = b.time
         # return self.save_time
 

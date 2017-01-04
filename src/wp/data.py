@@ -39,8 +39,9 @@ class Data(object):
         """
         escape = '../../' # escape from the Experiment subfolder, where this is called from
         dataset_folder = escape + 'data/' + dataset + '/'
+        model_folder = escape + 'models/' + dataset + '/'
         self.dataset = dataset
-        self.model_folder   = dataset_folder + 'models/'
+        self.model_folder   = model_folder
         self.raw_folder     = dataset_folder + '1-raw/'
         self.cleaned_folder = dataset_folder + '2-cleaned/'
         self.merged_folder  = dataset_folder + '3-merged/'
@@ -394,8 +395,8 @@ if __name__ == '__main__':
 
     print(data)
 
-
-    # histogram
+    # histogram of sentence lengths
+    # currently plotted in the notebook
     data = Data('gutenbergs')
     df = data.histogram(100, 100)
     print(df)
