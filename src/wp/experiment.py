@@ -112,33 +112,19 @@ if __name__ == '__main__':
         [wp.ngram.Ngram, {'n':3}],
         [wp.rnn.Rnn, {}],
     ]
-    # data = wp.data.Data('animals')
-    # print('text', data.text())
-    # params = {'train_amount':[0.5, 1.0]}
     data = wp.data.Data('gutenbergs')
-    # params = {'train_amount':[1000,2000,5000,10000]}
     params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
 
     exper = Experiment(specs, data, params, test_amount=1000)
     exper.run()
-    # exper.run(test_amount=1000)
-    # print(exper.test_scores)
-
-    # specs = [[rnn.Rnn, {'nvocab':100}] ]
-    # params = {'nhidden':[5,10,20,100]}
-    # exper = Experiment(specs, data, params)
-    # exper.run()
-
     exper.test_scores.plot()
     plt.suptitle('Model accuracy comparison')
     plt.xlabel('train_amount')
     plt.ylabel('accuracy')
     plt.show()
 
-    # plt.plot(exper.test_scores)
-    # plt.suptitle('Model accuracy comparison')
-    # plt.xlabel('train_amount')
-    # plt.ylabel('accuracy')
-    # plt.legend()
-    # plt.show()
+    # specs = [[rnn.Rnn, {'nvocab':100}] ]
+    # params = {'nhidden':[5,10,20,100]}
+    # exper = Experiment(specs, data, params)
+    # exper.run()
 
