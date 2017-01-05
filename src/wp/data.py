@@ -17,6 +17,7 @@ import os.path
 import random
 import glob
 import re
+# import math
 from pprint import pprint
 from collections import defaultdict
 
@@ -24,6 +25,7 @@ import numpy as np
 import pandas as pd
 import nltk
 from nltk import tokenize
+from textstat.textstat import textstat
 
 import util
 from benchmark import benchmark
@@ -207,10 +209,11 @@ class Data(object):
         Gather some statistics on the datafiles.
         """
         rows = []
-        cols = ['Text','Characters','Words','Sentences', 'Chars/Word', 'Words/Sentence', 'Unique Words']
+        cols = ['Text','Chars','Words','Sentences', 'Chars/Word', 'Words/Sentence', 'Unique Words', 'Grade Level']
         for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
+                s = s.lower()
                 words = s.split(' ')
                 filetitle = util.filetitle(filepath)
                 sentences = tokenize.sent_tokenize(s)
@@ -222,7 +225,9 @@ class Data(object):
                 ncharsword = nchars/nwords
                 nwordssentence = nwords/nsentences
                 nuniquewords = len(set(words))
-                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords]
+                # grade_level = self.readability(s)
+                grade_level = round(textstat.coleman_liau_index(s),1)
+                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords, grade_level]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
         return df
@@ -332,6 +337,17 @@ class Data(object):
         # self.source_files
         return s
 
+    def readability(self):
+        """
+        Return grade school readability level of the text, using consensus of several tests.
+        """
+        s = self.text('merged')
+        # grade_level = textstat.text_standard(s)
+        # grade_level = textstat.smog_index(s)
+        # grade_level = textstat.gunning_fog(s)
+        grade_level = textstat.coleman_liau_index(s)
+        grade_level = round(grade_level,1)
+        return grade_level
 
     # def indexed_tokens(self, source, vocab, nchars=None):
     #     """
@@ -386,9 +402,14 @@ class Data(object):
 
 if __name__ == '__main__':
 
-    # data = Data('animals')
+    from tabulate import tabulate
+
+    data = Data('animals')
     # data.prepare()
     # print(data.analyze())
+    df = data.analyze()
+    # print(util.table(data.analyze()))
+    # print(data.readability()) # grade level
     # print(data.text())
     # print(data.sentences())
     # print(data.tokens())
@@ -399,7 +420,11 @@ if __name__ == '__main__':
     # print()
 
     data = Data('gutenbergs')
-    print(data.analyze())
+    data.prepare()
+    # print(data.analyze())
+    print(util.table(data.analyze()))
+    # print(tabulate(data.analyze()))
+    # print(data.readability())
     # tokens = data.tokens() # 18 secs
     # print(len(tokens))
 

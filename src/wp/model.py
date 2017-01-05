@@ -99,21 +99,21 @@ class Model(object):
 
     def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
         """
-        Train model with Stochastic Gradient Descent (SGD)
+        Train model with Stochastic Gradient Descent (SGD) and return losses table.
         X_train             - the training data set
         y_train             - the training data labels
         learning_rate       - initial learning rate for SGD
         nepochs             - number of times to iterate through the complete dataset
         evaluate_loss_after - evaluate the loss after this many epochs
-        We keep track of the losses so we can plot them later
         """
         losses = []
         nexamples_seen = 0
+        loss_columns = ['Epoch','Examples Seen','Learning Rate','Loss']
         for nepoch in range(nepochs):
             # optionally evaluate the loss
             if (nepoch % evaluate_loss_after == 0):
                 loss = self.average_loss(X_train, y_train)
-                losses.append((nexamples_seen, loss))
+                losses.append([nepoch, nexamples_seen, learning_rate, loss])
                 time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print("%s: Loss after nexamples_seen=%d epoch=%d: %f" % (time, nexamples_seen, nepoch, loss))
                 # Adjust the learning rate if loss increases
@@ -125,5 +125,6 @@ class Model(object):
             for i in range(len(y_train)):
                 self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
                 nexamples_seen += 1
-        return losses
+        df_losses = pd.DataFrame(losses, columns=loss_columns)
+        return df_losses
 

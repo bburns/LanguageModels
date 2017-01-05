@@ -107,24 +107,24 @@ be addressed have been identified. -->
 The training and testing data are obtained from ten books from Project
 Gutenberg, totalling nearly a million words -
 
-    | Author                 | Year | Title                         | Gutenberg # |  Words | Chars/Word | Words/Sentence | Unique Words |
-    |------------------------+------+-------------------------------+-------------+--------+------------+----------------+--------------|
-    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |       5.70 |           15.8 |        84945 |
-    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |       5.55 |           16.3 |         6532 |
-    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |       5.31 |           18.1 |        14306 |
-    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |       5.35 |           16.7 |         9688 |
-    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |       5.51 |           15.5 |        10133 |
-    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |       5.50 |           20.6 |        11219 |
-    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |       5.52 |           27.8 |        14726 |
-    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |       5.51 |           18.1 |        13603 |
-    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |       5.38 |           10.8 |        11288 |
-    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |       5.30 |           22.2 |         7987 |
-    |------------------------+------+-------------------------------+-------------+--------+------------+----------------+--------------|
-    | Total                  |      |                               |             | 989451 |            |                |              |
+    | Text                                                 |   Chars |   Words |   Sentences |   Chars/Word |   Words/Sentence |   Unique Words |   Grade Level |
+    |------------------------------------------------------+---------+---------+-------------+--------------+------------------+----------------+---------------|
+    | 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 |       35431 |      6.22483 |          14.5704 |          82177 |          10.3 |
+    | 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 |        1631 |      5.55064 |          16.4059 |           6346 |           8.9 |
+    | 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 |        3719 |      5.74334 |          16.8933 |          13894 |           8.2 |
+    | 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 |        2517 |      5.85164 |          15.3607 |           9417 |           8.2 |
+    | 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 |        2400 |      6.00511 |          14.5137 |           9871 |           9.1 |
+    | 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 |        2161 |      5.88708 |          19.5919 |          10882 |           9.3 |
+    | 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 |        2359 |      6.00905 |          25.6583 |          14406 |           9.7 |
+    | 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 |        3215 |      5.94457 |          16.846  |          13102 |           9.3 |
+    | 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 |        4670 |      5.83337 |          10.0529 |          10917 |           7.8 |
+    | 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 |        1378 |      5.66286 |          21.2707 |           7767 |           8.1 |
 
-Note: the unique word count includes different capitalizations also.
+The grade level is calculated using the Coleman-Liau Index [cite].
 
-The texts can be found at, for example http://www.gutenberg.org/etext/28885.
+The Gutenberg text number is listed in parentheses, and the texts can be found
+online - e.g. Alice in Wonderland can be found at
+http://www.gutenberg.org/etext/28885.
 
 Some sample text:
 
@@ -167,7 +167,7 @@ ie how predictable it is?
 cf pure randomness (log2 26 ~ (log 26 2) ~ 4.7bits?)
 how calculate? ngrams? 
 
-->> information content of english - shannon paper
+-> information content of english - shannon paper
 use to compare texts?
 
 
@@ -178,16 +178,15 @@ use to compare texts?
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
-
-A Recurrent Neural Network (RNN) will be used to predict the next word in a
-sequence. In such networks, a sequence of words is encoded as a set of word
-vectors in a high-dimensional space (e.g. 300), and the network is trained until
-the output is within a certain distance of the actual word. Then on testing, a
-sequence of words will be fed into the network and the output used to search the
-vector space for the closest *k* words.
+Until recently, n-grams were state of the art in word prediction - Recurrent
+Neural Networks
 
 
-
+<!-- In such networks, a sequence of words is encoded as a set of word -->
+<!-- vectors in a high-dimensional space (e.g. 300), and the network is trained until -->
+<!-- the output is within a certain distance of the actual word. Then on testing, a -->
+<!-- sequence of words will be fed into the network and the output used to search the -->
+<!-- vector space for the closest *k* words. -->
 
 
 
@@ -378,8 +377,10 @@ and compared/contrasted to the current solution. -->
 
 ## References
 
-
 [Bengio2003] Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of Machine Learning Research, Feb 2003.
+
+<!-- If you publish work that uses NLTK, please cite the NLTK book as follows: -->
+[Bird2009] Bird, Steven, Edward Loper and Ewan Klein (2009), Natural Language Processing with Python. O'Reilly Media Inc. http://nltk.org/book
 
 [Carlberger1997] Carlberger, Alice, et al. "Profet, a new generation of word prediction: An evaluation study." Proceedings, ACL Workshop on Natural Language Processing for Communication Aids, 1997.
 
@@ -388,8 +389,6 @@ and compared/contrasted to the current solution. -->
 [Markov1913] Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
 
 [Shannon1948] Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
-
-
 
 
 --------------------------------------------------------------------------------

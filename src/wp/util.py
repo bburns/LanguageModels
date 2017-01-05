@@ -12,10 +12,16 @@ import os
 import re
 
 import numpy as np
+from tabulate import tabulate
 
 
 
-
+def table(df):
+    """
+    Convert a pandas dataframe into a more readable org table string.
+    """
+    s = tabulate(df, headers=df.columns, showindex=False, tablefmt="orgtbl")
+    return s
 
 def remove_text(regexp, s, to_char=0):
     """

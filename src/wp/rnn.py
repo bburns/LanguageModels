@@ -52,6 +52,7 @@ class Rnn(model.Model):
         self.nepochs = nepochs
         self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
         self.n = 2 #... for now - used in test()
+        self.seqlength = 10 #...
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
@@ -60,13 +61,14 @@ class Rnn(model.Model):
         self.save_time = None
         self.train_time = None
         self.test_time = None
+        self.unknown_token = "UNKNOWN" #. ok?
+        self.end_token = "END" #.
         print("Create model " + self.name)
 
     def train(self, force_training=False):
         """
         Train the model and save it, or load from file if available.
-        force_training - pass True to retrain model (ie don't load from file)
-        # Pass False to force training (or just delete the model files).
+        force_training - set True to retrain model (ie don't load from file)
         """
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
@@ -74,20 +76,21 @@ class Rnn(model.Model):
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             with benchmark("Trained model " + self.name) as b:
-                #. just go through text 10 tokens at a time
-                seqlength = 10 #...
-                unknown_token = "UNKNOWN" #.
+                #. just go through text some number of tokens at a time
+                # unknown_token = "UNKNOWN" #.
                 print("Getting training tokens")
                 tokens = self.data.tokens('train', self.train_amount)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
                 wordcounts = word_freqs.most_common(self.nvocab-1)
                 self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-                self.index_to_word.append(unknown_token)
+                # self.index_to_word.append(unknown_token)
+                self.index_to_word.append(self.unknown_token)
                 self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
                 self.nvocab = len(self.index_to_word)
                 # replace words not in vocabulary with UNKNOWN
-                tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+                # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+                tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
                 # replace words with numbers
                 itokens = [self.word_to_index[token] for token in tokens]
                 # chop x and y into sequences of 10 tokens. #. or rnd # tokens?
@@ -95,7 +98,7 @@ class Rnn(model.Model):
                 seq = []
                 for i, itoken in enumerate(itokens):
                     seq.append(itoken)
-                    if len(seq) >= seqlength:
+                    if len(seq) >= self.seqlength:
                         seqs.append(seq)
                         seq = []
                 seqs.append(seq)
@@ -111,13 +114,13 @@ class Rnn(model.Model):
                 # train model with stochastic gradient descent - learns U, V, W
                 # see model.py for fn
                 print("Starting gradient descent")
-                losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, evaluate_loss_after=int(self.nepochs/10))
+                losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, \
+                                             evaluate_loss_after=int(self.nepochs/10))
             self.train_time = b.time
             self.trained = True
+            self.train_losses = losses
             # save the model
             self.save()
-            #. save the losses info with the model?
-            # self.train_losses = losses
 
     # see model.py for test()
 
@@ -153,17 +156,15 @@ class Rnn(model.Model):
         try:
             i = self.word_to_index[word]
         except:
-            i = self.word_to_index["UNKNOWN"]
+            i = self.word_to_index[self.unknown_token]
         return i
 
     def generate(self):
         """
         Generate a sentence of random text.
         """
-        unknown_token = "UNKNOWN" #.
-        end_token = "END" #.
-        iunknown = self.word_to_index[unknown_token]
-        iend = self.word_to_index[end_token]
+        iunknown = self.word_to_index[self.unknown_token]
+        iend = self.word_to_index[self.end_token]
         # start with the END token
         iwords = [iend]
         # repeat until we get another END token
@@ -192,8 +193,8 @@ class Rnn(model.Model):
 
     def forward_propagation(self, x_i):
         """
-        Do forward propagation for sequence x and return output values and hidden states.
-        x - list of numbers, eg [2,4,5,1], referring to words in the vocabulary.
+        Do forward propagation for sequence x_i and return output values and hidden states.
+        x_i - list of numbers, eg [2,4,5,1], referring to words in the vocabulary.
         """
         nsteps = len(x_i)
         # save all hidden states because need them later
@@ -332,7 +333,8 @@ class Rnn(model.Model):
 if __name__=='__main__':
 
     import matplotlib.pyplot as plt
-    from tabulate import tabulate
+    import pandas as pd
+    # from tabulate import tabulate
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time
@@ -353,42 +355,31 @@ if __name__=='__main__':
     #     model.sgd_step(X_train[1], y_train[1], 0.005)
 
 
-
-
     from data import Data
-
-    # data = Data('animals')
-    # model = Rnn(data, nvocab=10, nhidden=4, nepochs=1000)
-    data = Data('gutenbergs')
-
-    # m = Rnn(data,train_amount=1000)
-    # print(m.filename)
-    # stop
+    data = Data('animals')
+    # data = Data('gutenbergs')
 
     model = Rnn(data, nvocab=1000, nhidden=10, nepochs=10, train_amount=10000)
-    # model.train()
     model.train(True)
     model.test(test_amount=10000)
     print('accuracy',model.test_score)
-    # print(model.test_samples)
     df = model.test_samples
-    print(tabulate(df, showindex=False, headers=df.columns))
+    print(util.table(df))
     print()
 
-    # plot losses per epoch of training
-    # plt.line(model.train_losses)
-    # plt.show()
-
-    # # Sample predictions
-    # tokens = "the dog".split()
-    # k = 2
-    # sample = model.predict(tokens, k)
-    # print(sample)
-    # print()
+    # plot losses by epoch of training
+    df = model.train_losses
+    df.plot(x='Epoch', y='Loss')
+    plt.style.use('ggplot') # nicer style
+    plt.grid()
+    plt.title('Loss by Training Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.show()
 
     # generate sentences
     print("Generate sentences")
-    nsentences = 10
+    nsentences = 5
     for i in range(nsentences):
         s = model.generate()
         print(s)
