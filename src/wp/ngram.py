@@ -38,9 +38,10 @@ class Ngram(model.Model):
         self.data = data # lightweight interface for data files
         self.n = n  # the n in n-gram
         self.train_amount = train_amount
-        # self.name = "ngram (n=%d)" % n
-        self.name = "ngram-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'n-3'
-        self.filename = "%s/ngram-(n-%d-train_amount-%.4f).pickle" % (data.model_folder, n, train_amount)
+        self.name = "ngram (n=%d)" % n
+        if name_includes:
+            self.name += '-' + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'train_amount-1000'
+        self.filename = "%s/ngram-(n-%d-train_amount-%s).pickle" % (data.model_folder, n, str(train_amount))
         self._d = {} # dictionary of dictionary of ... of counts
         self.trained = False
         self.load_time = None
@@ -217,30 +218,23 @@ if __name__ == '__main__':
 
     # unknown_token = "UNKNOWN"
     # sentence_end_token = "END"
-
     # s = "The dog barked. The cat meowed. The dog ran away. The cat slept."
     # print(s)
-
     # # nvocab = 10
-
     # # split text into sentences
     # sentences = nltk.sent_tokenize(s)
     # print(sentences)
-
     # # append END tokens
     # sentences = ["%s %s" % (sent, sentence_end_token) for sent in sentences]
     # print(sentences)
-
     # # Tokenize the sentences into words
     # tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
     # print(tokenized_sentences)
-
     # # Replace all words not in our vocabulary with the unknown token
     # print('replace unknown words with UNKNOWN token')
     # for i, sent in enumerate(tokenized_sentences):
     #     tokenized_sentences[i] = [w if w in word_to_index else unknown_token for w in sent]
     # print(tokenized_sentences)
-
     # # Create the training data
     # print('Create training data:')
     # X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] for sent in tokenized_sentences])
@@ -250,50 +244,29 @@ if __name__ == '__main__':
     # print('X_train:',X_train) # eg tokenized: The dog ran down the hill . END
     # print('y_train:',y_train) # eg tokenized: dog ran down the hill . END
 
-
     # --------------------------------------
 
     from data import Data
-    data = Data('animals')
-    print('text', data.text())
+    # data = Data('animals')
+    data = Data('gutenbergs')
+    # print('train text:', data.text('train',1000).replace('\n\n',' '))
+    # print('test text:', data.text('test',1000))
 
-    model = Ngram(data, n=1)
-    model.train()
-    accuracy = model.test()
-    print('accuracy', accuracy)
-    # token = model.generate_token(test_tokens)
-    # print(test_tokens)
-    # print('prediction:',token)
-    # print(model._d)
-    s = model.generate()
-    print('generate', s)
-    print(model)
-    print()
+    from tabulate import tabulate
 
-    model = Ngram(data, n=2)
-    model.train()
-    accuracy = model.test()
-    print('accuracy', accuracy)
-    # token = model.generate_token(test_tokens)
-    # print(test_tokens)
-    # print('prediction:',token)
-    # print(model._d)
-    s = model.generate()
-    print('generate', s)
-    print()
+    for n in (1,2,3):
+        # model = Ngram(data, n=n)
+        model = Ngram(data, n=n, train_amount=2000)
+        model.train()
+        model.test(test_amount=1000)
+        print('accuracy', model.test_score)
+        df = model.test_samples
+        print(tabulate(df, showindex=False, headers=df.columns))
+        # print(df)
+        # print(model._d)
+        s = model.generate()
+        print('generate', s)
+        print()
 
-    print(model)
-    print()
-
-    # print('predictions')
-    # predictions = model.predict(X_train[1], 3)
-    # # print(predictions.shape)
-    # print(predictions)
-    # # s = [index_to_word[i] for i in predictions]
-    # # print(s)
-    # print('actual')
-    # print(y_train[1])
-    # s = [index_to_word[i] for i in y_train[1]]
-    # print(s)
 
 

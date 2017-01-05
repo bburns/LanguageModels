@@ -68,24 +68,17 @@ class Experiment(object):
             test_time_row = []
             test_score_row = []
             cols = []
+            #. get data using this param value here?
             for (model_class, model_params) in self.model_specs:
                 # get a dict with all parameter names and values
                 name_includes = model_params.keys() # eg ['train_amount']
                 params = model_params.copy()
                 params[param_name] = param_value
                 print(params)
-                # model = model_class(self.data, **model_params)
-                # model = model_class(self.data, **params)
                 model = model_class(self.data, name_includes=name_includes, **params)
-                # print(model.name)
                 cols.append(model.name)
-                #. should timing be handled in experiment with benchmark? or return them from fns?
-                # with benchmark("Train model") as b:
-                #     model.train()
-                # with benchmark("Test model") as b:
-                #     accuracy = model.test()
                 model.train() # loads/saves model as needed
-                model.test(test_amount=self.test_amount) #. should this return score, or access it as with time?
+                model.test(test_amount=self.test_amount) #. should this return score, or access it as below?
                 print('Score', model.test_score)
                 train_time_row.append(model.train_time)
                 test_time_row.append(model.test_time)
@@ -158,34 +151,6 @@ if __name__ == '__main__':
     import sys; sys.path.append('../')
     import wp
 
-    name = "ngrams vs rnn"
-    specs = [
-        [wp.ngram.Ngram, {'n':1}],
-        [wp.ngram.Ngram, {'n':2}],
-        [wp.ngram.Ngram, {'n':3}],
-        [wp.rnn.Rnn, {}],
-    ]
-    data = wp.data.Data('gutenbergs')
-    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    exper = Experiment(name, specs, data, params, test_amount=1000)
-    exper.run()
-
-    # specs = [[rnn.Rnn, {'nvocab':100}] ]
-    # params = {'nhidden':[5,10,20,100]}
-    # exper = Experiment(specs, data, params)
-    # exper.run()
-
-    # specs = [
-    #     [wp.rnn.Rnn, {'train_amount':50000}],
-    # ]
-    # data = wp.data.Data('gutenbergs')
-    # # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    # # params = {'nvocabmax':[100,200,500,1000,2000,5000]}
-    # params = {'nhidden':[10,20,50,100]}
-    # exper = Experiment(specs, data, params, test_amount=1000)
-    # exper.run()
-
-
     # # 2017-01-04 1031
     # name = 'RNN hidden layer sizes'
     # specs = [
@@ -212,4 +177,17 @@ if __name__ == '__main__':
     # params = {'nvocab':[100,200,500,1000,2000]}
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
+
+    # 2017-01-04 1100
+    name = "ngrams vs rnn"
+    specs = [
+        [wp.ngram.Ngram, {'n':1}],
+        [wp.ngram.Ngram, {'n':2}],
+        [wp.ngram.Ngram, {'n':3}],
+        [wp.rnn.Rnn, {}],
+    ]
+    data = wp.data.Data('gutenbergs')
+    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    exper = Experiment(name, specs, data, params, test_amount=1000)
+    exper.run()
 

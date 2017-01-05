@@ -26,6 +26,7 @@ import nltk
 from nltk import tokenize
 
 import util
+from benchmark import benchmark
 
 
 class Data(object):
@@ -206,20 +207,22 @@ class Data(object):
         Gather some statistics on the datafiles.
         """
         rows = []
-        cols = ['Text','Characters','Words','Sentences', 'Chars/Word', 'Words/Sentence']
+        cols = ['Text','Characters','Words','Sentences', 'Chars/Word', 'Words/Sentence', 'Unique Words']
         for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
+                words = s.split(' ')
                 filetitle = util.filetitle(filepath)
                 sentences = tokenize.sent_tokenize(s)
                 # tokens = set(tokenize.word_tokenize(s))
                 # nwords = len(tokens = set(tokenize.word_tokenize(s))
                 nchars = len(s)
-                nwords = len(s.split(' '))
+                nwords = len(words)
                 nsentences = len(sentences)
                 ncharsword = nchars/nwords
                 nwordssentence = nwords/nsentences
-                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence]
+                nuniquewords = len(set(words))
+                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
         return df
@@ -311,13 +314,14 @@ class Data(object):
         """
         #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
-        sentences = self.sentences(source, amount)
-        tokens = []
-        for sentence in sentences:
-            # sentence = sentence.lower() # reduces vocab space
-            words = tokenize.word_tokenize(sentence)
-            tokens.extend(words)
-            tokens.append('END') # add an END token to every sentence
+        with benchmark("Get tokens from data source"):
+            sentences = self.sentences(source, amount)
+            tokens = []
+            for sentence in sentences:
+                # sentence = sentence.lower() # reduces vocab space
+                words = tokenize.word_tokenize(sentence)
+                tokens.extend(words)
+                tokens.append('END') # add an END token to every sentence
         return tokens
 
     def __str__(self):
@@ -382,24 +386,27 @@ class Data(object):
 
 if __name__ == '__main__':
 
-    data = Data('animals')
-    data.prepare()
+    # data = Data('animals')
+    # data.prepare()
+    # print(data.analyze())
+    # print(data.text())
+    # print(data.sentences())
+    # print(data.tokens())
+    # print(data.text('train'))
+    # print(data.text('train',0.5))
+    # print(data.text('train',20))
+    # print(data)
+    # print()
 
-    print(data.analyze())
-    print()
-
-    print(data.text())
-    print(data.sentences())
-    print(data.tokens())
-    print()
-
-    print(data)
-
-    # histogram of sentence lengths
-    # currently plotted in the notebook
     data = Data('gutenbergs')
-    df = data.histogram(100, 100)
-    print(df)
+    print(data.analyze())
+    # tokens = data.tokens() # 18 secs
+    # print(len(tokens))
+
+    # # get histogram of sentence lengths - currently plotted in the notebook
+    # data = Data('gutenbergs')
+    # df = data.histogram(100, 100)
+    # print(df)
     # import matplotlib.pyplot as plt
     # plt.figure(figsize=(12,7))
     # # plt.hist(lengths, range=(1,40), bins=40, stacked=True, label=filetitles, alpha=0.5, weights=weights)
@@ -409,10 +416,6 @@ if __name__ == '__main__':
     # plt.subplots_adjust(left=0.01,right=0.5)
     # plt.show()
 
-
-    # print(data.text('train'))
-    # print(data.text('train',0.5))
-    # print(data.text('train',20))
 
     # s = "header\n*** START OF TEXT ***\n contents \n*** END OF TEXT ***\n license"
     # s = data.clean_header_footer(s)

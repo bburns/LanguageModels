@@ -10,6 +10,8 @@ import cPickle as pickle # faster version of pickle
 from datetime import datetime
 import sys
 
+import pandas as pd
+
 from benchmark import benchmark
 import util
 
@@ -51,30 +53,48 @@ class Model(object):
     def test(self, k=3, test_amount=1.0):
         """
         Test the model and return the accuracy score.
-        k - number of words to predict
+        k           - number of words to predict
         test_amount - amount of test data to use, in percent or nchars
         """
+        nsamples = 20
         # get the test tokens
         tokens = self.data.tokens('test', test_amount)
         ntokens = len(tokens)
+        npredictions = ntokens - self.n #.. self.n
+        nsample_spacing = max(int(ntokens / nsamples), 1)
+        samples = []
         # run test on the models
         nright = 0
         print("Testing model " + self.name + "...")
+        sample_columns = ['Prompt','Predictions','Actual','Status']
+        # print(*sample_columns)
         with benchmark("Tested model " + self.name) as b: # time it
-            npredictions = ntokens - self.n
             for i in range(npredictions): # iterate over all test tokens
-                prompt = tokens[i:i+self.n-1]
-                actual = tokens[i+self.n-1]
+                prompt = tokens[i:i+self.n-1] #..
+                actual = tokens[i+self.n-1] #..
                 token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
-                #. add selection to samples
                 # print('prompt',prompt,'actual',actual,'token_probs',token_probs)
+                passed = False
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
-                    if actual in predicted_tokens:
+                    passed = (actual in predicted_tokens)
+                    if passed:
                         nright += 1
+                # add predictions to samples
+                if (i % nsample_spacing) == 0:
+                    sprompt = ' '.join(prompt) if prompt else '(none)'
+                    # spredictions = ' '.join(['%s %.2f%%' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
+                    spredictions = ' '.join(['(%s %.2f%%)' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
+                    spassed = 'OK' if passed else 'FAIL'
+                    sample = [sprompt, spredictions, actual, spassed]
+                    # print(*sample)
+                    samples.append(sample)
             accuracy = nright / npredictions if npredictions>0 else 0
         self.test_time = b.time
         self.test_score = accuracy
+        df_samples = pd.DataFrame(samples, columns=sample_columns)
+        self.test_samples = df_samples
+        self.save() # save test time, score, samples
         return accuracy
 
     def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):

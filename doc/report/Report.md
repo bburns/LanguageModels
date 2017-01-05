@@ -107,20 +107,22 @@ be addressed have been identified. -->
 The training and testing data are obtained from ten books from Project
 Gutenberg, totalling nearly a million words -
 
-    | Author                 | Year | Title                         | Gutenberg # |  Words | Chars/Word | Words/Sentence |
-    |------------------------+------+-------------------------------+-------------+--------+------------+----------------|
-    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |       5.70 |           15.8 |
-    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |       5.55 |           16.3 |
-    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |       5.31 |           18.1 |
-    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |       5.35 |           16.7 |
-    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |       5.51 |           15.5 |
-    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |       5.50 |           20.6 |
-    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |       5.52 |           27.8 |
-    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |       5.51 |           18.1 |
-    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |       5.38 |           10.8 |
-    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |       5.30 |           22.2 |
-    |------------------------+------+-------------------------------+-------------+--------+------------+----------------|
-    | Total                  |      |                               |             | 989451 |            |                |
+    | Author                 | Year | Title                         | Gutenberg # |  Words | Chars/Word | Words/Sentence | Unique Words |
+    |------------------------+------+-------------------------------+-------------+--------+------------+----------------+--------------|
+    | Victor Hugo            | 1862 | Les Miserables                |         135 | 563030 |       5.70 |           15.8 |        84945 |
+    | Lewis Carroll          | 1865 | Alice in Wonderland           |       28885 |  26719 |       5.55 |           16.3 |         6532 |
+    | Robert Louis Stevenson | 1883 | Treasure Island               |         120 |  67872 |       5.31 |           18.1 |        14306 |
+    | Henry James            | 1898 | The Turn of the Screw         |         209 |  42278 |       5.35 |           16.7 |         9688 |
+    | Joseph Conrad          | 1899 | Heart of Darkness             |         219 |  37928 |       5.51 |           15.5 |        10133 |
+    | M R James              | 1905 | Ghost Stories of an Antiquary |        8486 |  45268 |       5.50 |           20.6 |        11219 |
+    | Arthur Machen          | 1907 | The Hill of Dreams            |       13969 |  65861 |       5.52 |           27.8 |        14726 |
+    | Kenneth Graham         | 1908 | The Wind in the Willows       |         289 |  58366 |       5.51 |           18.1 |        13603 |
+    | P G Woodhouse          | 1919 | My Man Jeeves                 |        8164 |  50834 |       5.38 |           10.8 |        11288 |
+    | M R James              | 1920 | A Thin Ghost and Others       |       20387 |  31295 |       5.30 |           22.2 |         7987 |
+    |------------------------+------+-------------------------------+-------------+--------+------------+----------------+--------------|
+    | Total                  |      |                               |             | 989451 |            |                |              |
+
+Note: the unique word count includes different capitalizations also.
 
 The texts can be found at, for example http://www.gutenberg.org/etext/28885.
 
@@ -361,6 +363,8 @@ one or two particular aspects of the project they found interesting or
 difficult. -->
 
 it took a while to set up a good test harness and data preprocessing pipeline.
+
+
 
 
 
