@@ -31,7 +31,7 @@ from benchmark import benchmark
 class Rnn(model.Model):
     """
     Recurrent neural network (RNN) model.
-    For load, save, test methods, see model.py
+    For load, save, test methods, see model.py Model class.
     """
 
     def __init__(self, data, train_amount=1.0, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
@@ -88,11 +88,9 @@ class Rnn(model.Model):
                 self.nvocab = len(self.index_to_word)
                 # replace words not in vocabulary with UNKNOWN
                 tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-                # print(tokens)
                 # replace words with numbers
                 itokens = [self.word_to_index[token] for token in tokens]
-                # print(itokens)
-                # chop x and y into sequences of 10 tokens. or rnd # tokens?
+                # chop x and y into sequences of 10 tokens. #. or rnd # tokens?
                 seqs = []
                 seq = []
                 for i, itoken in enumerate(itokens):
@@ -162,8 +160,8 @@ class Rnn(model.Model):
         """
         Generate a sentence of random text.
         """
-        unknown_token = "UNKNOWN"
-        end_token = "END"
+        unknown_token = "UNKNOWN" #.
+        end_token = "END" #.
         iunknown = self.word_to_index[unknown_token]
         iend = self.word_to_index[end_token]
         # start with the END token
@@ -189,48 +187,48 @@ class Rnn(model.Model):
         Return model as a string.
         """
         s = self.name
-        #. etc
+        # etc
         return s
 
-    def forward_propagation(self, x):
+    def forward_propagation(self, x_i):
         """
         Do forward propagation for sequence x and return output values and hidden states.
-        x should be a list of numbers, eg [2, 4, 5, 1], referring to words in the vocabulary.
-        output is the softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
-        sstate is the internal state of the hidden layer for each time step.
+        x - list of numbers, eg [2,4,5,1], referring to words in the vocabulary.
         """
-        nsteps = len(x)
-        # During forward propagation we save all hidden states in s because need them later.
-        # We add one additional element for the initial hidden state, which we set to 0
-        state = np.zeros((nsteps + 1, self.nhidden))
-        state[-1] = np.zeros(self.nhidden)
-        # The outputs at each time step. Again, we save them for later.
-        # output = np.zeros((nsteps, self.nvocab))
+        nsteps = len(x_i)
+        # save all hidden states because need them later
+        state = np.zeros((nsteps + 1, self.nhidden)) # +1 for initial hidden state
+        state[-1] = np.zeros(self.nhidden) # set initial state to 0's
+        # the outputs at each time step - again, we save them for later
         output = np.zeros((nsteps, self.nvocab))
-        # For each time step...
+        # for each time step...
         for t in np.arange(nsteps):
-            # Note that we are indexing U by x[nstep] -
+            # note that we are indexing U by x[nstep] -
             # this is the same as multiplying U with a one-hot vector.
             # ie picks out a column from the matrix U.
-            state[t] = np.tanh(self.U[:,x[t]] + self.W.dot(state[t-1])) # note how t-1=-1 for t=0
+            state[t] = np.tanh(self.U[:,x_i[t]] + self.W.dot(state[t-1])) # note how t-1=-1 for t=0
             output[t] = util.softmax(self.V.dot(state[t]))
-        # We not only return the calculated outputs, but also the hidden states.
-        # We will use them later to calculate the gradients.
+        # we not only return the calculated outputs, but also the hidden states.
+        # we will use them later to calculate the gradients.
+        # output - softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
+        # state  - state of hidden layer elements
         return [output, state]
 
     def total_loss(self, x, y):
         """
-        Return total value of loss function for all training examples (?).
-        x is a list of sentences (sequence of numbers)
-        y is a list of labels, ie y[i][j] should follow from x[i][0]...x[i][j-1]
+        Return total value of loss function for all training examples.
+        x - list of sentences (sequence of numbers), eg [[5,2,6],[9,7,2,1],...]
+        y - list of labels - y[i][j] should follow from x[i][0]...x[i][j-1], eg [[2,6,0],[7,2,1,0],...]
         """
         total_loss = 0
-        # For each sentence...
+        # for each sentence...
         for i in np.arange(len(y)):
-            output, state = self.forward_propagation(x[i])
-            # We only care about our prediction of the "correct" words
-            correct_word_predictions = output[np.arange(len(y[i])), y[i]]
-            # Add to the loss based on how off we were
+            x_i = x[i] # sentence
+            y_i = y[i] # predictions
+            output, state = self.forward_propagation(x_i)
+            # we only care about our prediction of the "correct" words
+            correct_word_predictions = output[np.arange(len(y_i)), y_i]
+            # add to the loss based on how off we were
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
         return total_loss
 
@@ -243,19 +241,22 @@ class Rnn(model.Model):
         avg_loss = total_loss / nexamples
         return avg_loss
 
-    def bptt(self, x, y):
+    def bptt(self, x_i, y_i):
         """
-        Backpropagation through time
+        Backpropagation Through Time (bptt)
+        Calculate derivatives
+        x_i -
+        y_i -
         """
-        nsteps = len(y)
+        nsteps = len(y_i)
         # perform forward propagation
-        output, state = self.forward_propagation(x)
+        output, state = self.forward_propagation(x_i)
         # accumulate the gradients in these variables
         dLdU = np.zeros(self.U.shape)
         dLdV = np.zeros(self.V.shape)
         dLdW = np.zeros(self.W.shape)
         delta_output = output
-        delta_output[np.arange(nsteps), y] -= 1.0
+        delta_output[np.arange(nsteps), y_i] -= 1.0
         # for each output backwards...
         for t in np.arange(nsteps)[::-1]:
             dLdV += np.outer(delta_output[t], state[t].T)
@@ -265,7 +266,7 @@ class Rnn(model.Model):
             for bptt_step in np.arange(max(0, t-self.bptt_truncate), t+1)[::-1]:
                 # print("Backpropagation step t=%d bptt step=%d " % (t, bptt_step))
                 dLdW += np.outer(delta_t, state[bptt_step-1])
-                dLdU[:, x[bptt_step]] += delta_t
+                dLdU[:, x_i[bptt_step]] += delta_t
                 # update delta for next step
                 delta_t = self.W.T.dot(delta_t) * (1 - state[bptt_step-1] ** 2)
         return [dLdU, dLdV, dLdW]
@@ -331,6 +332,7 @@ class Rnn(model.Model):
 if __name__=='__main__':
 
     import matplotlib.pyplot as plt
+    from tabulate import tabulate
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time
@@ -366,9 +368,11 @@ if __name__=='__main__':
     model = Rnn(data, nvocab=1000, nhidden=10, nepochs=10, train_amount=10000)
     # model.train()
     model.train(True)
-    # accuracy = model.test()
-    accuracy = model.test(test_amount=10000)
-    print('accuracy',accuracy)
+    model.test(test_amount=10000)
+    print('accuracy',model.test_score)
+    # print(model.test_samples)
+    df = model.test_samples
+    print(tabulate(df, showindex=False, headers=df.columns))
     print()
 
     # plot losses per epoch of training

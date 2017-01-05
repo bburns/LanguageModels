@@ -50,11 +50,11 @@ class Ngram(model.Model):
         self.test_time = None
         print("Create model " + self.name)
 
-    def train(self, load_if_available=True):
+    def train(self, force_training=False):
         """
         Train the model and save it, or load from file if available.
         """
-        if load_if_available and os.path.isfile(self.filename):
+        if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
             with benchmark("Train " + self.name) as b:
@@ -256,12 +256,12 @@ if __name__ == '__main__':
 
     for n in (1,2,3):
         # model = Ngram(data, n=n)
-        model = Ngram(data, n=n, train_amount=2000)
+        model = Ngram(data, n=n, train_amount=6000)
         model.train()
-        model.test(test_amount=1000)
+        model.test(test_amount=2000)
         print('accuracy', model.test_score)
         df = model.test_samples
-        print(tabulate(df, showindex=False, headers=df.columns))
+        print(tabulate(model.test_samples, showindex=False, headers=df.columns))
         # print(df)
         # print(model._d)
         s = model.generate()

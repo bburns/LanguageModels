@@ -84,7 +84,7 @@ class Model(object):
                 if (i % nsample_spacing) == 0:
                     sprompt = ' '.join(prompt) if prompt else '(none)'
                     # spredictions = ' '.join(['%s %.2f%%' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
-                    spredictions = ' '.join(['(%s %.2f%%)' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
+                    spredictions = '  '.join(['%s (%.2f%%)' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
                     spassed = 'OK' if passed else 'FAIL'
                     sample = [sprompt, spredictions, actual, spassed]
                     # print(*sample)
