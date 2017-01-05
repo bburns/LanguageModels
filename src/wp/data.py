@@ -405,10 +405,7 @@ if __name__ == '__main__':
     from tabulate import tabulate
 
     data = Data('animals')
-    # data.prepare()
-    # print(data.analyze())
-    df = data.analyze()
-    # print(util.table(data.analyze()))
+    print(util.table(data.analyze()))
     # print(data.readability()) # grade level
     # print(data.text())
     # print(data.sentences())
@@ -419,10 +416,8 @@ if __name__ == '__main__':
     # print(data)
     # print()
 
-    data = Data('gutenbergs')
-    data.prepare()
-    # print(data.analyze())
-    print(util.table(data.analyze()))
+    # data = Data('gutenbergs')
+    # print(util.table(data.analyze()))
     # print(tabulate(data.analyze()))
     # print(data.readability())
     # tokens = data.tokens() # 18 secs

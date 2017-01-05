@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 from benchmark import benchmark
 import transcript
-
+import util
 
 class Experiment(object):
     """
@@ -42,7 +42,7 @@ class Experiment(object):
         assert(len(params)==1) # only handles one param at a time
         # self.data.prepare() # make sure the data is cleaned and split up
 
-    def run(self):
+    def run(self, force_training=False):
         """
         Train and test the models with different parameters.
         """
@@ -77,13 +77,15 @@ class Experiment(object):
                 print(params)
                 model = model_class(self.data, name_includes=name_includes, **params)
                 cols.append(model.name)
-                model.train() # loads/saves model as needed
-                model.test(test_amount=self.test_amount) #. should this return score, or access it as below?
+                model.train(force_training) # loads/saves model as needed
+                # print(util.table(model.train_losses)) # print losses by epoch nicely
+                model.test(test_amount=self.test_amount) #. should this return results, or access as below?
+                # print(util.table(model.test_samples))
                 print('Score', model.test_score)
+                print()
                 train_time_row.append(model.train_time)
                 test_time_row.append(model.test_time)
                 test_score_row.append(model.test_score)
-                print()
             train_times.append(train_time_row)
             test_times.append(test_time_row)
             test_scores.append(test_score_row)
@@ -178,16 +180,28 @@ if __name__ == '__main__':
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
 
-    # 2017-01-04 1100
-    name = "ngrams vs rnn"
+    # # 2017-01-04 1100
+    # name = "ngrams vs rnn"
+    # specs = [
+    #     [wp.ngram.Ngram, {'n':1}],
+    #     [wp.ngram.Ngram, {'n':2}],
+    #     [wp.ngram.Ngram, {'n':3}],
+    #     [wp.rnn.Rnn, {}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
+    # exper = Experiment(name, specs, data, params, test_amount=1000)
+    # exper.run()
+
+    # 2017-01-05 0700
+    name = "rnn n values"
     specs = [
-        [wp.ngram.Ngram, {'n':1}],
-        [wp.ngram.Ngram, {'n':2}],
-        [wp.ngram.Ngram, {'n':3}],
-        [wp.rnn.Rnn, {}],
+        [wp.rnn.Rnn, {'train_amount':10000}],
     ]
+    # data = wp.data.Data('animals')
     data = wp.data.Data('gutenbergs')
-    params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
-    exper = Experiment(name, specs, data, params, test_amount=1000)
-    exper.run()
+    params = {'n':[1,2,3,4,5]}
+    exper = Experiment(name, specs, data, params, test_amount=10000)
+    # exper.run()
+    exper.run(force_training=True)
 

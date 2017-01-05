@@ -56,11 +56,11 @@ class Model(object):
         k           - number of words to predict
         test_amount - amount of test data to use, in percent or nchars
         """
-        nsamples = 20
+        nsamples = 10
         # get the test tokens
         tokens = self.data.tokens('test', test_amount)
         ntokens = len(tokens)
-        npredictions = ntokens - self.n #.. self.n
+        npredictions = ntokens - self.n #..
         nsample_spacing = max(int(ntokens / nsamples), 1)
         samples = []
         # run test on the models
@@ -73,7 +73,6 @@ class Model(object):
                 prompt = tokens[i:i+self.n-1] #..
                 actual = tokens[i+self.n-1] #..
                 token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
-                # print('prompt',prompt,'actual',actual,'token_probs',token_probs)
                 passed = False
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
@@ -83,8 +82,8 @@ class Model(object):
                 # add predictions to samples
                 if (i % nsample_spacing) == 0:
                     sprompt = ' '.join(prompt) if prompt else '(none)'
-                    # spredictions = ' '.join(['%s %.2f%%' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
-                    spredictions = '  '.join(['%s (%.2f%%)' % (token_prob[0], token_prob[1]*100) for token_prob in token_probs]) if token_probs else '(none)'
+                    spredictions = '  '.join(['%s (%.2f%%)' % (token_prob[0], token_prob[1]*100) \
+                                              for token_prob in token_probs]) if token_probs else '(none)'
                     spassed = 'OK' if passed else 'FAIL'
                     sample = [sprompt, spredictions, actual, spassed]
                     # print(*sample)
@@ -92,10 +91,8 @@ class Model(object):
             accuracy = nright / npredictions if npredictions>0 else 0
         self.test_time = b.time
         self.test_score = accuracy
-        df_samples = pd.DataFrame(samples, columns=sample_columns)
-        self.test_samples = df_samples
+        self.test_samples = pd.DataFrame(samples, columns=sample_columns)
         self.save() # save test time, score, samples
-        return accuracy
 
     def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
         """
@@ -108,20 +105,24 @@ class Model(object):
         """
         losses = []
         nexamples_seen = 0
-        loss_columns = ['Epoch','Examples Seen','Learning Rate','Loss']
+        loss_columns = ['Time','Epoch','Examples Seen','Learning Rate','Loss']
+        # print(*loss_columns)
+        print(' | '.join(loss_columns))
         for nepoch in range(nepochs):
             # optionally evaluate the loss
             if (nepoch % evaluate_loss_after == 0):
+                stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 loss = self.average_loss(X_train, y_train)
-                losses.append([nepoch, nexamples_seen, learning_rate, loss])
-                time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                print("%s: Loss after nexamples_seen=%d epoch=%d: %f" % (time, nexamples_seen, nepoch, loss))
-                # Adjust the learning rate if loss increases
+                row = [stime, nepoch, nexamples_seen, learning_rate, loss]
+                losses.append(row)
+                # print(*row)
+                print(' | '.join([str(val) for val in row]))
+                # sys.stdout.flush()
+                # print("%s: Loss after nexamples_seen=%d epoch=%d: %f" % (time, nexamples_seen, nepoch, loss))
+                # adjust the learning rate if loss increases (ie overshot the minimum, so slow down)
                 if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
                     learning_rate = learning_rate * 0.5
-                    print("Setting learning rate to %f" % learning_rate)
-                sys.stdout.flush()
-            # for each training example... (ie each sentence in his formulation)
+            # for each training example... (ie each sentence?)
             for i in range(len(y_train)):
                 self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
                 nexamples_seen += 1

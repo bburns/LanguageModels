@@ -34,7 +34,7 @@ class Rnn(model.Model):
     For load, save, test methods, see model.py Model class.
     """
 
-    def __init__(self, data, train_amount=1.0, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
+    def __init__(self, data, train_amount=1.0, n=3, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
         """
         Create an RNN model
         data          - source of training and testing data
@@ -47,11 +47,12 @@ class Rnn(model.Model):
         """
         self.data = data
         self.train_amount = train_amount
+        self.n = n #... for now - used in test()
         self.nvocab = nvocab
         self.nhidden = nhidden
         self.nepochs = nepochs
-        self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
-        self.n = 2 #... for now - used in test()
+        # self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
+        self.bptt_truncate = n #. -> ntimestepsmax?
         self.seqlength = 10 #...
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
@@ -76,15 +77,12 @@ class Rnn(model.Model):
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             with benchmark("Trained model " + self.name) as b:
-                #. just go through text some number of tokens at a time
-                # unknown_token = "UNKNOWN" #.
                 print("Getting training tokens")
                 tokens = self.data.tokens('train', self.train_amount)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
                 wordcounts = word_freqs.most_common(self.nvocab-1)
                 self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-                # self.index_to_word.append(unknown_token)
                 self.index_to_word.append(self.unknown_token)
                 self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
                 self.nvocab = len(self.index_to_word)
@@ -93,7 +91,9 @@ class Rnn(model.Model):
                 tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
                 # replace words with numbers
                 itokens = [self.word_to_index[token] for token in tokens]
-                # chop x and y into sequences of 10 tokens. #. or rnd # tokens?
+                # go through text some number of tokens at a time
+                # so chop x and y into sequences of seqlength tokens
+                #. or rnd # tokens? his orig code fed sentences to rnn, but that loses intersentence context
                 seqs = []
                 seq = []
                 for i, itoken in enumerate(itokens):
@@ -102,11 +102,11 @@ class Rnn(model.Model):
                         seqs.append(seq)
                         seq = []
                 seqs.append(seq)
-                # print(seqs)
+                # print('seqs',seqs)
                 X_train = [seq[:-1] for seq in seqs]
                 y_train = [seq[1:] for seq in seqs]
-                # print(X_train)
-                # print(y_train)
+                # print('Xtrain',X_train)
+                # print('ytrain',y_train)
                 # parameters for the network that we need to learn
                 self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab))
                 self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
@@ -133,18 +133,21 @@ class Rnn(model.Model):
         iwords = [self._get_index(word) for word in tokens]
         # print(iwords)
         output, state = self.forward_propagation(iwords)
-        next_word_probs = output[-1]
-        # print(next_word_probs[:20])
-        pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
-        # print(pairs[:20])
-        best_iwords = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
-        # print(best_iwords)
-        # print(self.nvocab)
-        # print(self.nvocab)
-        # print(len(self.index_to_word))
-        # print(self.index_to_word)
-        best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
-        return best_words
+        if len(output)>0:
+            next_word_probs = output[-1]
+            # print(next_word_probs[:20])
+            pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
+            # print(pairs[:20])
+            best_iwords = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
+            # print(best_iwords)
+            # print(self.nvocab)
+            # print(self.nvocab)
+            # print(len(self.index_to_word))
+            # print(self.index_to_word)
+            best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
+            return best_words
+        else:
+            return []
 
     def _get_index(self, word):
         """
@@ -363,19 +366,18 @@ if __name__=='__main__':
     model.train(True)
     model.test(test_amount=10000)
     print('accuracy',model.test_score)
-    df = model.test_samples
-    print(util.table(df))
+    print(util.table(model.test_samples))
     print()
 
-    # plot losses by epoch of training
-    df = model.train_losses
-    df.plot(x='Epoch', y='Loss')
-    plt.style.use('ggplot') # nicer style
-    plt.grid()
-    plt.title('Loss by Training Epoch')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.show()
+    # # plot losses by epoch of training
+    # df = model.train_losses
+    # df.plot(x='Epoch', y='Loss')
+    # plt.style.use('ggplot') # nicer style
+    # plt.grid()
+    # plt.title('Loss by Training Epoch')
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Loss')
+    # plt.show()
 
     # generate sentences
     print("Generate sentences")
