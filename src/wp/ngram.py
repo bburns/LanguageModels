@@ -57,9 +57,11 @@ class Ngram(model.Model):
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
-            with benchmark("Train " + self.name) as b:
+            print("Training model " + self.name)
+            with benchmark("Got training data"):
                 tokens = self.data.tokens('train', self.train_amount)
                 token_tuples = nltk.ngrams(tokens, self.n)
+            with benchmark("Trained model") as b:
                 # train by adding ngram counts to model
                 for token_tuple in token_tuples:
                     self._increment_count(token_tuple)

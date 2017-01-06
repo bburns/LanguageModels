@@ -47,13 +47,16 @@ class Rnn(model.Model):
         """
         self.data = data
         self.train_amount = train_amount
-        self.n = n #... for now - used in test()
         self.nvocab = nvocab
         self.nhidden = nhidden
         self.nepochs = nepochs
+
+        # unsure about these...
+        self.n = n #... for now - used in test()
         # self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
-        self.bptt_truncate = n #. -> ntimestepsmax?
-        self.seqlength = 10 #...
+        self.bptt_truncate = n #. -> call it ntimestepsmax? keep separate from n?
+        self.seqlength = 10 #. -> call it nelements_per_sequence? instead of chopping up by sentences we'll chop up into sequences of this length
+
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
@@ -76,8 +79,10 @@ class Rnn(model.Model):
         else:
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
-            with benchmark("Trained model " + self.name) as b:
+            # with benchmark("Trained model " + self.name) as b:
+            with benchmark("Prepared training data"):
                 print("Getting training tokens")
+                #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
                 tokens = self.data.tokens('train', self.train_amount)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
@@ -113,6 +118,7 @@ class Rnn(model.Model):
                 self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
                 # train model with stochastic gradient descent - learns U, V, W
                 # see model.py for fn
+            with benchmark("Gradient descent finished") as b:
                 print("Starting gradient descent")
                 losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, \
                                              evaluate_loss_after=int(self.nepochs/10))
@@ -197,41 +203,85 @@ class Rnn(model.Model):
     def forward_propagation(self, x_i):
         """
         Do forward propagation for sequence x_i and return output values and hidden states.
-        x_i - list of numbers, eg [2,4,5,1], referring to words in the vocabulary.
+        x_i - sequence of numbers, eg [2,4,5,1], referring to words in the vocabulary.
         """
-        nsteps = len(x_i)
+        #. calculate amt of memory needed, eg in state, output, U,V,W, etc,
+        # and rough number of operations, as fns of sequence length, nhidden, nvocab, etc
+        nelements = len(x_i)
         # save all hidden states because need them later
-        state = np.zeros((nsteps + 1, self.nhidden)) # +1 for initial hidden state
+        state = np.zeros((nelements + 1, self.nhidden)) # + 1 for initial hidden state. an nelements+1 x nhidden matrix
         state[-1] = np.zeros(self.nhidden) # set initial state to 0's
         # the outputs at each time step - again, we save them for later
-        output = np.zeros((nsteps, self.nvocab))
+        output = np.zeros((nelements, self.nvocab)) # an nelements x nvocab matrix
         # for each time step...
-        for t in np.arange(nsteps):
-            # note that we are indexing U by x[nstep] -
+        for t in np.arange(nelements):
+
+            # original unexpanded code:
+            # note that we are indexing U by x_i[t] -
             # this is the same as multiplying U with a one-hot vector.
             # ie picks out a column from the matrix U.
-            state[t] = np.tanh(self.U[:,x_i[t]] + self.W.dot(state[t-1])) # note how t-1=-1 for t=0
-            output[t] = util.softmax(self.V.dot(state[t]))
+            # state[t] = np.tanh(self.U[:,x_i[t]] + self.W.dot(state[t-1])) # note how t-1=-1 for t=0
+            # output[t] = util.softmax(self.V.dot(state[t]))
+
+            # expanded code:
+            # get the t'th word in the sequence
+            iword = x_i[t]
+            # translate iword into a one-hot vector, eg
+            # ohv = [0,0,0,0,0,0,0,0,1,0,0,0,0,0,...0] # vector with nvocab elements
+            # ohv = np.zeros(nvocab)
+            # ohv[iword] = 1
+            # multiply matrix U by ohv -
+            # U is a matrix with nvocab x nhidden entries (eg 1e4 x 100 -> 1e6 entries).
+            # note: this translates the word to a lower dimensional space with nhidden dimensions (eg 100) -
+            # these will be the learned word embeddings, which we could replace with word2vec vectors, (?)
+            # which will cut down a lot on the number of parameters needed to learn.
+            # u = self.U.dot(ohv) # dot is matrix multiply!
+            # which is all equivalent to
+            u = self.U[:,iword] # u is a vector with nhidden elements - this is the word embedding
+            # now bring in the previous state, with more weights W -
+            # W is a matrix with nhidden x nhidden elements (eg 100x100 = 1e4 entries)
+            # note how t-1=-1 for t=0
+            prevstate = state[t-1] # prevstate is a vector with nhidden elements
+            w = self.W.dot(prevstate) # ie w = W x prevstate - dot is MATRIX MULTIPLY!
+            # now add those and calculate the new state's activation value with a nonlinear fn, tanh.
+            #. replace with ReLU!
+            # u + w is the effective
+            state[t] = np.tanh(u + w) # state[t] is a vector with nhidden elements
+            # output[t] = util.softmax(self.V.dot(state[t]))
+            # now convert the internal/hidden state to scores for each class -
+            # V is matrix with nhidden x nvocab entries (eg 100x1e4 = 1e6 entries) - converts an embedded word to vocab scores.
+            # but also can be doing some other work than just translation, eh?
+            v = self.V.dot(state[t]) # v is a vector with nvocab elements, representing scores for each classifier.
+            # ie each vocab word has a classifier that gets to vote for if it thinks it should be next.
+            # now convert the scores to probabilities that all add to 1 -
+            output[t] = util.softmax(v) # output[t] is a vector with nvocab entries - will be lots of very small numbers
+            # note that we don't convert to one-hot encodings or get argmax here - need the probabilities for gradient descent, eh?
         # we not only return the calculated outputs, but also the hidden states.
         # we will use them later to calculate the gradients.
-        # output - softmax output over the vocabulary for each time step (ie ~ a one-hot matrix).
+        # output - softmax output over the vocabulary for EACH time step, so a n
         # state  - state of hidden layer elements
         return [output, state]
 
     def total_loss(self, x, y):
         """
         Return total value of loss function for all training examples.
+        we're using negative log probability, which is entropy, ie amount of information ?
+        we want to minimize total loss, ie entropy ?
         x - list of sentences (sequence of numbers), eg [[5,2,6],[9,7,2,1],...]
         y - list of labels - y[i][j] should follow from x[i][0]...x[i][j-1], eg [[2,6,0],[7,2,1,0],...]
         """
         total_loss = 0
         # for each sentence...
-        for i in np.arange(len(y)):
-            x_i = x[i] # sentence
-            y_i = y[i] # predictions
-            output, state = self.forward_propagation(x_i)
+        # for i in np.arange(len(y)):
+        nsequences = len(x)
+        for i in np.arange(nsequences):
+            x_i = x[i] # a sentence, ie a sequence of numbers, eg [0,1,2]
+            y_i = y[i] # the actual outputs - a sequence of numbers, eg [1,2,3]
+            output, state = self.forward_propagation(x_i) # get predicted outputs and internal states
+            nelements = len(x_i) # number of elements in this training sentence / sequence
             # we only care about our prediction of the "correct" words
-            correct_word_predictions = output[np.arange(len(y_i)), y_i]
+            # correct_word_predictions = output[np.arange(len(y_i)), y_i]
+            correct_word_predictions = output[np.arange(nelements), y_i]
             # add to the loss based on how off we were
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
         return total_loss
