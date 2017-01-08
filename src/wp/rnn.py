@@ -77,25 +77,33 @@ class Rnn(model.Model):
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
+            #. fix train_amount output
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             # with benchmark("Trained model " + self.name) as b:
             with benchmark("Prepared training data"):
                 print("Getting training tokens")
                 #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
-                tokens = self.data.tokens('train', self.train_amount)
+                tokens = self.data.tokens('train', self.train_amount) # eg ['a','b','.','END']
+                print(tokens)
                 # get most common words for vocabulary
                 word_freqs = nltk.FreqDist(tokens)
+                # print(word_freqs)
                 wordcounts = word_freqs.most_common(self.nvocab-1)
+                # print(wordcounts)
                 self.index_to_word = [wordcount[0] for wordcount in wordcounts]
                 self.index_to_word.append(self.unknown_token)
+                self.index_to_word.sort() #. just using for abcd dataset
+                print(self.index_to_word)
                 self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
                 self.nvocab = len(self.index_to_word)
+                # print(self.word_to_index)
                 # replace words not in vocabulary with UNKNOWN
                 # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
                 tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
                 # replace words with numbers
                 itokens = [self.word_to_index[token] for token in tokens]
+                print(itokens)
                 # go through text some number of tokens at a time
                 # so chop x and y into sequences of seqlength tokens
                 #. or rnd # tokens? his orig code fed sentences to rnn, but that loses intersentence context
@@ -108,11 +116,11 @@ class Rnn(model.Model):
                         seq = []
                 seqs.append(seq) # add leftovers
                 # seqs will be a list of sequences for rnn to learn, eg [[0,1,2,3],...]
-                # print('seqs',seqs)
+                print('seqs',seqs)
                 X_train = [seq[:-1] for seq in seqs] # eg [[0,1,2],...]
                 y_train = [seq[1:] for seq in seqs] # eg [[1,2,3],...]
-                # print('Xtrain',X_train)
-                # print('ytrain',y_train)
+                print('Xtrain',X_train)
+                print('ytrain',y_train)
                 # parameters for the network that we need to learn
                 #. use gaussians with suggested parameters
                 self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab))
@@ -422,7 +430,7 @@ if __name__=='__main__':
 
 
     data = Data('abcd')
-    model = Rnn(data, nvocab=4, nhidden=2, nepochs=10, train_amount=100)
+    model = Rnn(data, nvocab=6, nhidden=2, nepochs=10, train_amount=100)
     model.train(force_training=True)
     # model.test(test_amount=100)
     # print('accuracy',model.test_score)

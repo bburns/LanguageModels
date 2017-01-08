@@ -49,6 +49,48 @@ class Model(object):
             self.load_time = None
         return self.load_time
 
+    def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
+        """
+        Train model with Stochastic Gradient Descent (SGD) and return losses table.
+        X_train             - the training data set
+        y_train             - the training data labels
+        learning_rate       - initial learning rate for SGD
+        nepochs             - number of times to iterate through the complete dataset
+        evaluate_loss_after - evaluate the loss after this many epochs
+        """
+        losses = []
+        nexamples_seen = 0
+        #. define col widths, print header and rows with them
+        #. can do with tabulate?
+        loss_columns = ['Time','Epoch','Examples Seen','Learning Rate','Loss']
+        # print(*loss_columns)
+        print(' | '.join(loss_columns))
+        for nepoch in range(nepochs):
+            # optionally evaluate the loss
+            if (nepoch % evaluate_loss_after == 0):
+                stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                loss = self.average_loss(X_train, y_train)
+                row = [stime, nepoch, nexamples_seen, learning_rate, loss]
+                losses.append(row)
+                # print(*row)
+                print(' | '.join([str(val) for val in row]))
+                # sys.stdout.flush() # why?
+                # adjust the learning rate if loss increases (ie overshot the minimum, so slow down)
+                if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
+                    learning_rate = learning_rate * 0.5
+            # for i in range(len(y_train)):
+                # self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
+            nsequences = len(y_train)
+            # iterate over training sequences
+            for i in range(nsequences):
+                x_sequence = X_train[i]
+                y_sequence = y_train[i]
+                # this will calculate the gradient for the loss function and adjust the parameters a small amount.
+                # it calls out to the subclass which should implement this method - eg see rnn.py.
+                self.sgd_step(x_sequence, y_sequence, learning_rate) # take one sgd step
+                nexamples_seen += 1
+        df_losses = pd.DataFrame(losses, columns=loss_columns)
+        return df_losses
 
     def test(self, k=3, test_amount=1.0):
         """
@@ -93,47 +135,4 @@ class Model(object):
         self.test_score = accuracy
         self.test_samples = pd.DataFrame(samples, columns=sample_columns)
         self.save() # save test time, score, samples
-
-    def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
-        """
-        Train model with Stochastic Gradient Descent (SGD) and return losses table.
-        X_train             - the training data set
-        y_train             - the training data labels
-        learning_rate       - initial learning rate for SGD
-        nepochs             - number of times to iterate through the complete dataset
-        evaluate_loss_after - evaluate the loss after this many epochs
-        """
-        losses = []
-        nexamples_seen = 0
-        #. define col widths, print header and rows with them
-        #. can do with tabulate?
-        loss_columns = ['Time','Epoch','Examples Seen','Learning Rate','Loss']
-        # print(*loss_columns)
-        print(' | '.join(loss_columns))
-        for nepoch in range(nepochs):
-            # optionally evaluate the loss
-            if (nepoch % evaluate_loss_after == 0):
-                stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                loss = self.average_loss(X_train, y_train)
-                row = [stime, nepoch, nexamples_seen, learning_rate, loss]
-                losses.append(row)
-                # print(*row)
-                print(' | '.join([str(val) for val in row]))
-                # sys.stdout.flush() # why?
-                # adjust the learning rate if loss increases (ie overshot the minimum, so slow down)
-                if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
-                    learning_rate = learning_rate * 0.5
-            # for i in range(len(y_train)):
-                # self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
-            nsequences = len(y_train)
-            # iterate over training sequences
-            for i in range(nsequences):
-                x_sequence = X_train[i]
-                y_sequence = y_train[i]
-                # this will calculate the gradient for the loss function and adjust the parameters a small amount.
-                # it calls out to the subclass which should implement this method - eg see rnn.py.
-                self.sgd_step(x_sequence, y_sequence, learning_rate) # take one sgd step
-                nexamples_seen += 1
-        df_losses = pd.DataFrame(losses, columns=loss_columns)
-        return df_losses
 
