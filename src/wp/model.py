@@ -105,6 +105,8 @@ class Model(object):
         """
         losses = []
         nexamples_seen = 0
+        #. define col widths, print header and rows with them
+        #. can do with tabulate?
         loss_columns = ['Time','Epoch','Examples Seen','Learning Rate','Loss']
         # print(*loss_columns)
         print(' | '.join(loss_columns))
@@ -117,14 +119,20 @@ class Model(object):
                 losses.append(row)
                 # print(*row)
                 print(' | '.join([str(val) for val in row]))
-                # sys.stdout.flush()
-                # print("%s: Loss after nexamples_seen=%d epoch=%d: %f" % (time, nexamples_seen, nepoch, loss))
+                # sys.stdout.flush() # why?
                 # adjust the learning rate if loss increases (ie overshot the minimum, so slow down)
                 if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
                     learning_rate = learning_rate * 0.5
-            # for each training example... (ie each sentence?)
-            for i in range(len(y_train)):
-                self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
+            # for i in range(len(y_train)):
+                # self.sgd_step(X_train[i], y_train[i], learning_rate) # take one sgd step
+            nsequences = len(y_train)
+            # iterate over training sequences
+            for i in range(nsequences):
+                x_sequence = X_train[i]
+                y_sequence = y_train[i]
+                # this will calculate the gradient for the loss function and adjust the parameters a small amount.
+                # it calls out to the subclass which should implement this method - eg see rnn.py.
+                self.sgd_step(x_sequence, y_sequence, learning_rate) # take one sgd step
                 nexamples_seen += 1
         df_losses = pd.DataFrame(losses, columns=loss_columns)
         return df_losses

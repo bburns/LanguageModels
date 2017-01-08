@@ -36,14 +36,14 @@ class Data(object):
     Wrapper around all data files, with splitter and tokenizers.
     """
 
-    def __init__(self, dataset):
+    def __init__(self, name):
         """
         Create a data object - contains little to no state - most is in predefined files.
         """
+        self.name = name
         escape = '../../' # escape from the Experiment subfolder, where this is called from
-        dataset_folder = escape + 'data/' + dataset + '/'
-        model_folder = escape + 'models/' + dataset + '/'
-        self.dataset = dataset
+        dataset_folder = escape + 'data/' + name + '/'
+        model_folder = escape + 'models/' + name + '/'
         self.model_folder   = model_folder
         self.raw_folder     = dataset_folder + '1-raw/'
         self.cleaned_folder = dataset_folder + '2-cleaned/'
@@ -62,14 +62,14 @@ class Data(object):
             'test': self.split_folder + 'all-test.txt',
         }
 
-    def prepare(self):
+    def prepare(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .split
         """
         Clean, merge, and split raw data files into train, validate, test sets.
         """
-        print('Prepare dataset:', self.dataset)
+        print('Prepare dataset:', self.name)
         self.clean()
         self.merge()
-        self.split()
+        self.split(ptrain, pvalidate, ptest)
         print('Dataset ready.')
         print()
 
@@ -133,7 +133,7 @@ class Data(object):
         print('done.')
         # print()
 
-    def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2):
+    def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .prepare
         """
         Split a textfile on sentences into train, validate, and test files.
         Will put resulting files in specified output folder with -train.txt etc appended.
@@ -333,7 +333,7 @@ class Data(object):
         """
         Return text representation of data object.
         """
-        s = "Dataset %s" % self.dataset
+        s = "Dataset %s" % self.name
         # self.source_files
         return s
 
@@ -404,8 +404,11 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
-    data = Data('animals')
-    print(util.table(data.analyze()))
+    data = Data('abcd')
+    data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+
+    # data = Data('animals')
+    # print(util.table(data.analyze()))
     # print(data.readability()) # grade level
     # print(data.text())
     # print(data.sentences())

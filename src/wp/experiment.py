@@ -30,14 +30,15 @@ class Experiment(object):
         test_amount - amount of test text to use (percent or nchars)
         """
         self.name = name
-        self.time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.logfolder = '../../logs'
-        self.caption = 'Experiment %s: %s' % (self.time, self.name)
-        self.plotfile_prefix = self.logfolder + '/' + self.caption.replace(':','')
         self.model_specs = model_specs
         self.data = data
         self.params = params
         self.test_amount = test_amount
+        # calculated values
+        self.stime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.logfolder = '../../logs'
+        self.caption = 'Experiment %s: %s, dataset %s' % (self.stime, self.name, self.data.name)
+        self.plotfile_prefix = self.logfolder + '/' + self.caption.replace(':','')
         self.logfile = self.logfolder + "/experiments.org"
         assert(len(params)==1) # only handles one param at a time
         # self.data.prepare() # make sure the data is cleaned and split up
@@ -198,8 +199,8 @@ if __name__ == '__main__':
     specs = [
         [wp.rnn.Rnn, {'train_amount':10000}],
     ]
-    # data = wp.data.Data('animals')
-    data = wp.data.Data('gutenbergs')
+    data = wp.data.Data('animals')
+    # data = wp.data.Data('gutenbergs')
     params = {'n':[1,2,3,4,5]}
     exper = Experiment(name, specs, data, params, test_amount=10000)
     # exper.run()
