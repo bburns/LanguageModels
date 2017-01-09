@@ -1,5 +1,6 @@
 
 # Makefile for word prediction project
+# Use make -B <target> to force building a target
 
 
 # default task - comment out for release version
@@ -35,7 +36,8 @@ help:
 report: doc/report/report.pdf
 doc/report/report.pdf: doc/report/report.md
 	cd doc/report && pandoc report.md -o report.pdf
-#	cd doc/report && pandoc report.md -o report.pdf && \
+#	cd doc/report && pandoc report.md  -V geometry:margin=1in -o report.pdf
+#	cd doc/report && pandoc report.md --toc --toc-depth=2 -o report.pdf
 
 # repo:
 # 	start "repo" cmd /c report.pdf

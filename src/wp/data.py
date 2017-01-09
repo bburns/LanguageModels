@@ -209,7 +209,7 @@ class Data(object):
         Gather some statistics on the datafiles.
         """
         rows = []
-        cols = ['Text','Chars','Words','Sentences', 'Chars/Word', 'Words/Sentence', 'Unique Words', 'Grade Level']
+        cols = ['Text','Chars','Words','Sentences', 'Chars / Word', 'Words / Sentence', 'Unique Words', 'Grade Level']
         for filepath in glob.glob(self.cleaned_files):
             with open(filepath, 'rb') as f:
                 s = f.read()
@@ -222,13 +222,17 @@ class Data(object):
                 nchars = len(s)
                 nwords = len(words)
                 nsentences = len(sentences)
-                ncharsword = nchars/nwords
-                nwordssentence = nwords/nsentences
+                ncharsword = round(nchars/nwords,2)
+                nwordssentence = round(nwords/nsentences,2)
                 nuniquewords = len(set(words))
                 # grade_level = self.readability(s)
                 grade_level = int(round(textstat.coleman_liau_index(s)))
                 row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords, grade_level]
                 rows.append(row)
+        nchars = sum([row[1] for row in rows])
+        nwords = sum([row[2] for row in rows])
+        row = ['Totals',nchars, nwords, '','','','','']
+        rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
         return df
 
@@ -404,8 +408,8 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
-    data = Data('abcd')
-    data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # data = Data('abcd')
+    # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 
     # data = Data('animals')
     # print(util.table(data.analyze()))
@@ -419,9 +423,8 @@ if __name__ == '__main__':
     # print(data)
     # print()
 
-    # data = Data('gutenbergs')
-    # print(util.table(data.analyze()))
-    # print(tabulate(data.analyze()))
+    data = Data('gutenbergs')
+    print(util.table(data.analyze()))
     # print(data.readability())
     # tokens = data.tokens() # 18 secs
     # print(len(tokens))
