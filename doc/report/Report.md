@@ -26,18 +26,18 @@ introduced by Andrei Markov [Markov1913] - counts of encountered word tuples are
 used to estimate the conditional probability of seeing a word given the prior
 words. These so called n-grams formed the basis of commercial word prediction
 software in the 1980's, eventually supplemented with similar syntax and part of
-speech predictions [Carlberger1997].
+speech predictions (Carlberger 1997).
 
 More recently, distributed representations of words have been used in recurrent
 neural networks (RNNs), which can better handle data sparsity and allow more of
-the context to affect the prediction [Bengio2003].
+the context to affect the prediction (Bengio 2003).
 
 The problem is a supervised learning task, and any text can be used to train and
 evaluate the models - we'll be using a million words from books digitized by the
-Gutenberg Project for evaluation. Others use larger corpora, e.g. Google's __,
-__, __. [cite papers] Depending on the problem domain, different corpora might
-be more appropriate, e.g. training on a chat/texting corpus would be good for a
-phone text entry application.
+Gutenberg Project (Gutenberg 2016) for evaluation. Others use larger corpora,
+e.g. Google's billion word corpus (Chelba 2013). Depending on the problem
+domain, different corpora might be more appropriate, e.g. training on a
+chat/texting corpus would be good for a phone text entry application.
 
 
 ### Problem Statement
@@ -72,26 +72,27 @@ will use accuracy or mean error rate or perplexity
 perplexity!
 gives rough idea of how well the model has narrowed down the possible choices -
 eg PPL of 250 means ~ uniform choice from 250 words
-
 how does this compare to accuracy though? or is accuracy too noisy in some way? 
 but we're averaging the accuracy over lots of test examples
-
 do both?
 but how calculate perplexity?
 it's complicated...
 
-
 For evaluation of both approaches, the accuracy score will be reported, for
-increasing training set sizes. The dataset will be split into training and test
-sets - after training, a sequence of words from the test set will be chosen at
-random, then fed to the predictor, and the most likely *k* words compared to the
-actual following word.
+different training set sizes.
 
 Accuracy: # correct predictions / # total predictions
 
 A prediction will be considered *correct* if the actual word is in the list of
 *k* most likely words - this is relevant to the task of presenting the user with
 a list of most likely next words as they are entering text.
+
+Results in the literature are often reported as perplexity, which is a measure
+of how similar one probability distribution to another (?).
+
+<!-- The dataset will be split into training and test sets - after training, a -->
+<!-- sequence of words from the test set will be chosen at random, then fed to the -->
+<!-- predictor, and the most likely *k* words compared to the actual following word. -->
 
 
 
@@ -109,18 +110,18 @@ Gutenberg, totalling nearly a million words -
 
     | Text                                                 |   Chars |   Words |   Sentences |   Chars/Word |   Words/Sentence |   Unique Words |   Grade Level |
     |------------------------------------------------------+---------+---------+-------------+--------------+------------------+----------------+---------------|
-    | 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 |       35431 |      6.22483 |          14.5704 |          82177 |          10.3 |
-    | 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 |        1631 |      5.55064 |          16.4059 |           6346 |           8.9 |
-    | 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 |        3719 |      5.74334 |          16.8933 |          13894 |           8.2 |
-    | 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 |        2517 |      5.85164 |          15.3607 |           9417 |           8.2 |
-    | 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 |        2400 |      6.00511 |          14.5137 |           9871 |           9.1 |
-    | 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 |        2161 |      5.88708 |          19.5919 |          10882 |           9.3 |
-    | 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 |        2359 |      6.00905 |          25.6583 |          14406 |           9.7 |
-    | 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 |        3215 |      5.94457 |          16.846  |          13102 |           9.3 |
-    | 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 |        4670 |      5.83337 |          10.0529 |          10917 |           7.8 |
-    | 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 |        1378 |      5.66286 |          21.2707 |           7767 |           8.1 |
+    | 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 |       35431 |      6.22483 |          14.5704 |          82177 |            10 |
+    | 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 |        1631 |      5.55064 |          16.4059 |           6346 |             9 |
+    | 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 |        3719 |      5.74334 |          16.8933 |          13894 |             8 |
+    | 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 |        2517 |      5.85164 |          15.3607 |           9417 |             8 |
+    | 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 |        2400 |      6.00511 |          14.5137 |           9871 |             9 |
+    | 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 |        2161 |      5.88708 |          19.5919 |          10882 |             9 |
+    | 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 |        2359 |      6.00905 |          25.6583 |          14406 |            10 |
+    | 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 |        3215 |      5.94457 |          16.846  |          13102 |             9 |
+    | 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 |        4670 |      5.83337 |          10.0529 |          10917 |             8 |
+    | 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 |        1378 |      5.66286 |          21.2707 |           7767 |             8 |
 
-The grade level is calculated using the Coleman-Liau Index [cite].
+The grade level is calculated using the Coleman-Liau Index (Coleman 1975).
 
 The Gutenberg text number is listed in parentheses, and the texts can be found
 online - e.g. Alice in Wonderland can be found at
@@ -153,12 +154,11 @@ discussion. Visual cues are clearly defined. -->
 make a histogram of sentence lengths
 but why?
 
-![Sentence length distributions][1]
-
-[1]: images/sentence_lengths.png
+![Sentence length distributions](images/sentence_lengths.png)
 
 
 keyword is *relevant* - what vis would be relevant for this problem?
+and *thorough discussion* - needs to be something interesting. 
 
 we're doing word prediction
 maybe something more like information content?
@@ -173,44 +173,59 @@ use to compare texts?
 
 
 
+
 ### Algorithms and Techniques
 
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
 Until recently, n-grams were state of the art in word prediction - Recurrent
-Neural Networks
+Neural Networks were able to beat n-grams in 2003, though at the cost of greater
+training time (Bengio 2003).
+
+A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
+context, while n-grams are limited to about 4 words of context (a 5-gram will
+give 4 words of context) - going beyond 5-grams requires increasing amounts of
+resources in terms of training data and storage space, as the resources required
+grow exponentially with the amount of context.
+
+An RNN is able to make predictions based on words further back in the sequence,
+e.g. 10 words, because it can represent words more compactly with an internal
+representation (embedding in a vector space), which also allows words to have
+arbitrary degrees of similarities to other words. Hence, for instance, a cat can
+be predicted to 'sleep', even if the model was only trained on a dog sleeping,
+due to the similarity of the words 'dog' and 'cat'.
+
+An RNN 'unfolds' to a neural network of arbitrary depth, depending on how far
+back in a sequence it is trained. It keeps track of what it has seen through a
+hidden state at each step in a sequence - this is combined with the current
+token's representation (by addition) and the sum is then used to make
+predictions about the next word.
+
+![RNN (LeCun 2015)](images/rnn_nature.jpg)
+
+The matrix **U** amounts to a table of word embeddings in a vector space of many
+dimensions (e.g. 300) - each word in the vocabulary corresponds with a row in
+the table, and the dot product between any two words gives their similarity,
+once the network is trained. Alternatively, pre-trained word embeddings, such as
+word2vec (Mikolov 2013), can be used to save on training time.
+
+The matrix **W** acts as a filter on the internal hidden state (?). 
+
+The matrix **V** allows each word in the vocabulary to 'vote' on how likely it
+thinks it will be next, based on the context (current + previous words). The
+softmax layer then converts these scores into probabilities, so the top *k* most
+likely words can be found for a given context.
 
 
-<!-- In such networks, a sequence of words is encoded as a set of word -->
 <!-- vectors in a high-dimensional space (e.g. 300), and the network is trained until -->
 <!-- the output is within a certain distance of the actual word. Then on testing, a -->
 <!-- sequence of words will be fed into the network and the output used to search the -->
 <!-- vector space for the closest *k* words. -->
 
-
-
-until recently [when?] trigram was state of the art in word prediction.
-can't use much bigger contexts than trigram because too many possibilities to store (calculate) and most counts would be zero.
-have to back off to digrams when trigram counts are too small. 
-eg if prompt is "dinosaur pizza", and you've never seen that pair before, must backoff to the bigram "pizza ___". 
-
-but trigrams fail to use a lot of information that can be used to predict the next word.
-doesn't understand similarities between words, eg cat and dog
-so need to convert words into vector of syntactic and semantic features, and use the features to predict next word.
-allows us to use much larger context, eg previous 10 words.
-bengio pioneered this. (year? 2003?)
-
-have huge softmax layer
-skipmax connections go straight from input to output words ?
-was slightly worse than trigram
-since then have been improved considerably
-(how?)
-(this was a plain rnn?)
 lstm's came in 1997
 various types, incl gru 2014 - simpler
 then attention 2015
-
 
 
 
@@ -220,16 +235,19 @@ then attention 2015
 performances of solutions obtained. -->
 
 For the benchmark model a simple n-gram model will be used - this is a standard
-approach for next word prediction. A nested dictionary is created based on the
-training data, which counts occurrences of n-tuples of words. These are then
-normalized to get a probability distribution, which can be used to predict the
-most likely words following a sequence.
+approach for next word prediction based on Markov models. A multidimensional
+array, indexed by vocabulary words, stores counts of occurrences of n-tuples of
+words based on the training data. These are then normalized to get a probability
+distribution, which can be used to predict the most likely words following a
+sequence.
+
+A trigram (3-gram) model will be used as the baseline, as it should work fairly
+well with a million words of data - going to 4- or 5- grams would
+require more training data.
+
+-> find published results, history (when were these first developed, called n-grams, get citations)
 
 
-
-n-grams - 1,2,3,4 trained on 1m words, 5-gram trained on billions (google)?
-
--> find published results, history
 
 
 
@@ -377,18 +395,29 @@ and compared/contrasted to the current solution. -->
 
 ## References
 
-[Bengio2003] Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of Machine Learning Research, Feb 2003.
+(Bengio 2003) Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of Machine Learning Research, Feb 2003.
 
-<!-- If you publish work that uses NLTK, please cite the NLTK book as follows: -->
-[Bird2009] Bird, Steven, Edward Loper and Ewan Klein (2009), Natural Language Processing with Python. O'Reilly Media Inc. http://nltk.org/book
+(Bird 2009) Bird, Steven, Edward Loper and Ewan Klein, Natural Language Processing with Python ("NLTK Book"). O'Reilly Media Inc., 2009. http://nltk.org/book
 
-[Carlberger1997] Carlberger, Alice, et al. "Profet, a new generation of word prediction: An evaluation study." Proceedings, ACL Workshop on Natural Language Processing for Communication Aids, 1997.
+(Carlberger 1997) Carlberger, Alice, et al. "Profet, a new generation of word prediction: An evaluation study." Proceedings, ACL Workshop on Natural Language Processing for Communication Aids, 1997.
 
-[Gutenberg2016] Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
+(Chelba 2013) Chelba, Ciprian, et al. "One billion word benchmark for measuring progress in statistical language modeling." arXiv preprint arXiv:1312.3005, 2013.
 
-[Markov1913] Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
+(Coleman 1975) Coleman, Meri; and Liau, T. L., "A computer readability formula designed for machine scoring", Journal of Applied Psychology, Vol. 60, pp. 283 - 284, 1975.
 
-[Shannon1948] Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
+(Gutenberg 2016) Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
+
+(LeCun 2015) LeCun, Bengio, Hinton, "Deep learning", Nature 521, 436 - 444 (28 May 2015) doi:10.1038/nature14539
+
+(Markov 1913) Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
+
+(Mikolov 2013) Mikolov, Tomas; et al. "Efficient Estimation of Word Representations in Vector Space". arXiv:1301.3781, 2013.
+
+(Shannon 1948) Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
+
+
+may need
+F. Rosenblatt. The perceptron, a perceiving and recognizing automaton Project Para. Cornell Aeronautical Laboratory, 1957.
 
 
 --------------------------------------------------------------------------------

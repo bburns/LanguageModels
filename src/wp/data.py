@@ -226,7 +226,7 @@ class Data(object):
                 nwordssentence = nwords/nsentences
                 nuniquewords = len(set(words))
                 # grade_level = self.readability(s)
-                grade_level = round(textstat.coleman_liau_index(s),1)
+                grade_level = int(round(textstat.coleman_liau_index(s)))
                 row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords, grade_level]
                 rows.append(row)
         df = pd.DataFrame(rows, columns=cols)

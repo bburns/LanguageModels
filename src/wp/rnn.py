@@ -130,7 +130,10 @@ class Rnn(model.Model):
                 print("Starting gradient descent")
                 # train model with stochastic gradient descent - learns U, V, W
                 # see model.py for fn
-                losses = self.train_with_sgd(X_train, y_train, nepochs=self.nepochs, \
+                learning_rate = 1.0 #.. for abcd dataset
+                losses = self.train_with_sgd(X_train, y_train,
+                                             learning_rate=learning_rate,
+                                             nepochs=self.nepochs,
                                              evaluate_loss_after=int(self.nepochs/10))
             self.train_time = b.time
             self.trained = True
@@ -236,7 +239,7 @@ class Rnn(model.Model):
             state[i] = np.tanh(u + w) # state[t] is a vector with nhidden elements
             # output[t] = util.softmax(self.V.dot(state[t]))
             # now convert the internal/hidden state to scores for each class -
-            # V is matrix with (nhidden x nvocab) entries (eg 100x1e4 = 1e6 entries) - converts an embedded word to vocab scores.
+            # V is matrix with (nhidden x nvocab) entries (eg 100x1e4 = 1e6 entries) - converts an embedded word+context to vocab scores.
             #. but also can be doing some other work than just translation, eh?
             v = self.V.dot(state[i]) # v is a vector with nvocab elements, representing SCORES for each classifier.
             # ie each vocab word has a classifier that gets to vote for if it thinks it should be next.
@@ -252,16 +255,16 @@ class Rnn(model.Model):
     def total_loss(self, x, y):
         """
         Return total value of loss function for all training examples.
-        The loss function is the Cross Entropy between the
-        we're using negative log probability, which is entropy, ie amount of information ?
-        we want to minimize total loss, ie entropy ?
-        x - list of sentences (sequence of numbers), eg [[5,2,6],[9,7,2,1],...]
-        y - list of labels - y[i][j] should follow from x[i][0]...x[i][j-1], eg [[2,6,0],[7,2,1,0],...]
+        #.The loss function is the Cross Entropy between the
+        #.we're using negative log probability, which is entropy, ie amount of information ?
+        #.we want to minimize total loss, ie entropy ?
+        x - list of sequences, eg [[0,1,2],...]
+        y - list of labels - y[i][j] should follow from x[i][0]...x[i][j-1], eg [[1,2,3],...]
         """
-        total_loss = 0
+        total_loss = 0.0
         nsequences = len(x)
         # iterate over sequences
-        for i in np.arange(nsequences):
+        for i in range(nsequences):
             x_sequence = x[i] # a sequence of numbers, eg [0,1,2]
             y_i = y[i] # the actual outputs - a sequence of numbers, eg [1,2,3]
             output, _ = self.forward_propagation(x_sequence) # get predicted outputs and internal states (don't need state though)
@@ -274,6 +277,20 @@ class Rnn(model.Model):
             # if the probability is close to zero, then the log will be towards -infinity, so add large number to loss.
             # so we'll try to minimize the total loss, which means all of the predictions are as correct as we can get them.
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
+        print('U (words embedded in nhidden-d space)')
+        print(self.U)
+        print('V (next word predictor)')
+        print(self.V)
+        print('W (previous state weights)')
+        print(self.W)
+        print('output')
+        print(output)
+        print('output max')
+        for i in range(len(output)):
+            row = output[i]
+            mr = row.max()
+            row = row/mr
+            print(row)
         return total_loss
 
     def average_loss(self, x, y):
@@ -429,13 +446,15 @@ if __name__=='__main__':
     #     model.sgd_step(X_train[1], y_train[1], 0.005)
 
 
+    np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+
     data = Data('abcd')
-    model = Rnn(data, nvocab=6, nhidden=2, nepochs=10, train_amount=100)
+    model = Rnn(data, nvocab=6, nhidden=2, nepochs=40, train_amount=100)
     model.train(force_training=True)
-    # model.test(test_amount=100)
-    # print('accuracy',model.test_score)
-    # print(util.table(model.test_samples))
-    # print()
+    model.test(test_amount=100)
+    print('accuracy',model.test_score)
+    print(util.table(model.test_samples))
+    print()
 
 
     # data = Data('animals')
