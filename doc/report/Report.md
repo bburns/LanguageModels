@@ -113,19 +113,24 @@ Gutenberg, totalling nearly a million words -
 
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
 
-| Text                                                 |   Chars |   Words | Sentences   | Chars/ Word   | Words/ Sent   | Unique Words   | Grade Level   |
-|------------------------------------------------------+---------+---------+-------------+---------------+---------------+----------------+---------------|
-| 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 | 35431       | 6.22          | 14.57         | 82177          | 10            |
-| 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 | 1631        | 5.55          | 16.41         | 6346           | 9             |
-| 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 | 3719        | 5.74          | 16.89         | 13894          | 8             |
-| 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 | 2517        | 5.85          | 15.36         | 9417           | 8             |
-| 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 | 2400        | 6.01          | 14.51         | 9871           | 9             |
-| 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 | 2161        | 5.89          | 19.59         | 10882          | 9             |
-| 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 | 2359        | 6.01          | 25.66         | 14406          | 10            |
-| 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 | 3215        | 5.94          | 16.85         | 13102          | 9             |
-| 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 | 4670        | 5.83          | 10.05         | 10917          | 8             |
-| 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 | 1378        | 5.66          | 21.27         | 7767           | 8             |
-| Totals                                               | 5533068 |  912608 |             |               |               |                |               |
+\small
+
+| Text                                                 |   Chars |   Words | Sentences | Chars/ Word | Words/ Sent | Unique Words | Grade Level |
+|------------------------------------------------------+---------+---------+-----------+-------------+-------------+--------------+-------------|
+| 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 | 35431     | 6.22        | 14.57       | 82177        | 10          |
+| 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 | 1631      | 5.55        | 16.41       | 6346         | 9           |
+| 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 | 3719      | 5.74        | 16.89       | 13894        | 8           |
+| 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 | 2517      | 5.85        | 15.36       | 9417         | 8           |
+| 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 | 2400      | 6.01        | 14.51       | 9871         | 9           |
+| 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 | 2161      | 5.89        | 19.59       | 10882        | 9           |
+| 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 | 2359      | 6.01        | 25.66       | 14406        | 10          |
+| 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 | 3215      | 5.94        | 16.85       | 13102        | 9           |
+| 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 | 4670      | 5.83        | 10.05       | 10917        | 8           |
+| 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 | 1378      | 5.66        | 21.27       | 7767         | 8           |
+
+Total words 912,608
+
+\normalsize
 
 The grade level is calculated using the Coleman-Liau Index (Coleman 1975).
 
