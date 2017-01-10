@@ -84,7 +84,8 @@ class Data(object):
             outfile = self.cleaned_folder + filetitle
             if not os.path.isfile(outfile):
                 # print('Cleaning %s to %s' % (infile, filetitle))
-                with open(infile, 'rb') as f_in:
+                # with open(infile, 'rb') as f_in:
+                with open(infile, 'r') as f_in:
                     s = f_in.read()
                     s = s.replace('\r\n','\n') # dos2unix
                     s = self.clean_header_footer(s)
@@ -109,6 +110,7 @@ class Data(object):
         """
         Remove table of contents from specific texts.
         """
+        s = util.remove_text(r"LENOX, January 27, 1851.", s, 0) # house of seven gables
         s = util.remove_text(r"List of Illustrations", s, 0) # les miserables
         s = util.remove_text(r"\[Sidenote\: _Down the Rabbit-Hole_\]", s, 0) # alice
         s = util.remove_text(r"PART ONE--The Old Buccaneer", s, 0) # treasure island
@@ -127,7 +129,8 @@ class Data(object):
             with open(self.merged_file, 'wb') as f_all:
                 for filename in glob.glob(self.cleaned_files):
                     # print('Adding', filename)
-                    with open(filename, 'rb') as f:
+                    # with open(filename, 'rb') as f:
+                    with open(filename, 'r') as f:
                         s = f.read()
                         f_all.write(s)
         print('done.')
@@ -209,59 +212,55 @@ class Data(object):
         Gather some statistics on the datafiles.
         """
         rows = []
-        cols = ['Text','Chars','Words','Sentences', 'Chars / Word', 'Words / Sentence', 'Unique Words', 'Grade Level']
+        cols = ['Text','Chars','Words','Sentences', 'Chars / Word', 'Words / Sentence', 'Unique Words', 'Unique Rate', 'Grade Level']
         for filepath in glob.glob(self.cleaned_files):
-            with open(filepath, 'rb') as f:
+            # with open(filepath, 'rb') as f:
+            with open(filepath, 'r') as f:
                 s = f.read()
                 s = s.lower()
                 words = s.split(' ')
                 filetitle = util.filetitle(filepath)
                 sentences = tokenize.sent_tokenize(s)
-                # tokens = set(tokenize.word_tokenize(s))
-                # nwords = len(tokens = set(tokenize.word_tokenize(s))
                 nchars = len(s)
                 nwords = len(words)
                 nsentences = len(sentences)
-                ncharsword = round(nchars/nwords,2)
-                nwordssentence = round(nwords/nsentences,2)
+                ncharsword = round(nchars/nwords,1)
+                nwordssentence = round(nwords/nsentences,1)
                 nuniquewords = len(set(words))
-                # grade_level = self.readability(s)
+                uniquerate = nuniquewords / nwords
                 grade_level = int(round(textstat.coleman_liau_index(s)))
-                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords, grade_level]
+                row = [filetitle, nchars, nwords, nsentences, ncharsword, nwordssentence, nuniquewords, uniquerate, grade_level]
                 rows.append(row)
         nchars = sum([row[1] for row in rows])
         nwords = sum([row[2] for row in rows])
-        row = ['Totals',nchars, nwords, '','','','','']
+        row = ['Totals',nchars, nwords, '','','','','','']
         rows.append(row)
         df = pd.DataFrame(rows, columns=cols)
+        df = df.drop('Chars',axis=1) # not enough space...
+        df = df.drop('Sentences',axis=1)
+        df = df.drop('Unique Rate',axis=1)
         return df
 
     def histogram(self, nsentences=100, nwordsmax=100):
         """
         Get histogram data of sentence length for the different cleaned texts.
         nsentences - limit to sample of this many sentences, for speed (eg lesmis has 35k sentences).
-        nwordsmax  - set wordcounts greater than this to NaN (ignore giant outlier sentences).
+        nwordsmax  - set wordcounts greater than this to NaN (to ignore giant outlier sentences).
         """
         lengths = []
         filetitles = []
-        # weights = []
         for filepath in glob.glob(self.cleaned_files):
-            with open(filepath, 'rb') as f:
+            # with open(filepath, 'rb') as f:
+            with open(filepath, 'r') as f:
                 s = f.read()
                 sentences = tokenize.sent_tokenize(s)
-                # sentences = sentences[:nsentences] # sample sentences
                 sentences = random.sample(sentences, nsentences) # sample sentences
                 nwords = [len(sentence.split()) for sentence in sentences]
                 lengths.append(nwords)
                 filetitle = util.filetitle(filepath)
                 filetitles.append(filetitle)
-                # factor = 1/len(nwords)
-                # weight = [factor for nword in nwords] # must be same size as nwords
-                # weights.append(weight)
-        # return lengths, filetitles, weights
         df = pd.DataFrame(lengths, index=filetitles)
         df = df.applymap(lambda x: x if x < nwordsmax else np.NaN)
-        # df = df.transpose()
         return df
 
     def text(self, source='merged', amount=1.0):
@@ -276,7 +275,8 @@ class Data(object):
             nchars = int(ntotal * amount)
         else:
             nchars = int(amount)
-        with open(filename, 'rb') as f:
+        # with open(filename, 'rb') as f:
+        with open(filename, 'r') as f:
             s = f.read(nchars)
         return s
 
@@ -423,8 +423,9 @@ if __name__ == '__main__':
     # print(data)
     # print()
 
-    data = Data('gutenbergs')
-    print(util.table(data.analyze()))
+    # data = Data('gutenbergs')
+    # # data.prepare(ptrain=0.9, pvalidate=0.05, ptest=0.05)
+    # print(util.table(data.analyze()))
     # print(data.readability())
     # tokens = data.tokens() # 18 secs
     # print(len(tokens))

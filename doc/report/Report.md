@@ -1,6 +1,10 @@
 ---
 geometry: margin=1in
+fontfamily: utopia
+fontsize: 11pt
 ---
+
+<!-- fontfamily: font package to use for LaTeX documents (with pdflatex): TeXLive has bookman (Bookman), utopia or fourier (Utopia), fouriernc (New Century Schoolbook), times or txfonts (Times), mathpazo or pxfonts or mathpple (Palatino), libertine (Linux Libertine), arev (Arev Sans), and the default lmodern, among others. -->
 
 # Word Prediction using Recurrent Neural Networks
 
@@ -58,11 +62,9 @@ For example, for the sequence "The dog", a solution might be
 We'll use some different neural network architectures to find the most likely
 next words - a Feedforward Neural Network (FNN), a standard Recurrent Neural
 Network (RNN), a Long Short-Term Memory (LSTM) RNN, and a GRU (Gated Recurrent
-Unit) RNN - and compare these against some baseline n-gram models. Based on the
-results in the literature, the GRU RNN is expected to offer the best performance
-for a given amount of computation [cite!].
-
--->>>diagrams of fnn, rnn, lstm, gru - grab from good site?
+Unit) RNN - and compare these against some baseline n-gram models. The GRU RNN
+is expected to offer the best performance for a given amount of training time
+[cite!].
 
 
 ### Metrics
@@ -70,28 +72,19 @@ for a given amount of computation [cite!].
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-will use accuracy or mean error rate or perplexity
--->>>see what is used in lit
-perplexity!
-gives rough idea of how well the model has narrowed down the possible choices -
-eg PPL of 250 means ~ uniform choice from 250 words
-how does this compare to accuracy though? or is accuracy too noisy in some way? 
-but we're averaging the accuracy over lots of test examples
-do both?
-but how calculate perplexity?
-it's complicated...
+For evaluation of all models, the accuracy score will be reported, for different
+training set sizes.
 
-For evaluation of both approaches, the accuracy score will be reported, for
-different training set sizes.
-
-Accuracy: # correct predictions / # total predictions
+> **Accuracy** = # correct predictions / # total predictions
 
 A prediction will be considered *correct* if the actual word is in the list of
 *k* most likely words - this is relevant to the task of presenting the user with
-a list of most likely next words as they are entering text.
+a list of most likely next words as they are entering text. We'll use *k* = 3
+for evaluation.
 
-Results in the literature are often reported as perplexity, which is a measure
-of how similar one probability distribution to another (?).
+Results in the literature are often reported as *perplexity*, which gives an idea
+of how well the model has narrowed down the possible choices for the next word -
+e.g. a perplexity of 100 corresponds roughly to a uniform choice from 100 words.
 
 <!-- The dataset will be split into training and test sets - after training, a -->
 <!-- sequence of words from the test set will be chosen at random, then fed to the -->
@@ -109,26 +102,26 @@ _Abnormalities_ or characteristics about the data or input that need to
 be addressed have been identified. -->
 
 The training and testing data are obtained from ten books from Project
-Gutenberg, totalling nearly a million words -
+Gutenberg, totalling 1,008,825 words -
 
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
+<!-- this is output from print(util.table(data.analyze())) -->
 
 \small
 
-| Text                                                 |   Chars |   Words | Sentences | Chars/ Word | Words/ Sent | Unique Words | Grade Level |
-|------------------------------------------------------+---------+---------+-----------+-------------+-------------+--------------+-------------|
-| 1862 Victor Hugo Les Miserables (G135)               | 3213531 |  516244 | 35431     | 6.22        | 14.57       | 82177        | 10          |
-| 1865 Lewis Carroll Alice in Wonderland (G28885)      |  148524 |   26758 | 1631      | 5.55        | 16.41       | 6346         | 9           |
-| 1883 Robert Louis Stevenson Treasure Island (G120)   |  360831 |   62826 | 3719      | 5.74        | 16.89       | 13894        | 8           |
-| 1898 Henry James The Turn of the Screw (G209)        |  226242 |   38663 | 2517      | 5.85        | 15.36       | 9417         | 8           |
-| 1899 Joseph Conrad Heart of Darkness (G219)          |  209176 |   34833 | 2400      | 6.01        | 14.51       | 9871         | 9           |
-| 1905 M R James Ghost Stories of an Antiquary (G8486) |  249247 |   42338 | 2161      | 5.89        | 19.59       | 10882        | 9           |
-| 1907 Arthur Machen The Hill of Dreams (G13969)       |  363716 |   60528 | 2359      | 6.01        | 25.66       | 14406        | 10          |
-| 1908 Kenneth Graham The Wind in the Willows (G289)   |  321958 |   54160 | 3215      | 5.94        | 16.85       | 13102        | 9           |
-| 1919 P G Woodhouse My Man Jeeves (G8164)             |  273859 |   46947 | 4670      | 5.83        | 10.05       | 10917        | 8           |
-| 1920 M R James A Thin Ghost and Others (G20387)      |  165984 |   29311 | 1378      | 5.66        | 21.27       | 7767         | 8           |
-
-Total words 912,608
+| Text                                                         |   Words | Chars / Word   | Words / Sentence   | Unique Words   |   Grade Level |
+|--------------------------------------------------------------+---------+----------------+--------------------+----------------+---------------|
+| 1851 Nathaniel Hawthorne The House of the Seven Gables (G77) |   96217 | 6.2            | 21.2               | 22214          |            12 |
+| 1862 Victor Hugo Les Miserables (G135)                       |  516244 | 6.2            | 14.6               | 82177          |            10 |
+| 1865 Lewis Carroll Alice in Wonderland (G28885)              |   26758 | 5.6            | 16.4               | 6346           |             9 |
+| 1883 Robert Louis Stevenson Treasure Island (G120)           |   62826 | 5.7            | 16.9               | 13894          |             8 |
+| 1898 Henry James The Turn of the Screw (G209)                |   38663 | 5.9            | 15.4               | 9417           |             8 |
+| 1899 Joseph Conrad Heart of Darkness (G219)                  |   34833 | 6.0            | 14.5               | 9871           |             9 |
+| 1905 M R James Ghost Stories of an Antiquary (G8486)         |   42338 | 5.9            | 19.6               | 10882          |             9 |
+| 1907 Arthur Machen The Hill of Dreams (G13969)               |   60528 | 6.0            | 25.7               | 14406          |            10 |
+| 1908 Kenneth Graham The Wind in the Willows (G289)           |   54160 | 5.9            | 16.8               | 13102          |             9 |
+| 1919 P G Woodhouse My Man Jeeves (G8164)                     |   46947 | 5.8            | 10.1               | 10917          |             8 |
+| 1920 M R James A Thin Ghost and Others (G20387)              |   29311 | 5.7            | 21.3               | 7767           |             8 |
 
 \normalsize
 
@@ -140,20 +133,16 @@ http://www.gutenberg.org/etext/28885.
 
 Some sample text:
 
-    The landscape was gloomy and deserted. He was encompassed by space.
-    There was nothing around him but an obscurity in which his gaze was
-    lost, and a silence which engulfed his voice.
-    - Les Miserables
+> "Speak English!" said the Eaglet. "I don't know the meaning of half those long words, and, what's more, I don't believe you do either!" - *Alice in Wonderland* (Shortest words)
 
-    From the eminence of the lane, skirting the brow of a hill, he looked down
-    into deep valleys and dingles, and beyond, across the trees, to remoter
-    country, wild bare hills and dark wooded lands meeting the grey still sky.
-    - The Hill of Dreams
+> I went up and passed the time of day. "Well, well, well, what?" I said. "Why, Mr. Wooster! How do you do?" - *My Man Jeeves* (Shortest sentences)
 
-    Meantime the Rat, warm and comfortable, dozed by his fireside. His paper
-    of half-finished verses slipped from his knee, his head fell back, his
-    mouth opened, and he wandered by the verdant banks of dream-rivers. 
-    - The Wind in the Willows
+> From the eminence of the lane, skirting the brow of a hill, he looked down into deep valleys and dingles, and beyond, across the trees, to remoter country, wild bare hills and dark wooded lands meeting the grey still sky. - *The Hill of Dreams* (Longest sentences)
+
+> He was one of the martyrs to that terrible delusion, which should teach us, among its other morals, that the influential classes, and those who take upon themselves to be leaders of the people, are fully liable to all the passionate error that has ever characterized the maddest mob. - *The House of the Seven Gables* (Highest grade level)
+
+<!-- The landscape was gloomy and deserted. He was encompassed by space. There was nothing around him but an obscurity in which his gaze was lost, and a silence which engulfed his voice. - *Les Miserables* -->
+<!-- Meantime the Rat, warm and comfortable, dozed by his fireside. His paper of half-finished verses slipped from his knee, his head fell back, his mouth opened, and he wandered by the verdant banks of dream-rivers. - *The Wind in the Willows* -->
 
 
 ### Exploratory Visualization
@@ -162,12 +151,11 @@ Some sample text:
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
+![Sentence length distributions](images/sentence_lengths_boxplot.png)
+
+
 make a histogram of sentence lengths
 but why?
-
-![Sentence length distributions](images/sentence_lengths.png)
-
-
 keyword is *relevant* - what vis would be relevant for this problem?
 and *thorough discussion* - needs to be something interesting. 
 
@@ -180,6 +168,7 @@ how calculate? ngrams?
 
 -> information content of english - shannon paper
 use to compare texts?
+plot against mean/median sentence lengths?
 
 
 
@@ -216,12 +205,14 @@ predictions about the next word.
 ![RNN (LeCun 2015)](images/rnn_nature.jpg)
 
 The matrix **U** amounts to a table of word embeddings in a vector space of many
-dimensions (e.g. 300) - each word in the vocabulary corresponds with a row in
-the table, and the dot product between any two words gives their similarity,
-once the network is trained. Alternatively, pre-trained word embeddings, such as
-word2vec (Mikolov 2013), can be used to save on training time.
+dimensions (which could be e.g. 50-300) - each word in the vocabulary
+corresponds with a row in the table, and the dot product between any two words
+gives their similarity, once the network is trained. Alternatively, pre-trained
+word embeddings, such as word2vec (Mikolov 2013), can be used to save on
+training time.
 
-The matrix **W** acts as a filter on the internal hidden state (?). 
+The matrix **W** acts as a filter on the internal hidden state, which represents
+the prior context.
 
 The matrix **V** allows each word in the vocabulary to 'vote' on how likely it
 thinks it will be next, based on the context (current + previous words). The
@@ -229,14 +220,16 @@ softmax layer then converts these scores into probabilities, so the top *k* most
 likely words can be found for a given context.
 
 
+<!-- would like to do lstm, gru, if have time - maybe will have another month... -->
+
 <!-- vectors in a high-dimensional space (e.g. 300), and the network is trained until -->
 <!-- the output is within a certain distance of the actual word. Then on testing, a -->
 <!-- sequence of words will be fed into the network and the output used to search the -->
 <!-- vector space for the closest *k* words. -->
 
-lstm's came in 1997
-various types, incl gru 2014 - simpler
-then attention 2015
+<!-- lstm's came in 1997 -->
+<!-- various types, incl gru 2014 - simpler -->
+<!-- then attention 2015 -->
 
 
 

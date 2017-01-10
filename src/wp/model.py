@@ -49,6 +49,8 @@ class Model(object):
             self.load_time = None
         return self.load_time
 
+    #. add mini_batch_size - not stochastic without it?
+    # or is this just minibatch size of 1? hmm, i guess so
     def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
         """
         Train model with Stochastic Gradient Descent (SGD) and return losses table.

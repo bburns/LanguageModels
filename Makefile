@@ -35,12 +35,7 @@ help:
 
 report: doc/report/report.pdf
 doc/report/report.pdf: doc/report/report.md
-	cd doc/report && pandoc report.md -o report.pdf
-#	cd doc/report && pandoc report.md  -V geometry:margin=1in -o report.pdf
-#	cd doc/report && pandoc report.md --toc --toc-depth=2 -o report.pdf
-
-# repo:
-# 	start "repo" cmd /c report.pdf
+	cd doc/report && pandoc report.md -o report.pdf && start report.pdf
 
 
 # --------------------------------------------------------------------------------
@@ -77,8 +72,8 @@ $(word_vectors_zipfile):
 	wget -O $(word_vectors_zipfile) $(word_vectors_url)
 	touch $(word_vectors_zipfile)
 
-split:
-	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/processed/all.txt data/split
+# split:
+# 	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/processed/all.txt data/split
 
 
 

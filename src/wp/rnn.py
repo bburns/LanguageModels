@@ -276,6 +276,7 @@ class Rnn(model.Model):
             # ie if the probability is close to one, then the log will be close to 0, so little to no loss -
             # if the probability is close to zero, then the log will be towards -infinity, so add large number to loss.
             # so we'll try to minimize the total loss, which means all of the predictions are as correct as we can get them.
+            #. where is y[i]?
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
         print('U (words embedded in nhidden-d space)')
         print(self.U)

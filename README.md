@@ -21,53 +21,20 @@ text to help fight spam.
 * Generate some text using both models and compare subjectively
 
 
-## Data
+## Libraries
 
-The texts used to train the models can be obtained from Project Gutenberg at the
-following URLs:
+Base is Anaconda 3 distribution with Python 3.5 - the following libraries are used:
 
-http://www.gutenberg.org/files/325/325-0.txt
-http://www.gutenberg.org/files/135/135-0.txt
-http://www.gutenberg.org/files/28885/28885-0.txt
-http://www.gutenberg.org/files/120/120-0.txt
-http://www.gutenberg.org/files/209/209-0.txt
-http://www.gutenberg.org/files/8486/8486-0.txt
-http://www.gutenberg.org/files/13969/13969-0.txt
-http://www.gutenberg.org/files/289/289-0.txt
-http://www.gutenberg.org/files/8164/8164-0.txt
-http://www.gutenberg.org/files/20387/20387-0.txt
-
-These were then concatenated together, converted to UTF-8, and stripped of non-conforming characters with:
-
-    $ cat *.txt > foo.txt
-    $ iconv -t utf-8 -c foo.txt > all.txt
-
-The word2vec project page is at https://code.google.com/archive/p/word2vec/ -
-the word2vec word vectors, trained on 100 billion words from Google News, can be
-obtained from https://docs.google.com/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download
-(1.5GB).
+- numpy
+- matplotlib
+- tabulate
 
 
-## Usage
+Additional libraries, installed with pip install:
 
-Show list of tasks
-    > make
-
-Run tests
-    > make test
-
-Run all tasks
-    > make all
-    
-Train the models
-
-    > make train-ngram
-    > make train-rnn
-
-Test the models
-
-    > make test-ngram
-    > make test-rnn
+- textstat - calculates Coleman-Liau Index for texts (grade level readability)
+- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository. 
+- TensorFlow
 
 
 ## License
