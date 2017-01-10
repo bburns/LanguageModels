@@ -5,7 +5,6 @@ n-gram word prediction model
 Basic version - no backoff or smoothing.
 """
 
-from __future__ import print_function, division
 import os
 import random
 from pprint import pprint, pformat
@@ -152,11 +151,11 @@ class Ngram(model.Model):
         output = []
         input = [start1]
         if self.n>=3:
-            start2 = random.choice(self._d[start1].keys())
+            start2 = random.choice(list(self._d[start1].keys()))
             input.append(start2)
             output.append(start2)
         if self.n>=4:
-            start3 = random.choice(self._d[start1][start2].keys())
+            start3 = random.choice(list(self._d[start1][start2].keys()))
             input.append(start3)
             output.append(start3)
         while True:
@@ -261,13 +260,13 @@ if __name__ == '__main__':
         model = Ngram(data, n=n, train_amount=6000)
         model.train()
         model.test(test_amount=2000)
-        print('accuracy', model.test_score)
+        print('accuracy:', model.test_score)
         df = model.test_samples
         print(tabulate(model.test_samples, showindex=False, headers=df.columns))
         # print(df)
         # print(model._d)
         s = model.generate()
-        print('generate', s)
+        print('generate:', s)
         print()
 
 

@@ -10,16 +10,14 @@ sentences = data.sentences('train')
 tokens = data.tokens('test')
 """
 
-from __future__ import print_function, division
-
 import sys
 import os.path
 import random
 import glob
 import re
-# import math
 from pprint import pprint
 from collections import defaultdict
+import codecs
 
 import numpy as np
 import pandas as pd
@@ -61,6 +59,7 @@ class Data(object):
             'validate': self.split_folder + 'all-validate.txt',
             'test': self.split_folder + 'all-test.txt',
         }
+        self.encodings = ['utf8', 'cp1252', 'latin1']
 
     def prepare(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .split
         """
@@ -84,8 +83,13 @@ class Data(object):
             outfile = self.cleaned_folder + filetitle
             if not os.path.isfile(outfile):
                 # print('Cleaning %s to %s' % (infile, filetitle))
-                # with open(infile, 'rb') as f_in:
-                with open(infile, 'r') as f_in:
+                # try:
+                # for encoding in self.encodings:
+                # with open(infile, 'r') as f_in:
+                # with open(infile, 'r', encoding=encoding, errors='replace') as f_in:
+                encoding = 'utf8'
+                # with codecs.open(infile, 'r', encoding=encoding, errors='replace') as f_in:
+                with codecs.open(infile, 'r', encoding=encoding, errors='ignore') as f_in:
                     s = f_in.read()
                     s = s.replace('\r\n','\n') # dos2unix
                     s = self.clean_header_footer(s)
@@ -93,10 +97,12 @@ class Data(object):
                     # strip out any non-ascii characters - nltk complains otherwise
                     #. need better way to handle this - eg convert to miserables, not misrables
                     #. use decode?
-                    s = re.sub(r'[^\x00-\x7f]',r'', s)
+                    # s = re.sub(r'[^\x00-\x7f]',r'', s)
                     # with open(outfile, 'wb') as f_out:
                     with open(outfile, 'w') as f_out:
                         f_out.write(s)
+                # except:
+                    # pass
         print("done.")
 
     def clean_header_footer(self, s):
@@ -427,11 +433,12 @@ if __name__ == '__main__':
     # print()
 
     # data = Data('gutenbergs')
-    # # data.prepare(ptrain=0.9, pvalidate=0.05, ptest=0.05)
-    # print(util.table(data.analyze()))
-    # print(data.readability())
-    # tokens = data.tokens() # 18 secs
-    # print(len(tokens))
+    # with benchmark("prepare"):
+        # data.prepare(ptrain=0.9, pvalidate=0.05, ptest=0.05) # 6 secs
+    # with benchmark("analyze"):
+        # print(util.table(data.analyze())) # 25 secs
+    # with benchmark("tokens"):
+        # tokens = data.tokens() # 18 secs
 
     # # get histogram of sentence lengths - currently plotted in the notebook
     # data = Data('gutenbergs')

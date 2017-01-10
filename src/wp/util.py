@@ -3,8 +3,6 @@
 Utility functions used by more than one module.
 """
 
-from __future__ import print_function, division
-
 import heapq
 from datetime import datetime
 import sys
@@ -13,7 +11,6 @@ import re
 
 import numpy as np
 from tabulate import tabulate
-
 
 
 def table(df):

@@ -12,9 +12,7 @@ Usage:
 Adapted from http://stackoverflow.com/a/14906787/243392
 """
 
-from __future__ import print_function, division
 import sys
-
 
 class Transcript(object):
 

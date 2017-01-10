@@ -6,8 +6,6 @@ The RNN is effectively a deep network with any number of hidden layers,
 all with the same parameters.
 """
 
-from __future__ import print_function, division
-
 import os
 import os.path
 import random
@@ -17,7 +15,6 @@ import itertools
 import operator
 import time
 from pprint import pprint, pformat
-# from collections import defaultdict
 
 import numpy as np
 import nltk

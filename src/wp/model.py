@@ -3,12 +3,11 @@
 Base Model class for use by n-gram and RNN classes.
 """
 
-from __future__ import print_function, division
 import os
 import os.path
-import cPickle as pickle # faster version of pickle
 from datetime import datetime
 import sys
+import pickle
 
 import pandas as pd
 
