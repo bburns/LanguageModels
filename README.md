@@ -27,14 +27,15 @@ Base is Anaconda 3 distribution with Python 3.5 - the following libraries are us
 
 - numpy
 - matplotlib
+- nltk
+- pandas
 - tabulate
-
 
 Additional libraries, installed with pip install:
 
 - textstat - calculates Coleman-Liau Index for texts (grade level readability)
-- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository. 
-- TensorFlow
+- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository - add to repo with `nbstripout --install`
+- tensorflow
 
 
 ## License

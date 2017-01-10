@@ -94,7 +94,8 @@ class Data(object):
                     #. need better way to handle this - eg convert to miserables, not misrables
                     #. use decode?
                     s = re.sub(r'[^\x00-\x7f]',r'', s)
-                    with open(outfile, 'wb') as f_out:
+                    # with open(outfile, 'wb') as f_out:
+                    with open(outfile, 'w') as f_out:
                         f_out.write(s)
         print("done.")
 
@@ -126,7 +127,8 @@ class Data(object):
         print('Merge cleaned files... ', end='')
         util.mkdir(self.merged_folder)
         if not os.path.isfile(self.merged_file):
-            with open(self.merged_file, 'wb') as f_all:
+            # with open(self.merged_file, 'wb') as f_all:
+            with open(self.merged_file, 'w') as f_all:
                 for filename in glob.glob(self.cleaned_files):
                     # print('Adding', filename)
                     # with open(filename, 'rb') as f:
@@ -167,7 +169,8 @@ class Data(object):
             output_files = []
             # open output files for writing
             for output_filename in output_filenames:
-                f = open(output_filename, 'wb')
+                # f = open(output_filename, 'wb')
+                f = open(output_filename, 'w')
                 output_files.append(f)
             # parse merged file into sentences
             # print('Splitting merged file into sentences')
