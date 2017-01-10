@@ -78,8 +78,8 @@ class Rnn(model.Model):
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             # with benchmark("Trained model " + self.name) as b:
+            print("Getting training tokens...")
             with benchmark("Prepared training data"):
-                print("Getting training tokens")
                 #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
                 tokens = self.data.tokens('train', self.train_amount) # eg ['a','b','.','END']
                 print(tokens)
@@ -123,8 +123,8 @@ class Rnn(model.Model):
                 self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab))
                 self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
                 self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
+            print("Starting gradient descent...")
             with benchmark("Gradient descent finished") as b:
-                print("Starting gradient descent")
                 # train model with stochastic gradient descent - learns U, V, W
                 # see model.py for fn
                 learning_rate = 1.0 #.. for abcd dataset
