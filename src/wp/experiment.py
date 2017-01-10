@@ -51,7 +51,7 @@ class Experiment(object):
         print('* ' + self.caption)
         print('-'*80)
         print()
-        param_name = self.params.keys()[0]
+        param_name = list(self.params.keys())[0]
         param_values = self.params[param_name]
         train_times = []
         test_times = []
