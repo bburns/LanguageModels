@@ -66,10 +66,10 @@ class Data(object):
         Clean, merge, and split raw data files into train, validate, test sets.
         """
         print('Prepare dataset:', self.name)
-        self.clean()
-        self.merge()
-        self.split(ptrain, pvalidate, ptest)
-        print('Dataset ready.')
+        with benchmark("Dataset prepared"):
+            self.clean()
+            self.merge()
+            self.split(ptrain, pvalidate, ptest)
         print()
 
     def clean(self):
@@ -417,6 +417,7 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
+    # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
     # data = Data('alphabet')
     # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 

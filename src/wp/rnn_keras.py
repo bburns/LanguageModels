@@ -154,10 +154,10 @@ class RnnKeras():
             # print(wordcounts)
             self.index_to_word = [wordcount[0] for wordcount in wordcounts]
             self.index_to_word.append(self.unknown_token)
-            # self.index_to_word.sort() #. just using for abcd dataset
+            self.index_to_word.sort() #. just using for alphabet dataset
             print(self.index_to_word)
             self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-            # self.nvocab = len(self.index_to_word) #? already set this
+            # self.nvocab = len(self.index_to_word) #? already set this? cut off with actual vocab length?
             # print(self.word_to_index)
             # replace words not in vocabulary with UNKNOWN
             # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
@@ -167,49 +167,21 @@ class RnnKeras():
             print(itokens)
 
             data = to_categorical(itokens, self.nvocab) # one-hot encoding
-            print('data')
-            print(data)
+            # print('data')
+            # print(data)
 
-            self.nlookback = 2 #.. this will be n, right?
+            # self.nlookback = 2 #.. this will be n, right?
+            self.nlookback = 3 #.. this will be n, right?
             x, y = create_dataset(data, self.nlookback)
-            print(x)
-            print(y)
-
-            # # go through text some number of tokens at a time
-            # # so chop x and y into sequences of seqlength tokens
-            # #. or rnd # tokens? his orig code fed sentences to rnn, but that loses intersentence context
-            # seqs = []
-            # seq = []
-            # for i, itoken in enumerate(itokens):
-            #     seq.append(itoken)
-            #     if len(seq) >= self.seqlength:
-            #         seqs.append(seq)
-            #         seq = []
-            # seqs.append(seq) # add leftovers
-            # # seqs will be a list of sequences for rnn to learn, eg [[0,1,2,3],...]
-            # print('seqs',seqs)
-            # X_train = [seq[:-1] for seq in seqs] # eg [[0,1,2],...]
-            # y_train = [seq[1:] for seq in seqs] # eg [[1,2,3],...]
-            # print('Xtrain',X_train)
-            # print('ytrain',y_train)
-
-            # need x y to be categorical (onehot)
-
+            # print(x)
+            # print(y)
 
         print("Starting gradient descent...")
         with benchmark("Gradient descent finished") as b:
-            # # train model with stochastic gradient descent - learns U, V, W
-            # # see model.py for fn
-            # learning_rate = 1.0 #.. for abcd dataset
-            # losses = self.train_with_sgd(X_train, y_train,
-            #                              learning_rate=learning_rate,
-            #                              nepochs=self.nepochs,
-            #                              evaluate_loss_after=int(self.nepochs/10))
-
             # self.model.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowPrediction(self.interval)])
             self.model.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
 
-            # show final prediction
+            # show final prediction for set of sequences in x
             s = self.get_prediction(x)
             print('prediction')
             print(s)
@@ -275,7 +247,8 @@ if __name__=='__main__':
     # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
     data = Data('alphabet')
-    model = RnnKeras(data, nvocab=6, nhidden=3, nepochs=5, train_amount=100)
+    # model = RnnKeras(data, nvocab=30, nhidden=3, nepochs=40, train_amount=100)
+    model = RnnKeras(data, nvocab=30, nhidden=10, nepochs=40, train_amount=100)
     model.train(force_training=True)
 
     # model.test(test_amount=100)
