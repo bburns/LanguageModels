@@ -4,6 +4,8 @@ Recurrent neural network (RNN) model
 
 The RNN is effectively a deep network with any number of hidden layers,
 all with the same parameters.
+
+Adapted from ___________________________
 """
 
 import os
@@ -25,9 +27,9 @@ import util
 from benchmark import benchmark
 
 
-class Rnn(model.Model):
+class RnnPython(model.Model):
     """
-    Recurrent neural network (RNN) model.
+    Recurrent neural network (RNN) model, implemented in Python.
     For load, save, test methods, see model.py Model class.
     """
 
@@ -453,7 +455,7 @@ if __name__=='__main__':
     np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
     data = Data('alphabet')
-    model = Rnn(data, nvocab=6, nhidden=2, nepochs=40, train_amount=100)
+    model = RnnPython(data, nvocab=6, nhidden=2, nepochs=40, train_amount=100)
     model.train(force_training=True)
     model.test(test_amount=100)
     print('accuracy',model.test_score)
@@ -463,7 +465,7 @@ if __name__=='__main__':
 
     # data = Data('animals')
     # # data = Data('gutenbergs')
-    # model = Rnn(data, nvocab=1000, nhidden=10, nepochs=10, train_amount=10000)
+    # model = RnnPython(data, nvocab=1000, nhidden=10, nepochs=10, train_amount=10000)
     # model.train(force_training=True)
     # model.test(test_amount=10000)
     # print('accuracy',model.test_score)

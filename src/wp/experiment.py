@@ -156,10 +156,10 @@ if __name__ == '__main__':
     # # 2017-01-04 1031
     # name = 'RNN hidden layer sizes'
     # specs = [
-    #     [wp.rnn.Rnn, {'nhidden':10}],
-    #     [wp.rnn.Rnn, {'nhidden':20}],
-    #     [wp.rnn.Rnn, {'nhidden':50}],
-    #     [wp.rnn.Rnn, {'nhidden':100}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':10}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':20}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':50}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':100}],
     # ]
     # data = wp.data.Data('gutenbergs')
     # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
@@ -170,10 +170,10 @@ if __name__ == '__main__':
     # # surprisingly, accuracy went down as vocab went up, even with 40k training chars
     # name = 'RNN vocab sizes'
     # specs = [
-    #     [wp.rnn.Rnn, {'nhidden':10, 'train_amount':40000}],
-    #     [wp.rnn.Rnn, {'nhidden':20, 'train_amount':40000}],
-    #     [wp.rnn.Rnn, {'nhidden':50, 'train_amount':40000}],
-    #     [wp.rnn.Rnn, {'nhidden':100, 'train_amount':40000}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':10, 'train_amount':40000}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':20, 'train_amount':40000}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':50, 'train_amount':40000}],
+    #     [wp.rnn_python.RnnPython, {'nhidden':100, 'train_amount':40000}],
     # ]
     # data = wp.data.Data('gutenbergs')
     # params = {'nvocab':[100,200,500,1000,2000]}
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     #     [wp.ngram.Ngram, {'n':1}],
     #     [wp.ngram.Ngram, {'n':2}],
     #     [wp.ngram.Ngram, {'n':3}],
-    #     [wp.rnn.Rnn, {}],
+    #     [wp.rnn_python.RnnPython, {}],
     # ]
     # data = wp.data.Data('gutenbergs')
     # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     # 2017-01-05 0700
     name = "rnn n values"
     specs = [
-        [wp.rnn.Rnn, {'train_amount':10000}],
+        [wp.rnn_python.RnnPython, {'train_amount':10000}],
     ]
     data = wp.data.Data('animals')
     # data = wp.data.Data('gutenbergs')
