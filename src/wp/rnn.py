@@ -120,7 +120,7 @@ class Rnn(model.Model):
                 print('ytrain',y_train)
                 # parameters for the network that we need to learn
                 #. use gaussians with suggested parameters
-                self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab))
+                self.U = np.random.uniform(-1,1, (self.nhidden, self.nvocab)) #. no +1 for bias dimension?
                 self.V = np.random.uniform(-1,1, (self.nvocab, self.nhidden))
                 self.W = np.random.uniform(-1,1, (self.nhidden, self.nhidden))
             print("Starting gradient descent...")
@@ -142,6 +142,7 @@ class Rnn(model.Model):
         """
         Perform one step of stochastic gradient descent (SGD).
         Adjust parameters U, V, W based on backpropagation gradients.
+        Called by model.train_with_sgd()
         """
         # calculate the gradients of the loss L with respect to parameters
         dLdU, dLdV, dLdW = self.bptt(x_sequence, y_sequence)
@@ -186,19 +187,21 @@ class Rnn(model.Model):
         """
         Do forward propagation for sequence x_sequence and return all output values and hidden states.
         x_sequence - sequence of numbers, eg [0,1,2], referring to words in the vocabulary.
-        returns output, state
-        output - a matrix of
-        state - a matrix of
+        Returns output, state -
+        output - a matrix of nelements x nvocab
+        state - a matrix of nelements+1 x nhidden
+        with nelements = len(x_sequence)
         """
         #. calculate amt of memory needed, eg in state, output, U,V,W, etc,
         #. and rough number of operations, as fns of sequence length, nhidden, nvocab, etc
 
-        nelements = len(x_sequence)
+        nelements = len(x_sequence) # eg 3
         # will save all hidden states because need them later
-        state = np.zeros((nelements + 1, self.nhidden)) # add 1 for initial hidden state. an nelements+1 x nhidden matrix
+        state = np.zeros((nelements + 1, self.nhidden)) # an nelements+1 x nhidden matrix - add 1 for initial hidden state
         state[-1] = np.zeros(self.nhidden) # set initial state to 0's
         # will save the outputs at each time step - will need later
         output = np.zeros((nelements, self.nvocab)) # an (nelements x nvocab) matrix
+
         # iterate over sequence
         for i in range(nelements): # eg [0,1,2]
 
@@ -213,7 +216,7 @@ class Rnn(model.Model):
             # get the i'th word in the sequence
             iword = x_sequence[i] # eg 0
             # translate iword into a one-hot vector, eg
-            # ohv = [0,0,0,0,0,0,0,0,1,0,0,0,0,0,...0] # vector with nvocab elements
+            # ohv = [1,0,0]^T # vector with nvocab elements
             # ohv = np.zeros(nvocab)
             # ohv[iword] = 1
             # multiply matrix U by ohv -
@@ -221,9 +224,10 @@ class Rnn(model.Model):
             # note: this translates the word to a lower dimensional space with nhidden dimensions (eg 100) -
             # these will be the learned word embeddings, which we could replace with word2vec vectors, (?)
             # which will cut down a lot on the number of parameters needed to learn.
-            # so U is a matrix of word embeddings (?)
+            # so U is a matrix of word embeddings
+            # each column is a word embedding for a word in the vocab
             # u = self.U.dot(ohv) # dot is matrix multiply!
-            # which is all equivalent to
+            # which is all equivalent to picking out the iword'th column of U
             u = self.U[:,iword] # u is a vector with nhidden elements - this is the word embedding
             # now bring in the previous state, with more weights W -
             # W is a matrix with (nhidden x nhidden) elements (eg 100x100 = 1e4 entries)
@@ -232,17 +236,19 @@ class Rnn(model.Model):
             w = self.W.dot(prevstate) # ie w = W x prevstate - dot is MATRIX MULTIPLY!
             # now add those and calculate the new state's activation value with a nonlinear fn, tanh.
             #. replace with ReLU?
-            # u + w is the word embedding + context (?)
-            state[i] = np.tanh(u + w) # state[t] is a vector with nhidden elements
+            # u + w is the word embedding + context
+            state[i] = np.tanh(u + w) # state[t] is a vector with nhidden elements, ie neurons, each w/activation fn here
             # output[t] = util.softmax(self.V.dot(state[t]))
             # now convert the internal/hidden state to scores for each class -
-            # V is matrix with (nhidden x nvocab) entries (eg 100x1e4 = 1e6 entries) - converts an embedded word+context to vocab scores.
+            # V is matrix with (nhidden x nvocab) entries (eg 100x1e4 = 1e6 entries) -
+            # converts an embedded word+context to vocab scores.
             #. but also can be doing some other work than just translation, eh?
             v = self.V.dot(state[i]) # v is a vector with nvocab elements, representing SCORES for each classifier.
             # ie each vocab word has a classifier that gets to vote for if it thinks it should be next.
             # now convert the scores to PROBABILITIES that all add to 1 -
-            output[i] = util.softmax(v) # output[t] is a vector with nvocab PROBABILITY entries - will be lots of very small numbers
-            # note that we don't convert to one-hot encodings or get argmax here, as need the probabilities for gradient descent
+            output[i] = util.softmax(v) # vector with nvocab PROBABILITY entries - will be lots of very small numbers.
+            # note that we don't convert to one-hot encodings or get argmax here,
+            # as need the probabilities for gradient descent.
         # we not only return the calculated outputs, but also the hidden states.
         # we will use them later to calculate the gradients.
         # output - softmax output over the vocabulary for EACH time step - an nelements x nvocab matrix
@@ -273,7 +279,7 @@ class Rnn(model.Model):
             # ie if the probability is close to one, then the log will be close to 0, so little to no loss -
             # if the probability is close to zero, then the log will be towards -infinity, so add large number to loss.
             # so we'll try to minimize the total loss, which means all of the predictions are as correct as we can get them.
-            #. where is y[i]?
+            #.. where is y[i]?
             total_loss += -1 * np.sum(np.log(correct_word_predictions))
         print('U (words embedded in nhidden-d space)')
         print(self.U)
@@ -446,7 +452,7 @@ if __name__=='__main__':
 
     np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
-    data = Data('abcd')
+    data = Data('alphabet')
     model = Rnn(data, nvocab=6, nhidden=2, nepochs=40, train_amount=100)
     model.train(force_training=True)
     model.test(test_amount=100)

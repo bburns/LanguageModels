@@ -417,7 +417,7 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
-    # data = Data('abcd')
+    # data = Data('alphabet')
     # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 
     # data = Data('animals')

@@ -231,6 +231,7 @@ likely words can be found for a given context.
 <!-- various types, incl gru 2014 - simpler -->
 <!-- then attention 2015 -->
 
+will use Keras (Chollet 2015)
 
 
 ### Benchmark
@@ -407,6 +408,8 @@ and compared/contrasted to the current solution. -->
 
 (Chelba 2013) Chelba, Ciprian, et al. "One billion word benchmark for measuring progress in statistical language modeling." arXiv preprint arXiv:1312.3005, 2013.
 
+(Chollet 2015) Chollet, Francois, Keras, https://github.com/fchollet/keras, 2015
+
 (Coleman 1975) Coleman, Meri; and Liau, T. L., "A computer readability formula designed for machine scoring", Journal of Applied Psychology, Vol. 60, pp. 283 - 284, 1975.
 
 (Gutenberg 2016) Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
@@ -422,6 +425,8 @@ and compared/contrasted to the current solution. -->
 
 may need
 F. Rosenblatt. The perceptron, a perceiving and recognizing automaton Project Para. Cornell Aeronautical Laboratory, 1957.
+
+shri 2014 with hinton on dropout
 
 
 --------------------------------------------------------------------------------
