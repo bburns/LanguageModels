@@ -3,18 +3,46 @@
 RNN implemented with Keras
 """
 
-import numpy as np
+import heapq
 
+import numpy as np
 import nltk
+from sklearn.preprocessing import MinMaxScaler
+
 import keras
 from keras.models import Sequential
 # from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import SimpleRNN, LSTM, GRU
 from keras.layers import Dense, Activation, Dropout
+from keras.callbacks import EarlyStopping
 from keras.utils.np_utils import to_categorical
-from sklearn.preprocessing import MinMaxScaler
 
 from benchmark import benchmark
+
+
+def get_relevance(yprobs, y_validate):
+    # print(y_validate[:3]) # onehot
+    yiwords = [row.argmax() for row in y_validate] # iword values
+    # print(yiwords[:3])
+    nrelevant = 0
+    ntotal = 0
+    for yp, yiw in zip(yprobs, yiwords):
+        pairs = [(iword,p) for iword,p in enumerate(yp)]
+        # print(pairs[:3])
+        k = 3
+        best_pairs = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
+        # print(best_pairs[:3])
+        best_iwords = [pair[0] for pair in best_pairs]
+        # print(best_iwords[:3])
+        # print(yiw)
+        relevant = (yiw in best_iwords)
+        nrelevant += int(relevant)
+        ntotal += 1
+        # # print(self.nvocab)
+        # best_words = [(self.m.index_to_word[iword],p) for iword,p in best_iwords]
+    # relevance = 1.0
+    relevance = nrelevant/ntotal
+    return relevance
 
 
 #. move to util.py
@@ -32,9 +60,28 @@ class ShowLoss(keras.callbacks.Callback):
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
             loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-            s = self.m.get_prediction(self.x_validate)
-            print("{: 6d} {:5.3f} {:5.3f} {}".format(epoch,loss,accuracy,s))
 
+            # s = self.m.get_prediction(self.x_validate)
+            # yprobs = self.model.predict(x) # softmax probabilities
+            yprobs = self.model.predict(self.x_validate) # softmax probabilities
+            # yprobs = rnn.predict(x) # softmax probabilities
+            # print(yprobs[:3])
+            yonehot = cutoff(yprobs) # onehot encodings
+            # print(yonehot)
+            yiwords = [row.argmax() for row in yonehot] # iword values
+            # print(yiwords[:3])
+            # ywords = [vocab[iword] for iword in yiwords]
+            ywords = [self.m.index_to_word[iword] for iword in yiwords]
+            # ywords = [vocab[iword] for iword in yiwords]
+            # print(ywords)
+            s = ' '.join(ywords)
+            # print(s)
+            # return s
+
+            relevance = get_relevance(yprobs, self.y_validate)
+            # relevance = 1.0
+
+            print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(epoch,loss,accuracy,relevance,s))
 
 #. move into Data class
 def create_dataset(data, nlookback=1):
@@ -113,8 +160,12 @@ class RnnKeras():
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
         # categorical_crossentropy is faster than mean_squared_error
-        #. make a custom metric for accuracy out of k best guesses
+        #. make a custom metric for accuracy out of k best guesses. call it 'relevancy'?
+        # oh this won't work - we need the probabilities -
+        # def relevancy(y_true, y_pred):
+        #     return 1
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', relevancy])
 
 
     def train(self, force_training=False):
@@ -131,8 +182,10 @@ class RnnKeras():
 
         self.batch_size = 1
         # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
+
         # self.epoch_interval = 10
         self.epoch_interval = 1
+
         print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
         print("Getting training tokens...")
         with benchmark("Prepared training data"):
@@ -177,11 +230,13 @@ class RnnKeras():
 
         print("Starting gradient descent...")
         with benchmark("Gradient descent finished") as b:
-            show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not just x y
+            # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
+            show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not x y
             # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
             # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
-            print("{:6} {:5} {:5} {}".format('epoch','loss','acc','s'))
+            print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
             self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
+            # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[early_stopping, show_loss])
 
             # # show final prediction for set of sequences in x
             # # s = self.get_prediction(x)
@@ -198,7 +253,6 @@ class RnnKeras():
         # self.save()
 
     def get_prediction(self, x):
-    # def get_prediction(self, rnn, x, vocab):
         """
         predict the next word in the sequence
         """
@@ -253,8 +307,10 @@ if __name__=='__main__':
 
     data = Data('alphabet')
     # data = Data('animals')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=40, train_amount=100)
-    model = RnnKeras(data, n=3, nvocab=30, nhidden=10, nepochs=50, train_amount=100)
+    # data = Data('gutenbergs')
+    model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=40, train_amount=100)
+    # model = RnnKeras(data, n=3, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
+    # model = RnnKeras(data, n=4, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
     model.train(force_training=True)
 
     # model.test(test_amount=100)
