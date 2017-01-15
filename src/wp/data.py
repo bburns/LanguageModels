@@ -338,6 +338,7 @@ class Data(object):
             for sentence in sentences:
                 # sentence = sentence.lower() # reduces vocab space
                 words = tokenize.word_tokenize(sentence)
+                words = [word.lower() for word in words] # lowercase everything
                 tokens.extend(words)
                 tokens.append('END') # add an END token to every sentence
         return tokens
@@ -421,12 +422,12 @@ if __name__ == '__main__':
     # data = Data('alphabet')
     # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 
-    # data = Data('animals')
-    # print(util.table(data.analyze()))
+    data = Data('animals')
+    print(util.table(data.analyze()))
     # print(data.readability()) # grade level
-    # print(data.text())
-    # print(data.sentences())
-    # print(data.tokens())
+    print(data.text())
+    print(data.sentences())
+    print(data.tokens())
     # print(data.text('train'))
     # print(data.text('train',0.5))
     # print(data.text('train',20))
