@@ -27,7 +27,7 @@ class Ngram(model.Model):
     The sparse array is implemented as a dict of dicts.
     """
 
-    def __init__(self, data, n, train_amount=1.0, name_includes=[]):
+    def __init__(self, data, n=3, k=3, train_amount=1.0, name_includes=[]):
         """
         Create an n-gram model.
         data          - source of training and testing data
@@ -36,6 +36,7 @@ class Ngram(model.Model):
         """
         self.data = data # lightweight interface for data files
         self.n = n  # the n in n-gram
+        self.k = k
         self.train_amount = train_amount
         self.name = "ngram (n=%d)" % n
         if name_includes:
@@ -168,7 +169,7 @@ class Ngram(model.Model):
         sentence = ' '.join(output)
         return sentence
 
-    def predict(self, tokens, k):
+    def predict(self, tokens):
         """
         Get the most likely next k tokens following the given sequence.
         """
@@ -184,7 +185,7 @@ class Ngram(model.Model):
         # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
         # maxtoken = max(d, key=d.get)
         # return maxtoken
-        best_tokens = util.get_best_tokens(d, k)
+        best_tokens = util.get_best_tokens(d, self.k)
         return best_tokens
 
     def __str__(self):

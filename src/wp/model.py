@@ -93,7 +93,7 @@ class Model(object):
         df_losses = pd.DataFrame(losses, columns=loss_columns)
         return df_losses
 
-    def test(self, k=3, test_amount=1.0):
+    def test(self, test_amount=1.0):
         """
         Test the model and return the accuracy score.
         k           - number of words to predict
@@ -115,7 +115,7 @@ class Model(object):
             for i in range(npredictions): # iterate over all test tokens
                 prompt = tokens[i:i+self.n-1] #..
                 actual = tokens[i+self.n-1] #..
-                token_probs = self.predict(prompt, k) # eg [('barked',0.031),('slept',0.025)...]
+                token_probs = self.predict(prompt) # eg [('barked',0.031),('slept',0.025)...]
                 passed = False
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]

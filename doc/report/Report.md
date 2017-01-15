@@ -396,6 +396,7 @@ and compared/contrasted to the current solution. -->
 
 train longer, more vocabulary, more hidden nodes
 
+online learning (?) - ie learn new vocab words like phone does
 
 
 ## References

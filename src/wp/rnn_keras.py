@@ -9,6 +9,7 @@ import numpy as np
 import nltk
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import keras
 from keras.models import Sequential
@@ -124,7 +125,7 @@ class RnnKeras():
     """
 
     #. pass rnn type - SimpleRNN, LSTM, GRU
-    def __init__(self, data, train_amount=1.0, n=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
+    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
         """
         Create an RNN model
         data          - source of training and testing data
@@ -134,14 +135,16 @@ class RnnKeras():
         nepochs       - number of times to run through training data
         name_includes - list of properties to include in model name, eg ['nhidden']
         """
+        # arguments
         self.data = data
         self.train_amount = train_amount
+        self.n = n # n-1 is amount of context given to model, ie number of words used for prediction.
+        self.k = k
         self.nvocab = nvocab
         self.nhidden = nhidden
         self.nepochs = nepochs
 
-        self.n = n # n-1 is amount of context given to model, ie number of words used for prediction.
-
+        # calculated values
         if not 'n' in name_includes:
             name_includes.append('n')
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
@@ -163,12 +166,12 @@ class RnnKeras():
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
         # categorical_crossentropy is faster than mean_squared_error
-        #. make a custom metric for accuracy out of k best guesses. call it 'relevancy'?
-        # oh this won't work - we need the probabilities -
-        # def relevancy(y_true, y_pred):
-        #     return 1
+        #. make a custom metric for accuracy out of k best guesses. call it 'relevance'?
+        # oh this won't work - we need the probabilities, not y_pred -
+        # def relevance(y_true, y_pred):
+        #     return 1.0
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', relevancy])
+        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', relevance])
 
 
     def train(self, force_training=False):
@@ -256,6 +259,7 @@ class RnnKeras():
         # save the model
         # self.save()
 
+    #. ?
     def get_prediction(self, x):
         """
         predict the next word in the sequence
@@ -274,6 +278,50 @@ class RnnKeras():
         s = ' '.join(ywords)
         # print(s)
         return s
+
+    #. put in a Vocab class?
+    def _get_index(self, word):
+        """
+        Convert word to integer representation.
+        """
+        # tried using a defaultdict to return UNKNOWN instead of a dict, but
+        # pickle wouldn't save an object with a lambda - would require defining
+        # a fn just to return UNKNOWN. so this'll do.
+        try:
+            i = self.word_to_index[word]
+        except:
+            i = self.word_to_index[self.unknown_token]
+        return i
+
+    def predict(self, s):
+        """
+        Get the k most likely next tokens following the given string.
+        eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
+        """
+        s = s.lower()
+        #. use nltk tokenizer to handle commas, etc, or use a Vocab class
+        tokens = s.split()
+        # print(tokens)
+        # print(len(self.word_to_index))
+        #. use Data for this transform? or a Vocab class?
+        iwords = [self._get_index(word) for word in tokens]
+        # print(iwords)
+        # output, state = self.forward_propagation(iwords)
+        if len(output)>0:
+            next_word_probs = output[-1]
+            # print(next_word_probs[:20])
+            pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
+            # print(pairs[:20])
+            best_iwords = heapq.nlargest(self.k, pairs, key=lambda pair: pair[1])
+            # print(best_iwords)
+            # print(self.nvocab)
+            # print(self.nvocab)
+            # print(len(self.index_to_word))
+            # print(self.index_to_word)
+            best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
+            return best_words
+        else:
+            return []
 
 
 
@@ -309,14 +357,26 @@ if __name__=='__main__':
 
     # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
-    data = Data('alphabet')
-    # data = Data('animals')
+    # data = Data('alphabet')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
+    data = Data('animals')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
     # data = Data('gutenbergs')
-    model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=40, train_amount=100)
-    # model = RnnKeras(data, n=3, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
-    # model = RnnKeras(data, n=4, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
     model.train(force_training=True)
     print(util.table(model.train_results))
+    print()
+
+    print('prediction')
+    s = 'The cat'
+    word_probs = model.predict(s)
+    print(s)
+    print(word_probs)
+
+
+    model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    plt.show()
 
     # model.test(test_amount=100)
     # print('accuracy',model.test_score)

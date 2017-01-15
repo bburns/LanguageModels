@@ -33,7 +33,7 @@ class RnnPython(model.Model):
     For load, save, test methods, see model.py Model class.
     """
 
-    def __init__(self, data, train_amount=1.0, n=3, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
+    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
         """
         Create an RNN model
         data          - source of training and testing data
@@ -45,6 +45,7 @@ class RnnPython(model.Model):
         name_includes - list of properties to include in model name, eg ['nhidden']
         """
         self.data = data
+        self.k = k
         self.train_amount = train_amount
         self.nvocab = nvocab
         self.nhidden = nhidden
@@ -310,9 +311,10 @@ class RnnPython(model.Model):
 
     # see model.py for test()
 
-    def predict(self, tokens, k):
+    def predict(self, tokens):
         """
-        Get the k most likely next tokens following the given sequence.
+        Get the self.k most likely next tokens following the given sequence.
+        eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
         # print(tokens)
         # print(len(self.word_to_index))
@@ -324,7 +326,7 @@ class RnnPython(model.Model):
             # print(next_word_probs[:20])
             pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
             # print(pairs[:20])
-            best_iwords = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
+            best_iwords = heapq.nlargest(self.k, pairs, key=lambda pair: pair[1])
             # print(best_iwords)
             # print(self.nvocab)
             # print(self.nvocab)
