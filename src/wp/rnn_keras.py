@@ -367,7 +367,7 @@ if __name__=='__main__':
     prompt = 'a b c'
     word_probs = model.predict(prompt)
     print('prediction')
-    print(s)
+    print(prompt)
     print(word_probs)
 
 
