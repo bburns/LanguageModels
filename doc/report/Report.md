@@ -72,10 +72,10 @@ is expected to offer the best performance for a given amount of training time
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-For evaluation of all models, the accuracy score will be reported, for different
+For evaluation of all models, a **relevance** score will be reported, for different
 training set sizes.
 
-> **Accuracy** = # correct predictions / # total predictions
+> **Relevance** = # correct predictions / # total predictions
 
 A prediction will be considered *correct* if the actual word is in the list of
 *k* most likely words - this is relevant to the task of presenting the user with
@@ -297,8 +297,8 @@ fed to the network and trained until its output is close to the correct final
 word.
 
 For the testing step, the baseline predictor will be fed random tuples of words,
-and the top *k* predicted words will be compared against the actual word, and an
-accuracy score tallied. For the RNN predictor, the same process will be used.
+and the top *k* predicted words will be compared against the actual word, and a
+*relevance* score tallied. For the RNN predictor, the same process will be used.
 
 Training sets of increasing sizes will be used - 1k, 10k, 100k, 1 million words,
 and the results recorded for comparison. Timing and memory information will also
@@ -368,13 +368,11 @@ Dry happiness resembles dry bread .
 Just like a rocket too , it burst in the air of splendidly coloured fire-flies , which sped hither and thither .
 
 
-ffnn
+RNN
 
-rnn
+LSTM RNN
 
-lstm
-
-?
+GRU RNN
 
 
 
@@ -395,6 +393,8 @@ it took a while to set up a good test harness and data preprocessing pipeline.
 <!-- Discussion is made as to how one aspect of the implementation could be
 improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
+
+train longer, more vocabulary, more hidden nodes
 
 
 

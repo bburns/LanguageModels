@@ -8,6 +8,7 @@ import heapq
 import numpy as np
 import nltk
 from sklearn.preprocessing import MinMaxScaler
+import pandas as pd
 
 import keras
 from keras.models import Sequential
@@ -18,18 +19,22 @@ from keras.callbacks import EarlyStopping
 from keras.utils.np_utils import to_categorical
 
 from benchmark import benchmark
+import util
 
 
-def get_relevance(yprobs, y_validate):
-    # print(y_validate[:3]) # onehot
-    yiwords = [row.argmax() for row in y_validate] # iword values
+def get_relevance(yactual, yprobs, k=3):
+    """
+    Get relevance score for the given probabilities and actual values.
+    ie check if the k most probable values include the actual value.
+    """
+    # print(yactual[:3]) # onehot
+    yiwords = [row.argmax() for row in yactual] # iword values
     # print(yiwords[:3])
     nrelevant = 0
     ntotal = 0
     for yp, yiw in zip(yprobs, yiwords):
         pairs = [(iword,p) for iword,p in enumerate(yp)]
         # print(pairs[:3])
-        k = 3
         best_pairs = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
         # print(best_pairs[:3])
         best_iwords = [pair[0] for pair in best_pairs]
@@ -40,7 +45,6 @@ def get_relevance(yprobs, y_validate):
         ntotal += 1
         # # print(self.nvocab)
         # best_words = [(self.m.index_to_word[iword],p) for iword,p in best_iwords]
-    # relevance = 1.0
     relevance = nrelevant/ntotal
     return relevance
 
@@ -56,6 +60,7 @@ class ShowLoss(keras.callbacks.Callback):
         self.x_validate = x_validate
         self.y_validate = y_validate
         self.epoch_interval = epoch_interval
+        self.rows = []
 
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
@@ -78,10 +83,11 @@ class ShowLoss(keras.callbacks.Callback):
             # print(s)
             # return s
 
-            relevance = get_relevance(yprobs, self.y_validate)
-            # relevance = 1.0
+            relevance = get_relevance(self.y_validate, yprobs)
 
             print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(epoch,loss,accuracy,relevance,s))
+            row = [epoch, loss, accuracy, relevance, s]
+            self.rows.append(row)
 
 #. move into Data class
 def create_dataset(data, nlookback=1):
@@ -118,7 +124,6 @@ class RnnKeras():
     """
 
     #. pass rnn type - SimpleRNN, LSTM, GRU
-    # def __init__(self, data, train_amount=1.0, n=3, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
     def __init__(self, data, train_amount=1.0, n=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
         """
         Create an RNN model
@@ -135,12 +140,10 @@ class RnnKeras():
         self.nhidden = nhidden
         self.nepochs = nepochs
 
-        # unsure about these...
-        self.n = n #... for now - used in test(). yes i think that's what we want - n-1 is amount of context given to model.
-        # self.bptt_truncate = bptt_truncate #. -> ntimestepsmax?
-        # self.bptt_truncate = n #. -> call it ntimestepsmax? keep separate from n?
-        # self.seqlength = 10 #. -> call it nelements_per_sequence? instead of chopping up by sentences we'll chop up into sequences of this length
+        self.n = n # n-1 is amount of context given to model, ie number of words used for prediction.
 
+        if not 'n' in name_includes:
+            name_includes.append('n')
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
@@ -235,8 +238,9 @@ class RnnKeras():
             # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
             # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
             print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
-            self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
+            history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
             # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[early_stopping, show_loss])
+            # print(history)
 
             # # show final prediction for set of sequences in x
             # # s = self.get_prediction(x)
@@ -246,7 +250,7 @@ class RnnKeras():
 
         self.train_time = b.time
         self.trained = True
-        # self.train_losses = losses
+        self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Prediction'])
 
         #. put back
         # save the model
@@ -312,6 +316,7 @@ if __name__=='__main__':
     # model = RnnKeras(data, n=3, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
     # model = RnnKeras(data, n=4, nvocab=100, nhidden=20, nepochs=50, train_amount=1000)
     model.train(force_training=True)
+    print(util.table(model.train_results))
 
     # model.test(test_amount=100)
     # print('accuracy',model.test_score)
