@@ -311,11 +311,16 @@ class RnnPython(model.Model):
 
     # see model.py for test()
 
-    def predict(self, tokens):
+    def predict(self, prompt):
         """
-        Get the self.k most likely next tokens following the given sequence.
+        Get the self.k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
+        print(prompt)
+        s = prompt.lower()
+        #. use nltk tokenizer to handle commas, etc, or use a Vocab class
+        tokens = s.split()
+        # tokens.append(self.unknown_token) # will be predicting this value
         # print(tokens)
         # print(len(self.word_to_index))
         iwords = [self._get_index(word) for word in tokens]
@@ -464,6 +469,11 @@ if __name__=='__main__':
     print(util.table(model.test_samples))
     print()
 
+    prompt = 'a b c'
+    word_probs = model.predict(prompt)
+    print('prediction')
+    print(prompt)
+    print(word_probs)
 
     # data = Data('animals')
     # # data = Data('gutenbergs')

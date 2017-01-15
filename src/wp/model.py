@@ -115,7 +115,9 @@ class Model(object):
             for i in range(npredictions): # iterate over all test tokens
                 prompt = tokens[i:i+self.n-1] #..
                 actual = tokens[i+self.n-1] #..
-                token_probs = self.predict(prompt) # eg [('barked',0.031),('slept',0.025)...]
+                sprompt = ' '.join(prompt) if prompt else '(none)'
+                # token_probs = self.predict(prompt) # eg [('barked',0.031),('slept',0.025)...]
+                token_probs = self.predict(sprompt) # eg [('barked',0.031),('slept',0.025)...]
                 passed = False
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
@@ -124,7 +126,7 @@ class Model(object):
                         nright += 1
                 # add predictions to samples
                 if (i % nsample_spacing) == 0:
-                    sprompt = ' '.join(prompt) if prompt else '(none)'
+                    # sprompt = ' '.join(prompt) if prompt else '(none)'
                     spredictions = '  '.join(['%s (%.2f%%)' % (token_prob[0], token_prob[1]*100) \
                                               for token_prob in token_probs]) if token_probs else '(none)'
                     spassed = 'OK' if passed else 'FAIL'

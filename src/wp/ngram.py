@@ -169,10 +169,14 @@ class Ngram(model.Model):
         sentence = ' '.join(output)
         return sentence
 
-    def predict(self, tokens):
+    # def predict(self, tokens):
+    def predict(self, prompt):
         """
-        Get the most likely next k tokens following the given sequence.
+        Get the most likely next k tokens following the given string.
         """
+        #. use Vocab class?
+        s = prompt.lower()
+        tokens = prompt.split()
         #. add assert len(tokens)==self.n, or ignore too much/not enough info?
         # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
