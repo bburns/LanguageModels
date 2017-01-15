@@ -293,35 +293,27 @@ class RnnKeras():
             i = self.word_to_index[self.unknown_token]
         return i
 
-    def predict(self, s):
+    #. refactor!
+    #. move to model.py?
+    def predict(self, prompt):
         """
         Get the k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
-        s = s.lower()
+        s = prompt.lower()
         #. use nltk tokenizer to handle commas, etc, or use a Vocab class
         tokens = s.split()
-        # print(tokens)
-        # print(len(self.word_to_index))
-        #. use Data for this transform? or a Vocab class?
+        tokens.append(self.unknown_token) # will be predicting this value
+        #. use a Vocab class?
         iwords = [self._get_index(word) for word in tokens]
-        # print(iwords)
-        # output, state = self.forward_propagation(iwords)
-        if len(output)>0:
-            next_word_probs = output[-1]
-            # print(next_word_probs[:20])
-            pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
-            # print(pairs[:20])
-            best_iwords = heapq.nlargest(self.k, pairs, key=lambda pair: pair[1])
-            # print(best_iwords)
-            # print(self.nvocab)
-            # print(self.nvocab)
-            # print(len(self.index_to_word))
-            # print(self.index_to_word)
-            best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
-            return best_words
-        else:
-            return []
+        data = to_categorical(iwords, self.nvocab) # one-hot encoding
+        x, y = create_dataset(data, self.n-1) # n-1 = amount of lookback / context
+        probs = self.rnn.predict_proba(x)
+        next_word_probs = probs[-1]
+        pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
+        best_iwords = heapq.nlargest(self.k, pairs, key=lambda pair: pair[1])
+        best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
+        return best_words
 
 
 
@@ -357,24 +349,29 @@ if __name__=='__main__':
 
     # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
-    # data = Data('alphabet')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
-    data = Data('animals')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    data = Data('alphabet')
+    model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
+    # data = Data('animals')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)
     # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
-    model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
     # data = Data('gutenbergs')
     model.train(force_training=True)
-    print(util.table(model.train_results))
-    print()
+    # print(util.table(model.train_results))
+    # print()
+    # print(model.rnn.get_weights())
+    # print()
 
+    # predict next word after a prompt
+    # s = 'The cat'
+    prompt = 'a b c'
+    word_probs = model.predict(prompt)
     print('prediction')
-    s = 'The cat'
-    word_probs = model.predict(s)
     print(s)
     print(word_probs)
 
 
+    # plot training curves
     model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
     plt.show()
 
