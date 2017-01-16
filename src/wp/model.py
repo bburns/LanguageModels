@@ -97,10 +97,9 @@ class Model(object):
     def test(self, test_amount=1.0):
         """
         Test the model and return the accuracy score.
-        k           - number of words to predict
         test_amount - amount of test data to use, in percent or nchars
         """
-        nsamples = 10
+        nsamples = 10 #. ?
         # get the test tokens
         tokens = self.data.tokens('test', test_amount)
         ntokens = len(tokens)
@@ -134,9 +133,9 @@ class Model(object):
                     sample = [sprompt, spredictions, actual, spassed]
                     # print(*sample)
                     samples.append(sample)
-            accuracy = nright / npredictions if npredictions>0 else 0
+            relevance = nright / npredictions if npredictions>0 else 0
         self.test_time = b.time
-        self.test_score = accuracy
+        self.test_score = relevance
         self.test_samples = pd.DataFrame(samples, columns=sample_columns)
         self.save() # save test time, score, samples
 

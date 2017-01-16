@@ -15,6 +15,7 @@ from benchmark import benchmark
 import transcript
 import util
 
+
 class Experiment(object):
     """
     Run an experiment on a set of models across a set of parameters.
@@ -95,8 +96,8 @@ class Experiment(object):
         self.test_times = pd.DataFrame(test_times, index=rows, columns=cols)
         self.test_scores = pd.DataFrame(test_scores, index=rows, columns=cols)
         # print and plot results
-        self.print_results()
-        self.plot_results()
+        self.print_results() # goes to transcript
+        # self.plot()
         transcript.stop()
 
     def print_results(self):
@@ -112,19 +113,19 @@ class Experiment(object):
         print(self.test_scores)
         print()
 
-    def plot_results(self):
+    def plot(self, show=False):
 
-        param_name = self.params.keys()[0]
+        param_name = list(self.params.keys())[0]
         plt.style.use('ggplot') # nicer style
         line_styles = ['-', '--', '-.', ':']
 
         self.test_scores.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
-        plt.title('Accuracy vs ' + param_name)
+        plt.title('Relevance vs ' + param_name)
         plt.xlabel(param_name)
-        plt.ylabel('accuracy')
-        # plt.show()
-        plt.savefig(self.plotfile_prefix + ' accuracy.png')
+        plt.ylabel('relevance')
+        if show: plt.show()
+        plt.savefig(self.plotfile_prefix + ' relevance.png')
         plt.close()
 
         self.train_times.plot(kind='line', style=line_styles)
@@ -132,7 +133,7 @@ class Experiment(object):
         plt.title('Train time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('train_time (sec)')
-        # plt.show()
+        if show: plt.show()
         plt.savefig(self.plotfile_prefix + ' train_time.png')
         plt.close()
 
@@ -141,9 +142,10 @@ class Experiment(object):
         plt.title('Test time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('test_time (sec)')
-        # plt.show()
+        if show: plt.show()
         plt.savefig(self.plotfile_prefix + ' test_time.png')
         plt.close()
+
 
 
 
@@ -204,4 +206,5 @@ if __name__ == '__main__':
     exper = Experiment(name, specs, data, params, test_amount=10000)
     # exper.run()
     exper.run(force_training=True)
+    exper.plot(True)
 

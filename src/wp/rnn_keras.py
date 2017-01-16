@@ -340,8 +340,8 @@ if __name__=='__main__':
     # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
     # plt.show()
 
-    # model.test(test_amount=100)
-    # print('accuracy',model.test_score)
-    # print(util.table(model.test_samples))
-    # print()
+    model.test(test_amount=100)
+    print('relevance',model.test_score)
+    print(util.table(model.test_samples))
+    print()
 
