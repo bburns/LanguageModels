@@ -28,7 +28,11 @@ class Model(object):
         util.mkdir(folder)
         with benchmark("Save model " + self.name) as b:
             with open(self.filename, 'wb') as f:
-                pickle.dump(self.__dict__, f, 2)
+                # pickle.dump(self.__dict__, f, 2)
+                # pickle.dump(self.__dict__, f) # default type is 3
+                # pickle.dump(self.__dict__, f, 4)
+                d = {k:v for (k,v) in self.__dict__.items() if k!='rnn'}
+                pickle.dump(d, f, 4)
         #. time this? but can't save it with the object
         # self.save_time = b.time
         # return self.save_time

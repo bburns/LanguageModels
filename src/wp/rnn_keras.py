@@ -3,24 +3,28 @@
 RNN implemented with Keras
 """
 
-import heapq
-
-import numpy as np
-import nltk
-from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
-import matplotlib.pyplot as plt
-
-import keras
-from keras.models import Sequential
-# from keras.layers.embeddings import Embedding
-from keras.layers.recurrent import SimpleRNN, LSTM, GRU
-from keras.layers import Dense, Activation, Dropout
-from keras.callbacks import EarlyStopping
-from keras.utils.np_utils import to_categorical
-
 from benchmark import benchmark
-import util
+with benchmark('import'):
+    import os
+    import heapq
+
+    import numpy as np
+    import nltk
+    from sklearn.preprocessing import MinMaxScaler
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    import keras
+    from keras.models import Sequential
+    from keras.models import load_model
+    # from keras.layers.embeddings import Embedding
+    from keras.layers.recurrent import SimpleRNN, LSTM, GRU
+    from keras.layers import Dense, Activation, Dropout
+    from keras.callbacks import EarlyStopping
+    from keras.utils.np_utils import to_categorical
+
+    from model import Model
+    import util
 
 
 def get_relevance(yactual, yprobs, k=3):
@@ -120,7 +124,7 @@ def cutoff(p):
 
 
 
-class RnnKeras():
+class RnnKeras(Model):
     """
     """
 
@@ -148,8 +152,10 @@ class RnnKeras():
         if not 'n' in name_includes:
             name_includes.append('n')
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
-        self.filename = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d).pickle' \
+        self.filetitle = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d)' \
                          % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
+        self.filename = self.filetitle + '.pickle'
+        self.filename_h5 = self.filetitle + '.h5'
         self.trained = False
         self.load_time = None
         self.save_time = None
@@ -180,84 +186,96 @@ class RnnKeras():
         force_training - set True to retrain rnn (ie don't load from file)
         """
 
-        #. put this back in
-        # if force_training==False and os.path.isfile(self.filename):
-        #     self.load() # see model.py - will set self.load_time
-        # else:
+        if force_training==False and os.path.isfile(self.filename):
+            self.load() # see model.py - will set self.load_time
+        else:
 
 
-        self.batch_size = 1
-        # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
+            self.batch_size = 1
+            # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
 
-        # self.epoch_interval = 10
-        self.epoch_interval = 1
+            # self.epoch_interval = 10
+            self.epoch_interval = 1
 
-        print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
-        print("Getting training tokens...")
-        with benchmark("Prepared training data"):
+            print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
+            print("Getting training tokens...")
+            with benchmark("Prepared training data"):
 
-            #. move all this into Data class
+                #. move all this into Data class
 
-            #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
-            tokens = self.data.tokens('train', self.train_amount) # eg ['a','b','.','END']
-            # print(tokens)
-            # get most common words for vocabulary
-            word_freqs = nltk.FreqDist(tokens)
-            # print(word_freqs)
-            wordcounts = word_freqs.most_common(self.nvocab-1)
-            # print(wordcounts)
-            self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-            self.index_to_word.append(self.unknown_token)
-            while len(self.index_to_word) < self.nvocab:
-                self.index_to_word.append('~') # pad out the vocabulary if needed
-            self.index_to_word.sort() #. just using for alphabet dataset
-            # print(self.index_to_word)
-            self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-            # self.nvocab = len(self.index_to_word) #? already set this? cut off with actual vocab length?
-            # print(self.word_to_index)
-            # replace words not in vocabulary with UNKNOWN
-            # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-            tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
-            # replace words with numbers
-            itokens = [self.word_to_index[token] for token in tokens]
-            # print(itokens)
+                #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
+                tokens = self.data.tokens('train', self.train_amount) # eg ['a','b','.','END']
+                # print(tokens)
+                # get most common words for vocabulary
+                word_freqs = nltk.FreqDist(tokens)
+                # print(word_freqs)
+                wordcounts = word_freqs.most_common(self.nvocab-1)
+                # print(wordcounts)
+                self.index_to_word = [wordcount[0] for wordcount in wordcounts]
+                self.index_to_word.append(self.unknown_token)
+                while len(self.index_to_word) < self.nvocab:
+                    self.index_to_word.append('~') # pad out the vocabulary if needed
+                self.index_to_word.sort() #. just using for alphabet dataset
+                # print(self.index_to_word)
+                self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
+                # self.nvocab = len(self.index_to_word) #? already set this? cut off with actual vocab length?
+                # print(self.word_to_index)
+                # replace words not in vocabulary with UNKNOWN
+                # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+                tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
+                # replace words with numbers
+                itokens = [self.word_to_index[token] for token in tokens]
+                # print(itokens)
 
-            data = to_categorical(itokens, self.nvocab) # one-hot encoding
-            # print('data')
-            # print(data)
+                data = to_categorical(itokens, self.nvocab) # one-hot encoding
+                # print('data')
+                # print(data)
 
-            # self.nlookback = 2 #.. this will be n, right?
-            # self.nlookback = 3 #.. this will be n, right?
-            # x, y = create_dataset(data, self.nlookback)
-            # x, y = create_dataset(data, self.n) # n = amount of lookback
-            x, y = create_dataset(data, self.n-1) # n-1 = amount of lookback / context
-            # print(x)
-            # print(y)
+                # self.nlookback = 2 #.. this will be n, right?
+                # self.nlookback = 3 #.. this will be n, right?
+                # x, y = create_dataset(data, self.nlookback)
+                # x, y = create_dataset(data, self.n) # n = amount of lookback
+                x, y = create_dataset(data, self.n-1) # n-1 = amount of lookback / context
+                # print(x)
+                # print(y)
 
-        print("Starting gradient descent...")
-        with benchmark("Gradient descent finished") as b:
-            # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
-            show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not x y
-            # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
-            # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
-            print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
-            history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
-            # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[early_stopping, show_loss])
-            # print(history)
+            print("Starting gradient descent...")
+            with benchmark("Gradient descent finished") as b:
+                # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
+                show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not x y
+                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
+                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
+                print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
+                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
+                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[early_stopping, show_loss])
+                # print(history)
 
-            # # show final prediction for set of sequences in x
-            # # s = self.get_prediction(x)
-            # s = self.get_prediction(self.rnn, x, self.index_to_word)
-            # print('prediction')
-            # print(s)
+                # # show final prediction for set of sequences in x
+                # # s = self.get_prediction(x)
+                # s = self.get_prediction(self.rnn, x, self.index_to_word)
+                # print('prediction')
+                # print(s)
 
-        self.train_time = b.time
-        self.trained = True
-        self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Prediction'])
+            self.train_time = b.time
+            self.trained = True
+            self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Prediction'])
 
-        #. put back
-        # save the model
-        # self.save()
+            # save the model
+            self.save()
+
+    def save(self):
+        """
+        Save the model to file - overrides base model class method.
+        """
+        Model.save(self)
+        self.rnn.save(self.filename_h5)
+
+    def load(self):
+        """
+        Load the model from file - overrides base model class method.
+        """
+        Model.load(self)
+        self.rnn = load_model(self.filename_h5)
 
     #. ?
     def get_prediction(self, x):
@@ -351,16 +369,23 @@ if __name__=='__main__':
 
     data = Data('alphabet')
     model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
+    # model.save()
     # data = Data('animals')
     # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)
     # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
     # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
     # data = Data('gutenbergs')
-    model.train(force_training=True)
+
+    model.train() # load model from file if available
+    # model.train(force_training=True)
+
     # print(util.table(model.train_results))
     # print()
     # print(model.rnn.get_weights())
     # print()
+    # model.save()
+    # model.load()
+
 
     # predict next word after a prompt
     # s = 'The cat'
@@ -368,12 +393,13 @@ if __name__=='__main__':
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
-    print(word_probs)
+    print(word_probs) # 'd' should be first in listi
 
 
-    # plot training curves
-    model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
-    plt.show()
+    # works
+    # # plot training curves
+    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    # plt.show()
 
     # model.test(test_amount=100)
     # print('accuracy',model.test_score)
