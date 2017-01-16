@@ -24,12 +24,16 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
 
     from model import Model
     import util
+    import vocab
 
 
+#. move to util?
+#. refactor
 def get_relevance(yactual, yprobs, k=3):
     """
     Get relevance score for the given probabilities and actual values.
     ie check if the k most probable values include the actual value.
+    eg _____________
     """
     # print(yactual[:3]) # onehot
     yiwords = [row.argmax() for row in yactual] # iword values
@@ -80,7 +84,8 @@ class ShowLoss(keras.callbacks.Callback):
             yiwords = [row.argmax() for row in yonehot] # iword values
             # print(yiwords[:3])
             # ywords = [vocab[iword] for iword in yiwords]
-            ywords = [self.m.index_to_word[iword] for iword in yiwords]
+            # ywords = [self.m.index_to_word[iword] for iword in yiwords]
+            ywords = self.m.vocab.get_tokens(yiwords)
             # ywords = [vocab[iword] for iword in yiwords]
             # print(ywords)
             s = ' '.join(ywords)
@@ -93,21 +98,25 @@ class ShowLoss(keras.callbacks.Callback):
             row = [epoch, loss, accuracy, relevance, s]
             self.rows.append(row)
 
-#. move into Data class
-def create_dataset(data, nlookback=1):
-    """
-    convert an array of values into a dataset matrix
-    """
-    dataX, dataY = [], []
-    for i in range(len(data) - nlookback):
-        a = data[i:(i + nlookback)]
-        dataX.append(a)
-        dataY.append(data[i + nlookback])
-    return np.array(dataX), np.array(dataY)
+# #. move into Data class?
+# def create_dataset(dat, nlookback=1):
+#     """
+#     convert an array of values into a dataset matrix
+#     eg _________
+#     from http://machinelearningmastery.com/time-series-prediction-lstm-recurrent-neural-networks-python-keras/
+#     """
+#     dataX, dataY = [], []
+#     for i in range(len(dat) - nlookback):
+#         a = dat[i:(i + nlookback)]
+#         dataX.append(a)
+#         dataY.append(dat[i + nlookback])
+#     return np.array(dataX), np.array(dataY)
 
+#. move to util
 def cutoff(p):
     """
     convert probabilities to hard 0's and 1's (1 for highest probability)
+    eg ___________
     """
     onehot = np.zeros(p.shape)
     for i in range(len(p)):
@@ -125,13 +134,14 @@ def cutoff(p):
 
 class RnnKeras(Model):
     """
+    An RNN implemented with Keras - can be a SimpleRNN, LSTM, or GRU.
     """
 
     #. pass rnn type - SimpleRNN, LSTM, GRU
     def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
         """
         Create an RNN model
-        data          - source of training and testing data
+        data          - a Data object - source of training and testing data
         train_amount  - percent or number of training characters to use
         nvocab        - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
@@ -151,8 +161,8 @@ class RnnKeras(Model):
         if not 'n' in name_includes:
             name_includes.append('n')
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
-        self.filetitle = '%s/rnn-(train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d)' \
-                         % (data.model_folder, str(train_amount), nvocab, nhidden, nepochs)
+        self.filetitle = '%s/rnn-(n-%d-train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d)' \
+                         % (data.model_folder, self.n, str(train_amount), nvocab, nhidden, nepochs)
         self.filename = self.filetitle + '.pickle'
         self.filename_h5 = self.filetitle + '.h5'
         self.trained = False
@@ -160,8 +170,6 @@ class RnnKeras(Model):
         self.save_time = None
         self.train_time = None
         self.test_time = None
-        self.unknown_token = "UNKNOWN" #. ok?
-        self.end_token = "END" #.
 
         # create the keras model
         print("Create model " + self.name)
@@ -170,13 +178,10 @@ class RnnKeras(Model):
         self.rnn.add(SimpleRNN(self.nhidden, input_dim=self.nvocab))
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
-        # categorical_crossentropy is faster than mean_squared_error
-        #. make a custom metric for accuracy out of k best guesses. call it 'relevance'?
-        # oh this won't work - we need the probabilities, not y_pred -
-        # def relevance(y_true, y_pred):
-        #     return 1.0
+        # note: can't make a custom metric for relevance here because callback just passes y_true and y_pred, not probs.
+        # categorical_crossentropy is faster than mean_squared_error.
+        #. try different optimizers
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy', relevance])
 
 
     def train(self, force_training=False):
@@ -189,7 +194,6 @@ class RnnKeras(Model):
             self.load() # see model.py - will set self.load_time
         else:
 
-
             self.batch_size = 1
             # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
 
@@ -197,63 +201,28 @@ class RnnKeras(Model):
             self.epoch_interval = 1
 
             print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
+
             print("Getting training tokens...")
             with benchmark("Prepared training data"):
-
-                #. move all this into Data class
-
-                #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
-                tokens = self.data.tokens('train', self.train_amount) # eg ['a','b','.','END']
-                # print(tokens)
-                # get most common words for vocabulary
-                word_freqs = nltk.FreqDist(tokens)
-                # print(word_freqs)
-                wordcounts = word_freqs.most_common(self.nvocab-1)
-                # print(wordcounts)
-                self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-                self.index_to_word.append(self.unknown_token)
-                while len(self.index_to_word) < self.nvocab:
-                    self.index_to_word.append('~') # pad out the vocabulary if needed
-                self.index_to_word.sort() #. just using for alphabet dataset
-                # print(self.index_to_word)
-                self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-                # self.nvocab = len(self.index_to_word) #? already set this? cut off with actual vocab length?
-                # print(self.word_to_index)
-                # replace words not in vocabulary with UNKNOWN
-                # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-                tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
-                # replace words with numbers
-                itokens = [self.word_to_index[token] for token in tokens]
-                # print(itokens)
-
-                data = to_categorical(itokens, self.nvocab) # one-hot encoding
-                # print('data')
-                # print(data)
-
-                # self.nlookback = 2 #.. this will be n, right?
-                # self.nlookback = 3 #.. this will be n, right?
-                # x, y = create_dataset(data, self.nlookback)
-                # x, y = create_dataset(data, self.n) # n = amount of lookback
-                x, y = create_dataset(data, self.n-1) # n-1 = amount of lookback / context
-                # print(x)
-                # print(y)
+                tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
+                self.vocab = vocab.Vocab(tokens, self.nvocab)
+                itokens = self.vocab.get_itokens(tokens) # eg ________
+                onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
+                #. these would be huge arrays - simpler way?
+                x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
 
             print("Starting gradient descent...")
             with benchmark("Gradient descent finished") as b:
+                #. add early stopping
                 # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
                 show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not x y
                 # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
                 # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
                 print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
-                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
-                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[early_stopping, show_loss])
+                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0,
+                                       callbacks=[show_loss])
+                #. what is history obj?
                 # print(history)
-
-                # # show final prediction for set of sequences in x
-                # # s = self.get_prediction(x)
-                # s = self.get_prediction(self.rnn, x, self.index_to_word)
-                # print('prediction')
-                # print(s)
 
             self.train_time = b.time
             self.trained = True
@@ -280,57 +249,31 @@ class RnnKeras(Model):
     def get_prediction(self, x):
         """
         predict the next word in the sequence
+        x is onehot, eg ____________?
         """
         yprobs = self.rnn.predict(x) # softmax probabilities
-        # yprobs = rnn.predict(x) # softmax probabilities
         # print(yprobs)
         yonehot = cutoff(yprobs) # onehot encodings
         # print(yonehot)
         yiwords = [row.argmax() for row in yonehot] # iword values
         # print(yiwords)
-        # ywords = [vocab[iword] for iword in yiwords]
-        ywords = [self.index_to_word[iword] for iword in yiwords]
-        # ywords = [vocab[iword] for iword in yiwords]
+        ywords = self.vocab.get_tokens(yiwords)
         # print(ywords)
         s = ' '.join(ywords)
         # print(s)
         return s
 
-    #. put in a Vocab class?
-    def _get_index(self, word):
-        """
-        Convert word to integer representation.
-        """
-        # tried using a defaultdict to return UNKNOWN instead of a dict, but
-        # pickle wouldn't save an object with a lambda - would require defining
-        # a fn just to return UNKNOWN. so this'll do.
-        try:
-            i = self.word_to_index[word]
-        except:
-            i = self.word_to_index[self.unknown_token]
-        return i
-
     #. refactor!
-    #. move to model.py?
     def predict(self, prompt):
         """
         Get the k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
-        s = prompt.lower()
-        #. use nltk tokenizer to handle commas, etc, or use a Vocab class
-        tokens = s.split()
-        tokens.append(self.unknown_token) # will be predicting this value
-        #. use a Vocab class?
-        iwords = [self._get_index(word) for word in tokens]
-        data = to_categorical(iwords, self.nvocab) # one-hot encoding
-        x, y = create_dataset(data, self.n-1) # n-1 = amount of lookback / context
+        x, y = self.vocab.prompt_to_onehot(prompt, self.n)
         probs = self.rnn.predict_proba(x)
-        next_word_probs = probs[-1]
-        pairs = [(iword,p) for iword,p in enumerate(next_word_probs)]
-        best_iwords = heapq.nlargest(self.k, pairs, key=lambda pair: pair[1])
-        best_words = [(self.index_to_word[iword],p) for iword,p in best_iwords]
+        best_words = self.vocab.probs_to_word_probs(probs, self.k)
         return best_words
+
 
 
 
@@ -375,8 +318,8 @@ if __name__=='__main__':
     # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
     # data = Data('gutenbergs')
 
-    model.train() # load model from file if available
-    # model.train(force_training=True)
+    # model.train() # load model from file if available
+    model.train(force_training=True)
 
     # print(util.table(model.train_results))
     # print()
@@ -392,7 +335,7 @@ if __name__=='__main__':
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
-    print(word_probs) # 'd' should be first in listi
+    print(word_probs) # 'd' should be first in list
 
 
     # works

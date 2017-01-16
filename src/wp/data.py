@@ -25,6 +25,7 @@ import nltk
 from nltk import tokenize
 from textstat.textstat import textstat
 
+import vocab
 import util
 from benchmark import benchmark
 
@@ -300,8 +301,6 @@ class Data(object):
         sentences = tokenize.sent_tokenize(s)
         return sentences
 
-
-
     # def tokenized_sentences(self, source, nchars=None):
     #     """
     #     Parse a data source into tokenized sentences up to nchars, return in list.
@@ -342,6 +341,40 @@ class Data(object):
                 tokens.extend(words)
                 tokens.append('END') # add an END token to every sentence
         return tokens
+
+    def get_vocab(self, train_amount, nvocab):
+        """
+        Get a vocabulary object containing the top nvocab words from the training data.
+        """
+        #. would like this to memoize these if not too much memory, or else pass in tokens and calc them in Experiment class
+        tokens = self.tokens('train', train_amount) # eg ['a','b','.','END']
+        vocab = vocab.Vocab(tokens, nvocab)
+        return vocab
+
+    def get_training_data(self, train_amount, nvocab, n):
+        """
+        """
+        # replace words not in vocabulary with UNKNOWN
+        # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
+        tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
+        # replace words with numbers
+        itokens = [self.word_to_index[token] for token in tokens]
+        # print(itokens)
+
+        # onehot = to_categorical(itokens, self.nvocab) # one-hot encoding
+        onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding
+        # print('onehot')
+        # print(onehot)
+
+        # self.nlookback = 2 #.. this will be n, right?
+        # self.nlookback = 3 #.. this will be n, right?
+        # x, y = create_dataset(onehot, self.nlookback)
+        # x, y = create_dataset(onehot, self.n) # n = amount of lookback
+        x, y = create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context
+        # print(x)
+        # print(y)
+
+        return x,y
 
     def __str__(self):
         """
