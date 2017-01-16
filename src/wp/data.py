@@ -301,30 +301,6 @@ class Data(object):
         sentences = tokenize.sent_tokenize(s)
         return sentences
 
-    # def tokenized_sentences(self, source, nchars=None):
-    #     """
-    #     Parse a data source into tokenized sentences up to nchars, return in list.
-    #     """
-    #     sentences = self.sentences(source, nchars)
-    #     tokenized_sentences = [tokenize.word_tokenize(sentence) for sentence in sentences]
-    #     #. trim vocab here, ie pass nvocab=None, use UNKNOWN where needed?
-    #     return tokenized_sentences
-
-    # def indexed_sentences(self, source, vocab, nchars=None):
-    #     """
-    #     Parse a data source into indexed sentences up to nchars, return in list.
-    #     """
-    #     # word_to_index = {'The':1,'dog':2,'cat':3,'slept':4,'barked':5,'UNKNOWN':6}
-    #     sentences = self.tokenized_sentences(source, nchars)
-    #     indexed_sentences = [[vocab.word_to_index[word] for word in sentence] for sentence in sentences]
-    #     # # replace all words not in vocabulary with UNKNOWN
-    #     # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-    #     # # replace words with numbers
-    #     # itokens = [self.word_to_index[token] for token in tokens]
-    #     # X_train = itokens[:-1]
-    #     # y_train = itokens[1:]
-    #     return indexed_sentences
-
     def tokens(self, source='merged', amount=1.0):
         """
         Parse a data source into tokens and return in a list.
@@ -335,11 +311,10 @@ class Data(object):
             sentences = self.sentences(source, amount)
             tokens = []
             for sentence in sentences:
-                # sentence = sentence.lower() # reduces vocab space
+                sentence = sentence.lower() # reduces vocab space
                 words = tokenize.word_tokenize(sentence)
-                words = [word.lower() for word in words] # lowercase everything
                 tokens.extend(words)
-                tokens.append('END') # add an END token to every sentence
+                tokens.append('END') # add an END token to every sentence #. magic
         return tokens
 
     def get_vocab(self, train_amount, nvocab):
@@ -350,31 +325,6 @@ class Data(object):
         tokens = self.tokens('train', train_amount) # eg ['a','b','.','END']
         vocab = vocab.Vocab(tokens, nvocab)
         return vocab
-
-    def get_training_data(self, train_amount, nvocab, n):
-        """
-        """
-        # replace words not in vocabulary with UNKNOWN
-        # tokens = [token if token in self.word_to_index else unknown_token for token in tokens]
-        tokens = [token if token in self.word_to_index else self.unknown_token for token in tokens]
-        # replace words with numbers
-        itokens = [self.word_to_index[token] for token in tokens]
-        # print(itokens)
-
-        # onehot = to_categorical(itokens, self.nvocab) # one-hot encoding
-        onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding
-        # print('onehot')
-        # print(onehot)
-
-        # self.nlookback = 2 #.. this will be n, right?
-        # self.nlookback = 3 #.. this will be n, right?
-        # x, y = create_dataset(onehot, self.nlookback)
-        # x, y = create_dataset(onehot, self.n) # n = amount of lookback
-        x, y = create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context
-        # print(x)
-        # print(y)
-
-        return x,y
 
     def __str__(self):
         """
@@ -396,14 +346,6 @@ class Data(object):
         grade_level = round(grade_level,1)
         return grade_level
 
-    # def indexed_tokens(self, source, vocab, nchars=None):
-    #     """
-    #     Parse a data source into tokens up to nchars and return indices according to vocabulary.
-    #     """
-    #     tokens = self.tokens(source, nchars)
-    #     indexed_tokens = [vocab.word_to_index[token] for token in tokens]
-    #     return indexed_tokens
-
     # def tuples(self, source, ntokens_per_tuple, nchars=None):
     #     """
     #     Parse a data source into tokens up to nchars and return as tuples.
@@ -413,25 +355,6 @@ class Data(object):
     #     tokenlists = [tokens[i:] for i in range(ntokens_per_tuple)]
     #     tuples = zip(*tokenlists) # eg [['the','dog'], ['dog','barked'], ...]
     #     return tuples
-
-
-# class Vocab(object):
-#     """
-#     """
-#     def __init__(self, tokens, nvocab):
-#         """
-#         """
-#         self.nvocab = nvocab
-#         unknown_token = "UNKNOWN"
-#         word_freqs = nltk.FreqDist(tokens)
-#         wordcounts = word_freqs.most_common(nvocab-1)
-#         self.index_to_word = [wordcount[0] for wordcount in wordcounts]
-#         self.index_to_word.append(unknown_token)
-#         # self.word_to_index = dict([(word,i) for i,word in enumerate(self.index_to_word)])
-#         self.word_to_index = defaultdict(lambda: unknown_token)
-#         for i, word in enumerate(self.index_to_word):
-#             self.word_to_index[word] = i
-
 
 
 # Split a textfile by sentences into train, validate, test files,

@@ -251,15 +251,15 @@ class RnnKeras(Model):
         predict the next word in the sequence
         x is onehot, eg ____________?
         """
-        yprobs = self.rnn.predict(x) # softmax probabilities
+        yprobs = self.rnn.predict(x) # softmax probabilities, eg ________
         # print(yprobs)
-        yonehot = cutoff(yprobs) # onehot encodings
+        yonehot = cutoff(yprobs) # onehot encodings, eg ________
         # print(yonehot)
-        yiwords = [row.argmax() for row in yonehot] # iword values
+        yiwords = [row.argmax() for row in yonehot] # iword values, eg ________
         # print(yiwords)
-        ywords = self.vocab.get_tokens(yiwords)
+        ywords = self.vocab.get_tokens(yiwords) # eg ___________
         # print(ywords)
-        s = ' '.join(ywords)
+        s = ' '.join(ywords) # eg _____________
         # print(s)
         return s
 
@@ -269,13 +269,10 @@ class RnnKeras(Model):
         Get the k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
-        x, y = self.vocab.prompt_to_onehot(prompt, self.n)
-        probs = self.rnn.predict_proba(x)
-        best_words = self.vocab.probs_to_word_probs(probs, self.k)
+        x, y = self.vocab.prompt_to_onehot(prompt, self.n) # eg ___________
+        probs = self.rnn.predict_proba(x) # eg __________
+        best_words = self.vocab.probs_to_word_probs(probs, self.k) # eg ____________
         return best_words
-
-
-
 
 
 if __name__=='__main__':
