@@ -4,7 +4,7 @@ RNN implemented with Keras
 """
 
 from benchmark import benchmark
-with benchmark('import'):
+with benchmark('import'): # 19 secs cold, 4 secs warm
     import os
     import heapq
 
@@ -12,7 +12,6 @@ with benchmark('import'):
     import nltk
     from sklearn.preprocessing import MinMaxScaler
     import pandas as pd
-    import matplotlib.pyplot as plt
 
     import keras
     from keras.models import Sequential
@@ -267,7 +266,7 @@ class RnnKeras(Model):
         """
         Save the model to file - overrides base model class method.
         """
-        Model.save(self)
+        Model.save(self, exclude=['rnn'])
         self.rnn.save(self.filename_h5)
 
     def load(self):
