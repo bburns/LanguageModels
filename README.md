@@ -47,6 +47,29 @@ Additional programs used:
 - dot - to visualize Keras models
 
 
+## Datasets
+
+There are several datasets available for testing -
+
+> list sizes etc
+
+- abcd
+- alphabet
+- alice1
+- gutenbergs
+
+To make a new one, create a folder in the `data` folder, then a subfolder called
+`1-raw`, put any text files in it, then run the following code, with appropriate
+p values -
+
+    data = Data('abcd')
+    data.prepare(ptrain=0.8, pvalidate=0.1, ptest=0.1)
+
+This will clean the texts, merge them, and split the text up by sentence and
+distribute them among the different sets according to the percentages given -
+the resulting files will be in the `4-split` subfolder.
+
+
 ## License
 
 GPL
