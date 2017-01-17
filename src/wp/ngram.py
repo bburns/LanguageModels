@@ -30,7 +30,7 @@ class Ngram(model.Model):
     def __init__(self, data, n=3, k=3, train_amount=1.0, name_includes=[]):
         """
         Create an n-gram model.
-        data          - source of training and testing data
+        data          - a Data object - source of training and testing data
         train_amount  - percent or number of training characters to use
         name_includes - list of properties to include in model name
         """

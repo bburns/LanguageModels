@@ -313,6 +313,15 @@ documented. Both the initial and final solutions are reported, along with
 intermediate solutions, if necessary. -->
 
 
+incl hyperparameter tuning here - list available parameters, possible ranges
+
+eg use grid search with sklearn keras wrapper to find good parameters with alice_ch1.txt
+
+then compare those parameters with original guesses on the whole gutenberg dataset here
+
+
+
+
 
 ## Results
 
@@ -397,6 +406,8 @@ and compared/contrasted to the current solution. -->
 train longer, more vocabulary, more hidden nodes
 
 online learning (?) - ie learn new vocab words like phone does
+
+better training/testing - distribute text by paragraphs, not sentences
 
 
 ## References

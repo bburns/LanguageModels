@@ -36,7 +36,7 @@ class RnnPython(model.Model):
     def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, bptt_truncate=4, name_includes=[]):
         """
         Create an RNN model
-        data          - source of training and testing data
+        data          - a Data object - source of training and testing data
         train_amount  - percent or number of training characters to use
         nvocab        - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer

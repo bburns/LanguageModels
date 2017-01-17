@@ -51,6 +51,7 @@ class Model(object):
 
     #. add mini_batch_size - not stochastic without it?
     # or is this just minibatch size of 1? hmm, i guess so
+    #. adapted from ______________
     def train_with_sgd(self, X_train, y_train, learning_rate=0.005, nepochs=100, evaluate_loss_after=5):
         """
         Train model with Stochastic Gradient Descent (SGD) and return losses table.
@@ -94,6 +95,7 @@ class Model(object):
         df_losses = pd.DataFrame(losses, columns=loss_columns)
         return df_losses
 
+    #. refactor
     def test(self, test_amount=1.0):
         """
         Test the model and return the accuracy score.

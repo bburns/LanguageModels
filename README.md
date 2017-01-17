@@ -23,6 +23,8 @@ text to help fight spam.
 
 ## Libraries
 
+>>include version numbers for all libraries
+
 The base Python used is the Anaconda 3 distribution with Python 3.5 - the following libraries are included:
 
 - numpy

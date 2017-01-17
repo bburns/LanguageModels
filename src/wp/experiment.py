@@ -72,7 +72,8 @@ class Experiment(object):
             #. get data using this param value here?
             for (model_class, model_params) in self.model_specs:
                 # get a dict with all parameter names and values
-                name_includes = model_params.keys() # eg ['train_amount']
+                # name_includes = model_params.keys() # eg ['train_amount']
+                name_includes = list(model_params.keys()) # eg ['train_amount']
                 params = model_params.copy()
                 params[param_name] = param_value
                 print(params)
@@ -119,6 +120,7 @@ class Experiment(object):
         plt.style.use('ggplot') # nicer style
         line_styles = ['-', '--', '-.', ':']
 
+        # plot test scores
         self.test_scores.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
         plt.title('Relevance vs ' + param_name)
@@ -128,6 +130,7 @@ class Experiment(object):
         plt.savefig(self.plotfile_prefix + ' relevance.png')
         plt.close()
 
+        # plot train times
         self.train_times.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
         plt.title('Train time vs ' + param_name)
@@ -137,6 +140,7 @@ class Experiment(object):
         plt.savefig(self.plotfile_prefix + ' train_time.png')
         plt.close()
 
+        # plot test times
         self.test_times.plot(kind='line', style=line_styles)
         # plt.suptitle(self.caption)
         plt.title('Test time vs ' + param_name)
@@ -195,10 +199,24 @@ if __name__ == '__main__':
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
 
-    # 2017-01-05 0700
-    name = "rnn n values"
+    # # 2017-01-05 0700
+    # name = "rnn n values"
+    # specs = [
+    #     [wp.rnn_python.RnnPython, {'train_amount':10000}],
+    # ]
+    # data = wp.data.Data('animals')
+    # # data = wp.data.Data('gutenbergs')
+    # params = {'n':[1,2,3,4,5]}
+    # exper = Experiment(name, specs, data, params, test_amount=10000)
+    # # exper.run()
+    # exper.run(force_training=True)
+    # exper.plot(True)
+
+
+    # 2017-01-16 4pm
+    name = "keras rnn n values"
     specs = [
-        [wp.rnn_python.RnnPython, {'train_amount':10000}],
+        [wp.rnn_keras.RnnKeras, {'train_amount':10000}],
     ]
     data = wp.data.Data('animals')
     # data = wp.data.Data('gutenbergs')
@@ -206,5 +224,5 @@ if __name__ == '__main__':
     exper = Experiment(name, specs, data, params, test_amount=10000)
     # exper.run()
     exper.run(force_training=True)
-    exper.plot(True)
+    # exper.plot(True)
 

@@ -374,21 +374,34 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
-    # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
+    # # alphabet
+    # # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
     # data = Data('alphabet')
     # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 
-    data = Data('animals')
+    # alice ch1
+    data = Data('alice1')
+    data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
     print(util.table(data.analyze()))
+    # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # |--------+---------+----------------+--------------------+----------------+---------------|
+    # | text   |    2044 | 5.6            | 23.2               | 843            | 8             |
+    # | Totals |    2044 |                |                    |                |               |
+
+
+    # # animals
+    # data = Data('animals')
+    # print(util.table(data.analyze()))
     # print(data.readability()) # grade level
-    print(data.text())
-    print(data.sentences())
-    print(data.tokens())
-    # print(data.text('train'))
-    # print(data.text('train',0.5))
-    # print(data.text('train',20))
-    # print(data)
-    # print()
+    # print(data.text())
+    # print(data.sentences())
+    # print(data.tokens())
+    # # print(data.text('train'))
+    # # print(data.text('train',0.5))
+    # # print(data.text('train',20))
+    # # print(data)
+    # # print()
+
 
     # data = Data('gutenbergs')
     # with benchmark("prepare"):

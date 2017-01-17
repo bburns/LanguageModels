@@ -306,7 +306,8 @@ if __name__=='__main__':
 
     # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
-    data = Data('alphabet')
+    # data = Data('alphabet')
+    data = Data('alice1')
     model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
     # model.save()
     # data = Data('animals')
@@ -328,7 +329,8 @@ if __name__=='__main__':
 
     # predict next word after a prompt
     # s = 'The cat'
-    prompt = 'a b c'
+    # prompt = 'a b c'
+    prompt = 'The white rabbit'
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
