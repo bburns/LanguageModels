@@ -78,7 +78,7 @@ class RnnPython(model.Model):
             self.load() # see model.py - will set self.load_time
         else:
             #. fix train_amount output
-            print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
+            print("Training model %s on %s of training data..." % (self.name, str(self.train_amount)))
             # time the training session
             # with benchmark("Trained model " + self.name) as b:
             print("Getting training tokens...")

@@ -27,37 +27,7 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
     import vocab
 
 
-#. move to util?
-#. refactor
-def get_relevance(yactual, yprobs, k=3):
-    """
-    Get relevance score for the given probabilities and actual values.
-    ie check if the k most probable values include the actual value.
-    eg _____________
-    """
-    # print(yactual[:3]) # onehot
-    yiwords = [row.argmax() for row in yactual] # iword values
-    # print(yiwords[:3])
-    nrelevant = 0
-    ntotal = 0
-    for yp, yiw in zip(yprobs, yiwords):
-        pairs = [(iword,p) for iword,p in enumerate(yp)]
-        # print(pairs[:3])
-        best_pairs = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
-        # print(best_pairs[:3])
-        best_iwords = [pair[0] for pair in best_pairs]
-        # print(best_iwords[:3])
-        # print(yiw)
-        relevant = (yiw in best_iwords)
-        nrelevant += int(relevant)
-        ntotal += 1
-        # # print(self.nvocab)
-        # best_words = [(self.m.index_to_word[iword],p) for iword,p in best_iwords]
-    relevance = nrelevant/ntotal
-    return relevance
 
-
-#. move to util.py
 class ShowLoss(keras.callbacks.Callback):
     """
     A callback class to show loss, accuracy, and prediction during training.
@@ -79,7 +49,7 @@ class ShowLoss(keras.callbacks.Callback):
             yprobs = self.model.predict(self.x_validate) # softmax probabilities
             # yprobs = rnn.predict(x) # softmax probabilities
             # print(yprobs[:3])
-            yonehot = cutoff(yprobs) # onehot encodings
+            yonehot = util.cutoff(yprobs) # onehot encodings
             # print(yonehot)
             yiwords = [row.argmax() for row in yonehot] # iword values
             # print(yiwords[:3])
@@ -92,43 +62,11 @@ class ShowLoss(keras.callbacks.Callback):
             # print(s)
             # return s
 
-            relevance = get_relevance(self.y_validate, yprobs)
+            relevance = util.get_relevance(self.y_validate, yprobs)
 
             print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(epoch,loss,accuracy,relevance,s))
             row = [epoch, loss, accuracy, relevance, s]
             self.rows.append(row)
-
-# #. move into Data class?
-# def create_dataset(dat, nlookback=1):
-#     """
-#     convert an array of values into a dataset matrix
-#     eg _________
-#     from http://machinelearningmastery.com/time-series-prediction-lstm-recurrent-neural-networks-python-keras/
-#     """
-#     dataX, dataY = [], []
-#     for i in range(len(dat) - nlookback):
-#         a = dat[i:(i + nlookback)]
-#         dataX.append(a)
-#         dataY.append(dat[i + nlookback])
-#     return np.array(dataX), np.array(dataY)
-
-#. move to util
-def cutoff(p):
-    """
-    convert probabilities to hard 0's and 1's (1 for highest probability)
-    eg ___________
-    """
-    onehot = np.zeros(p.shape)
-    for i in range(len(p)):
-        row = p[i]
-        # print(row)
-        mx = row.max()
-        row = row/mx
-        row = row.astype('int')
-        #. if all 1's, choose one at random to be 1, rest 0
-        onehot[i] = row
-    return onehot
-
 
 
 
@@ -170,6 +108,7 @@ class RnnKeras(Model):
         self.save_time = None
         self.train_time = None
         self.test_time = None
+        self.vocab = None
 
         # create the keras model
         print("Create model " + self.name)
@@ -200,7 +139,7 @@ class RnnKeras(Model):
             # self.epoch_interval = 10
             self.epoch_interval = 1
 
-            print("Training model %s on %s percent/chars of training data..." % (self.name, str(self.train_amount)))
+            print("Training model %s on %s of training data..." % (self.name, str(self.train_amount)))
 
             print("Getting training tokens...")
             with benchmark("Prepared training data"):
@@ -245,23 +184,23 @@ class RnnKeras(Model):
         Model.load(self)
         self.rnn = load_model(self.filename_h5)
 
-    #. ?
-    def get_prediction(self, x):
-        """
-        predict the next word in the sequence
-        x is onehot, eg ____________?
-        """
-        yprobs = self.rnn.predict(x) # softmax probabilities, eg ________
-        # print(yprobs)
-        yonehot = cutoff(yprobs) # onehot encodings, eg ________
-        # print(yonehot)
-        yiwords = [row.argmax() for row in yonehot] # iword values, eg ________
-        # print(yiwords)
-        ywords = self.vocab.get_tokens(yiwords) # eg ___________
-        # print(ywords)
-        s = ' '.join(ywords) # eg _____________
-        # print(s)
-        return s
+    # #. ?
+    # def get_prediction(self, x):
+    #     """
+    #     predict the next word in the sequence
+    #     x is onehot, eg ____________?
+    #     """
+    #     yprobs = self.rnn.predict(x) # softmax probabilities, eg ________
+    #     # print(yprobs)
+    #     yonehot = util.cutoff(yprobs) # onehot encodings, eg ________
+    #     # print(yonehot)
+    #     yiwords = [row.argmax() for row in yonehot] # iword values, eg ________
+    #     # print(yiwords)
+    #     ywords = self.vocab.get_tokens(yiwords) # eg ___________
+    #     # print(ywords)
+    #     s = ' '.join(ywords) # eg _____________
+    #     # print(s)
+    #     return s
 
     #. refactor!
     def predict(self, prompt):
@@ -270,21 +209,98 @@ class RnnKeras(Model):
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
         x, y = self.vocab.prompt_to_onehot(prompt, self.n) # eg ___________
-        probs = self.rnn.predict_proba(x) # eg __________
+        probs = self.rnn.predict_proba(x, verbose=0) # eg __________
         best_words = self.vocab.probs_to_word_probs(probs, self.k) # eg ____________
         return best_words
 
 
 if __name__=='__main__':
 
-    np.random.seed(0)
-    # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
-
     import matplotlib.pyplot as plt
-    import pandas as pd
-    # from tabulate import tabulate
-
     from data import Data
+
+    np.random.seed(0)
+    np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+
+    # abcd
+    # vocab is 7 tokens: . END UNKNOWN a b c d
+    data = Data('abcd')
+    model = RnnKeras(data, n=3, nvocab=7, nhidden=4, nepochs=10)
+    # model = RnnKeras(data, n=2, nvocab=7, nhidden=4, nepochs=10)
+    # model = RnnKeras(data, n=3, nvocab=7, nhidden=4, nepochs=200) # works
+    model.train(force_training=True)
+    # model.train()
+    print('vocab',model.vocab)
+    print(util.table(model.train_results))
+    print()
+    weights = model.rnn.get_weights()
+    U, W, b, V, c = weights
+    print('U')
+    print(U)
+    print('W')
+    print(W)
+    print('b')
+    print(b)
+    print()
+    print('V')
+    print(V)
+    print('c')
+    print(c)
+    print()
+
+    # predict next word after a prompt
+    prompt = 'a b c'
+    word_probs = model.predict(prompt)
+    print('prediction')
+    print(prompt)
+    print(word_probs) # 'd' should be first in list
+
+    model.test(test_amount=100)
+    print('relevance',model.test_score)
+    print(util.table(model.test_samples))
+    print()
+
+
+    # data = Data('alphabet')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
+
+    # data = Data('animals')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=10)
+
+    # data = Data('alice1')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=10)
+
+    # data = Data('animals')
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)
+    # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
+    # data = Data('gutenbergs')
+
+    # model.train() # load model from file if available
+    # model.train(force_training=True)
+
+    # print(util.table(model.train_results))
+    # print()
+    # print(model.rnn.get_weights())
+    # print()
+
+    # # predict next word after a prompt
+    # # prompt = 'The cat'
+    # # prompt = 'The white rabbit'
+    # word_probs = model.predict(prompt)
+    # print('prediction')
+    # print(prompt)
+    # print(word_probs)
+
+    # works
+    # # plot training curves
+    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    # plt.show()
+
+    # model.test(test_amount=100)
+    # print('relevance',model.test_score)
+    # print(util.table(model.test_samples))
+    # print()
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time
@@ -305,45 +321,4 @@ if __name__=='__main__':
     #     model.sgd_step(X_train[1], y_train[1], 0.005)
 
     # np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
-
-    # data = Data('alphabet')
-    data = Data('alice1')
-    model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
-    # model.save()
-    # data = Data('animals')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)
-    # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
-    # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
-    # data = Data('gutenbergs')
-
-    # model.train() # load model from file if available
-    model.train(force_training=True)
-
-    # print(util.table(model.train_results))
-    # print()
-    # print(model.rnn.get_weights())
-    # print()
-    # model.save()
-    # model.load()
-
-
-    # predict next word after a prompt
-    # s = 'The cat'
-    # prompt = 'a b c'
-    prompt = 'The white rabbit'
-    word_probs = model.predict(prompt)
-    print('prediction')
-    print(prompt)
-    print(word_probs) # 'd' should be first in list
-
-
-    # works
-    # # plot training curves
-    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
-    # plt.show()
-
-    model.test(test_amount=100)
-    print('relevance',model.test_score)
-    print(util.table(model.test_samples))
-    print()
 

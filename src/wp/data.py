@@ -372,21 +372,29 @@ class Data(object):
 
 if __name__ == '__main__':
 
-    from tabulate import tabulate
+    # from tabulate import tabulate
+
+    # # abcd
+    # data = Data('abcd')
+    # # build the abcd dataset with same test set as train set (data is duplicated in raw text file)
+    # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # print(util.table(data.analyze()))
+    # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # |--------+---------+----------------+--------------------+----------------+---------------|
+    # | text   |      10 | 2.0            | 5.0                | 6              | -15           |
 
     # # alphabet
-    # # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
     # data = Data('alphabet')
-    # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
+    # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
 
-    # alice ch1
-    data = Data('alice1')
-    data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
-    print(util.table(data.analyze()))
+    # # alice
+    # data = Data('alice1')
+    # # data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
+    # print(util.table(data.analyze()))
     # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # |--------+---------+----------------+--------------------+----------------+---------------|
     # | text   |    2044 | 5.6            | 23.2               | 843            | 8             |
-    # | Totals |    2044 |                |                    |                |               |
 
 
     # # animals
@@ -452,3 +460,5 @@ if __name__ == '__main__':
     # print('train:',indexed_sentences)
     # print()
 
+
+    pass
