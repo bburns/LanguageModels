@@ -116,7 +116,7 @@ class Data(object):
 
     def clean_table_of_contents(self, s):
         """
-        Remove table of contents from specific texts.
+        Remove table of contents, etc from specific texts.
         """
         s = util.remove_text(r"LENOX, January 27, 1851.", s, 0) # house of seven gables
         s = util.remove_text(r"List of Illustrations", s, 0) # les miserables
@@ -130,20 +130,15 @@ class Data(object):
         """
         Merge the cleaned files into one file if not done yet.
         """
-        # print('Merge cleaned files...')
         print('Merge cleaned files... ', end='')
         util.mkdir(self.merged_folder)
         if not os.path.isfile(self.merged_file):
-            # with open(self.merged_file, 'wb') as f_all:
             with open(self.merged_file, 'w') as f_all:
                 for filename in glob.glob(self.cleaned_files):
-                    # print('Adding', filename)
-                    # with open(filename, 'rb') as f:
                     with open(filename, 'r') as f:
                         s = f.read()
                         f_all.write(s)
         print('done.')
-        # print()
 
     def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .prepare
         """
@@ -154,7 +149,6 @@ class Data(object):
         artificial word tuples.
         """
         assert abs(ptrain + pvalidate + ptest - 1) < 1e-6 # must add to 1.0
-        # print('Split merged file...')
         print('Split merged file... ', end='')
         # initialize
         util.mkdir(self.split_folder)
@@ -176,23 +170,26 @@ class Data(object):
             output_files = []
             # open output files for writing
             for output_filename in output_filenames:
-                # f = open(output_filename, 'wb')
                 f = open(output_filename, 'w')
                 output_files.append(f)
-            # parse merged file into sentences
-            # print('Splitting merged file into sentences')
-            sentences = self.sentences('merged')
-            # walk over sentences, outputting to the different output files
-            # print('Distributing sentences over output files')
-            for sentence in sentences:
+            # # parse merged file into sentences
+            # sentences = self.sentences('merged')
+            # # walk over sentences, outputting to the different output files
+            # for sentence in sentences:
+            #     f = self._get_next_file(output_files, proportions)
+            #     f.write(sentence)
+            #     f.write('\n\n')
+            # parse merged file into paragraphs
+            paragraphs = self.paragraphs('merged')
+            # walk over paragraphs, outputting to the different output files
+            for paragraph in paragraphs:
                 f = self._get_next_file(output_files, proportions)
-                f.write(sentence)
+                f.write(paragraph)
                 f.write('\n\n')
             # close all files
             for f in output_files:
                 f.close()
         print('done.')
-        # print()
 
     def _get_next_file(self, output_files, proportions):
         """
@@ -290,6 +287,15 @@ class Data(object):
             s = f.read(nchars)
         return s
 
+    def paragraphs(self, source='merged', amount=1.0):
+        """
+        Parse a data source into paragraphs and return in a list.
+        """
+        s = self.text(source, amount)
+        s = s.replace('\r\n',' ')
+        paragraphs = re.split(r"\n\n+", s)
+        return paragraphs
+
     def sentences(self, source='merged', amount=1.0):
         """
         Parse a data source into sentences and return in a list.
@@ -308,13 +314,18 @@ class Data(object):
         #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
         with benchmark("Get tokens from data source"):
-            sentences = self.sentences(source, amount)
-            tokens = []
-            for sentence in sentences:
-                sentence = sentence.lower() # reduces vocab space
-                words = tokenize.word_tokenize(sentence)
-                tokens.extend(words)
-                tokens.append('END') # add an END token to every sentence #. magic
+            # # add END token to end of each sentence (#. why? not relevant to task of predicting next input)
+            # sentences = self.sentences(source, amount)
+            # tokens = []
+            # for sentence in sentences:
+            #     sentence = sentence.lower() # reduces vocab space
+            #     words = tokenize.word_tokenize(sentence)
+            #     tokens.extend(words)
+            #     tokens.append('END') # add an END token to every sentence #. magic
+            s = self.text(source, amount)
+            s = s.replace('\r\n',' ')
+            s = s.replace('\n',' ')
+            tokens = tokenize.word_tokenize(s)
         return tokens
 
     def get_vocab(self, train_amount, nvocab):
@@ -376,17 +387,18 @@ if __name__ == '__main__':
 
     # # abcd
     # data = Data('abcd')
-    # # build the abcd dataset with same test set as train set (data is duplicated in raw text file)
     # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
-    # print(util.table(data.analyze()))
-    # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
-    # # |--------+---------+----------------+--------------------+----------------+---------------|
-    # # | text   |      10 | 2.0            | 5.0                | 6              | -15           |
+    # # print(util.table(data.analyze()))
+    # # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # # # |--------+---------+----------------+--------------------+----------------+---------------|
+    # # # | text   |      10 | 2.0            | 5.0                | 6              | -15           |
+    # print('\n\n'.join(data.paragraphs()))
+    # print(data.sentences('train'))
+    # print(data.tokens('train'))
 
     # # alphabet
     # data = Data('alphabet')
-    # # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
-    # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
     # print(util.table(data.analyze()))
     # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -394,6 +406,7 @@ if __name__ == '__main__':
 
     # # animals
     # data = Data('animals')
+    # data.prepare(ptrain=0.6, pvalidate=0.2, ptest=0.2) # 0.8,0.1,0.1 nowork
     # print(util.table(data.analyze()))
     # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -401,11 +414,23 @@ if __name__ == '__main__':
 
     # # alice
     # data = Data('alice1')
-    # # data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
+    # data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
     # print(util.table(data.analyze()))
     # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # |--------+---------+----------------+--------------------+----------------+---------------|
     # # | text   |    2044 | 5.6            | 23.2               | 843            | 8             |
+    # print('\n\n'.join(data.paragraphs()))
+    # print(data.sentences('train'))
+    # print(data.tokens('train'))
+
+    # # gutenbergs
+    data = Data('gutenbergs')
+    with benchmark("prepare"):
+        data.prepare(ptrain=0.95, pvalidate=0.025, ptest=0.025) # 6 secs
+    # with benchmark("analyze"):
+        # print(util.table(data.analyze())) # 25 secs
+    # with benchmark("tokens"):
+        # tokens = data.tokens() # 18 secs
 
 
     # print(data.readability()) # grade level
@@ -417,14 +442,6 @@ if __name__ == '__main__':
     # # print(data.text('train',20))
     # # print(data)
     # # print()
-
-    # data = Data('gutenbergs')
-    # with benchmark("prepare"):
-        # data.prepare(ptrain=0.9, pvalidate=0.05, ptest=0.05) # 6 secs
-    # with benchmark("analyze"):
-        # print(util.table(data.analyze())) # 25 secs
-    # with benchmark("tokens"):
-        # tokens = data.tokens() # 18 secs
 
     # # get histogram of sentence lengths - currently plotted in the notebook
     # data = Data('gutenbergs')

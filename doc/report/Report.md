@@ -271,13 +271,13 @@ training, validation, and test sets.
 To clean the files, headers and footers with Project Gutenberg and license
 information are removed via regular expression searches for the delimiter
 strings. Some texts contain titlepages and tables of contents also, which are
-removed similarly where possible. All non-ASCII characters are removed, as they
-caused problems for NLTK in Python 2.7.
+removed similarly where possible. 
 
 Once the files are cleaned, they are merged into a single file, which is then
 split into the training, validation, and test files. This is done by parsing the
-text into sentences, and apportioning them to the different files based on the
-desired proportions (e.g. 80% training, 10% validation, 10% testing).
+text into paragraphs, and apportioning them to the different files based on the
+desired proportions (e.g. for Gutenbergs, 95% training, 2.5% validation, 2.5%
+testing).
 
 
 ### Implementation
@@ -288,7 +288,9 @@ Complications that occurred during the coding process are discussed. -->
 
 
 The texts will first be preprocessed to remove punctuation and converted to
-lowercase.
+lowercase. Better accuracy could be achieved by leaving text case as it is, but
+this would increase the vocabulary size by a significant factor, and so require
+more training time.
 
 For the training step, the baseline trigram predictor will be fed all word
 triples, which will be accumulated in the nested dictionaries and converted to

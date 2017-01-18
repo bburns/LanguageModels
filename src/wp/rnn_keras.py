@@ -30,14 +30,22 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
 
 class ShowLoss(keras.callbacks.Callback):
     """
-    A callback class to show loss, accuracy, and prediction during training.
+    A callback class to show loss, accuracy, relevance, and predictions during training.
     """
-    def __init__(self, m, x_validate, y_validate, k, fmt, epoch_interval=10):
+    def __init__(self, m, x_validate, y_validate, k, fmt_rows, epoch_interval=10):
+        """
+        m - RnnKeras model (note: the Callback class defines .model as the Keras RNN model)
+        x_validate -
+        y_validate -
+        k -
+        fmt_rows -
+        epoch_interval -
+        """
         self.m = m
         self.x_validate = x_validate
         self.y_validate = y_validate
         self.k = k
-        self.fmt = fmt
+        self.fmt_rows = fmt_rows
         self.epoch_interval = epoch_interval
         self.rows = []
 
@@ -46,11 +54,9 @@ class ShowLoss(keras.callbacks.Callback):
             loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
             yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
             relevance = util.get_relevance(self.y_validate, yprobs, self.k)
-            # predictions = self.m.get_predictions(self.x_validate)
-            # predictions = self.m.get_predictions(self.x_validate)[:40]
             predictions = self.m.get_predictions(yprobs)[:40] #. rename fn
             row = [epoch, loss, accuracy, relevance, predictions]
-            print(self.fmt.format(*row))
+            print(self.fmt_rows.format(*row))
             self.rows.append(row)
 
 
@@ -122,24 +128,30 @@ class RnnKeras(Model):
 
             print("Training model %s on %s of training data..." % (self.name, str(self.train_amount)))
 
-            print("Getting training tokens...")
+            print("Getting training and validation tokens...")
             with benchmark("Prepared training data"):
                 tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
                 self.vocab = vocab.Vocab(tokens, self.nvocab)
-                itokens = self.vocab.get_itokens(tokens) # eg ________
+                itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
                 onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
                 #. these would be huge arrays - simpler way?
                 x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
+
+                tokens = self.data.tokens('validate') # eg ['the','dog','barked',...]
+                itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
+                onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
+                #. these would be huge arrays - simpler way?
+                x_validate, y_validate = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
 
             print("Starting gradient descent...")
             with benchmark("Gradient descent finished") as b:
                 #. add early stopping
                 # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
                 columns = ['Epoch','Loss','Accuracy','Relevance','Predictions']
-                fmt = "{:5}  {:6}  {:8}  {:9}  {}"
-                print(fmt.format(*columns))
-                fmt = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
-                show_loss = ShowLoss(self, x, y, self.k, fmt, self.epoch_interval) #. pass in validation dataset here, not x y
+                fmt_header = "{:5}  {:6}  {:8}  {:9}  {}"
+                print(fmt_header.format(*columns))
+                fmt_rows = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
+                show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
                 history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
                 #. what is history obj?
                 # print(history)
@@ -165,7 +177,6 @@ class RnnKeras(Model):
         Model.load(self)
         self.rnn = load_model(self.filename_h5)
 
-    # def get_predictions(self, xonehots):
     def get_predictions(self, yprobs):
         """
         predict the next words in the given sequence.
@@ -173,12 +184,12 @@ class RnnKeras(Model):
         xonehots eg ____________
         """
         # yprobs = self.rnn.predict(xonehots) # softmax probabilities, eg ______
-        yonehots = util.cutoff(yprobs) # onehot encodings, eg ______
-        yiwords = [row.argmax() for row in yonehots] # iword values, eg ______
+        # yonehots = util.cutoff(yprobs) # onehot encodings, eg ______
+        # yiwords = [row.argmax() for row in yonehots] # iword values, eg ______
+        yiwords = [row.argmax() for row in yprobs] # iword values, eg ______
         ywords = self.vocab.get_tokens(yiwords) # eg _______
         s = ' '.join(ywords) # eg ________
         return s
-
 
     #. refactor!
     def predict(self, prompt):
@@ -202,37 +213,43 @@ if __name__=='__main__':
 
     # select dataset and build model
 
-    # data = Data('abcd') # vocab is 7 tokens: . END UNKNOWN a b c d
-    # model = RnnKeras(data, n=3, nvocab=7, nhidden=4, nepochs=200) # works
+    # abcd
+    # data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
     # prompt = 'a b c'
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=200) # works
 
+    # alphabet
     # data = Data('alphabet')
-    # nepochs vs nhidden - cramming info into smaller hidden layer takes more work
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=30, nepochs=20) # works
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=15, nepochs=40) # works
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=10, nepochs=40) # works
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=5, nepochs=800) # nearly works
-    # nepochs vs n - increasing context doesn't require much work
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=15, nepochs=40) # works
-    # model = RnnKeras(data, n=4, nvocab=30, nhidden=15, nepochs=40) # works
-    # model = RnnKeras(data, n=5, nvocab=30, nhidden=15, nepochs=40) # works
-    # model = RnnKeras(data, n=6, nvocab=30, nhidden=15, nepochs=50) # works
-    # model = RnnKeras(data, n=7, nvocab=30, nhidden=15, nepochs=50) # works
-    # model = RnnKeras(data, n=8, nvocab=30, nhidden=15, nepochs=50) # works
-    # model = RnnKeras(data, n=9, nvocab=30, nhidden=15, nepochs=50) # works
-    # model = RnnKeras(data, n=10, nvocab=30, nhidden=15, nepochs=60) # works
-    # model = RnnKeras(data, n=20, nvocab=30, nhidden=15, nepochs=60) # works
     # prompt = 'a b c d e f g h i j k l m'
+    # nepochs vs nhidden - cramming info into smaller hidden layer takes more work
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=30, nepochs=20) # works
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=10, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=5, nepochs=800) # nearly works
+    # nepochs vs n - increasing context doesn't require much work
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=4, nvocab=27, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=5, nvocab=27, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=6, nvocab=27, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=7, nvocab=27, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=8, nvocab=27, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=9, nvocab=27, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=10, nvocab=27, nhidden=15, nepochs=60) # works
+    # model = RnnKeras(data, n=20, nvocab=27, nhidden=15, nepochs=60) # works
 
-    # data = Data('animals')
-    # model = RnnKeras(data, n=5, nvocab=60, nhidden=30, nepochs=100) # nearly works
-    # prompt = 'the cat and dog'
+    # animals
+    data = Data('animals')
+    model = RnnKeras(data, n=5, nvocab=60, nhidden=30, nepochs=100) # nearly works
+    prompt = 'the cat and dog'
 
-    data = Data('alice1')
+    # alice
+    # data = Data('alice1')
+    # prompt = 'the white rabbit ran away and'
+    # model = RnnKeras(data, n=4, nvocab=50, nhidden=25, nepochs=5) # fast and bad
     # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
     # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
-    model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=3)
-    prompt = 'the white rabbit said'
+    # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=3)
+
 
     # train model
     model.train(force_training=True)

@@ -13,7 +13,7 @@ import numpy as np
 from tabulate import tabulate
 
 
-#. a bit confusing - separate out fns?
+#. a bit confusing - separate out fns? add example comments
 def get_relevance(actuals, probs, k):
     """
     Get relevance score for the given actual values and probabilities.
@@ -27,7 +27,7 @@ def get_relevance(actuals, probs, k):
         probs = [prob, prob] # probabilities for 2 values
         get_relevance(actual, probs) => 0.5
     """
-    values = [row.argmax() for row in actuals] # get values
+    values = [row.argmax() for row in actuals] # get values, eg [2, 1]
     nrelevant = 0
     ntotal = 0
     for value_probs, value in zip(probs, values):
@@ -47,22 +47,23 @@ def get_relevance(actuals, probs, k):
 # assert(relevance==0.5)
 # stop
 
-def cutoff(p):
-    """
-    Convert rows of probabilities to hard 0's and 1 (highest probability gets the 1).
-    eg cutoff(np.array([[0.1,0.1,0.8]])) => [[0. 0. 1.]]
-    """
-    onehot = np.zeros(p.shape)
-    for i in range(len(p)):
-        row = p[i]
-        mx = row.max()
-        row = row/mx
-        row = row.astype('int')
-        #. if all 1's, choose one at random to be 1, rest 0
-        onehot[i] = row
-    return onehot
-# print(cutoff(np.array([[0.1,0.1,0.8]])))
-# stop
+
+# def cutoff(p):
+#     """
+#     Convert rows of probabilities to hard 0's and 1 (highest probability gets the 1).
+#     eg cutoff(np.array([[0.1,0.1,0.8]])) => [[0. 0. 1.]]
+#     """
+#     onehot = np.zeros(p.shape)
+#     for i in range(len(p)):
+#         row = p[i]
+#         mx = row.max()
+#         row = row/mx
+#         row = row.astype('int')
+#         #. if all 1's, choose one at random to be 1, rest 0
+#         onehot[i] = row
+#     return onehot
+# # print(cutoff(np.array([[0.1,0.1,0.8]])))
+# # stop
 
 def table(df):
     """
