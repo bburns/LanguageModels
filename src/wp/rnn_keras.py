@@ -32,23 +32,25 @@ class ShowLoss(keras.callbacks.Callback):
     """
     A callback class to show loss, accuracy, and prediction during training.
     """
-    #. pass in a pandas table and col formats, print last row each step using tabulate?
-    def __init__(self, m, x_validate, y_validate, k, epoch_interval=10):
+    def __init__(self, m, x_validate, y_validate, k, fmt, epoch_interval=10):
         self.m = m
         self.x_validate = x_validate
         self.y_validate = y_validate
         self.k = k
+        self.fmt = fmt
         self.epoch_interval = epoch_interval
         self.rows = []
 
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
             loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-            predictions = self.m.get_predictions(self.x_validate)
-            # relevance = util.get_relevance(self.y_validate, yprobs) #. pass k
-            relevance = util.get_relevance(self.y_validate, yprobs, k)
+            yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
+            relevance = util.get_relevance(self.y_validate, yprobs, self.k)
+            # predictions = self.m.get_predictions(self.x_validate)
+            # predictions = self.m.get_predictions(self.x_validate)[:40]
+            predictions = self.m.get_predictions(yprobs)[:40] #. rename fn
             row = [epoch, loss, accuracy, relevance, predictions]
-            print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(*row))
+            print(self.fmt.format(*row))
             self.rows.append(row)
 
 
@@ -133,8 +135,11 @@ class RnnKeras(Model):
             with benchmark("Gradient descent finished") as b:
                 #. add early stopping
                 # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
-                show_loss = ShowLoss(self, x, y, self.k, self.epoch_interval) #. pass in validation dataset here, not x y
-                print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','predictions'))
+                columns = ['Epoch','Loss','Accuracy','Relevance','Predictions']
+                fmt = "{:5}  {:6}  {:8}  {:9}  {}"
+                print(fmt.format(*columns))
+                fmt = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
+                show_loss = ShowLoss(self, x, y, self.k, fmt, self.epoch_interval) #. pass in validation dataset here, not x y
                 history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
                 #. what is history obj?
                 # print(history)
@@ -160,13 +165,14 @@ class RnnKeras(Model):
         Model.load(self)
         self.rnn = load_model(self.filename_h5)
 
-    def get_predictions(self, xonehots):
+    # def get_predictions(self, xonehots):
+    def get_predictions(self, yprobs):
         """
         predict the next words in the given sequence.
         called by ShowLoss callback class.
         xonehots eg ____________
         """
-        yprobs = self.rnn.predict(xonehots) # softmax probabilities, eg ______
+        # yprobs = self.rnn.predict(xonehots) # softmax probabilities, eg ______
         yonehots = util.cutoff(yprobs) # onehot encodings, eg ______
         yiwords = [row.argmax() for row in yonehots] # iword values, eg ______
         ywords = self.vocab.get_tokens(yiwords) # eg _______
@@ -225,13 +231,13 @@ if __name__=='__main__':
     data = Data('alice1')
     # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
     # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
-    model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=1)
+    model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=3)
     prompt = 'the white rabbit said'
 
     # train model
-    # model.train(force_training=True)
-    model.train()
-    print(util.table(model.train_results))
+    model.train(force_training=True)
+    # model.train()
+    # print(util.table(model.train_results))
     print()
 
     # # show vocab
