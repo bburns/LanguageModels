@@ -60,11 +60,10 @@ For example, for the sequence "The dog", a solution might be
 (barked 10%, slept 9%, ran 8%).
 
 We'll use some different neural network architectures to find the most likely
-next words - a Feedforward Neural Network (FNN), a standard Recurrent Neural
-Network (RNN), a Long Short-Term Memory (LSTM) RNN, and a GRU (Gated Recurrent
-Unit) RNN - and compare these against some baseline n-gram models. The GRU RNN
-is expected to offer the best performance for a given amount of training time
-[cite!].
+next words - a standard Recurrent Neural Network (RNN), a Long Short-Term Memory
+(LSTM) RNN, and a GRU (Gated Recurrent Unit) RNN - and compare these against
+some baseline n-gram models. The GRU RNN is expected to offer the best
+performance for a given amount of training time [cite!].
 
 
 ### Metrics
@@ -141,8 +140,6 @@ Some sample text:
 
 > He was one of the martyrs to that terrible delusion, which should teach us, among its other morals, that the influential classes, and those who take upon themselves to be leaders of the people, are fully liable to all the passionate error that has ever characterized the maddest mob. - *The House of the Seven Gables* (Highest grade level)
 
-<!-- The landscape was gloomy and deserted. He was encompassed by space. There was nothing around him but an obscurity in which his gaze was lost, and a silence which engulfed his voice. - *Les Miserables* -->
-<!-- Meantime the Rat, warm and comfortable, dozed by his fireside. His paper of half-finished verses slipped from his knee, his head fell back, his mouth opened, and he wandered by the verdant banks of dream-rivers. - *The Wind in the Willows* -->
 
 
 ### Exploratory Visualization
@@ -180,7 +177,7 @@ plot against mean/median sentence lengths?
 properly justified based on the characteristics of the problem. -->
 
 Until recently, n-grams were state of the art in word prediction - Recurrent
-Neural Networks were able to beat n-grams in 2003, though at the cost of greater
+Neural Networks were able to beat them in 2003, though at the cost of greater
 training time (Bengio 2003).
 
 A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
@@ -220,18 +217,14 @@ softmax layer then converts these scores into probabilities, so the top *k* most
 likely words can be found for a given context.
 
 
-<!-- would like to do lstm, gru, if have time - maybe will have another month... -->
+explain LSTM and GRU
 
-<!-- vectors in a high-dimensional space (e.g. 300), and the network is trained until -->
-<!-- the output is within a certain distance of the actual word. Then on testing, a -->
-<!-- sequence of words will be fed into the network and the output used to search the -->
-<!-- vector space for the closest *k* words. -->
-
-<!-- lstm's came in 1997 -->
-<!-- various types, incl gru 2014 - simpler -->
+<!-- lstm's came in 1997 [cite] -->
+<!-- various types, incl gru 2014 - simpler [cite] -->
 <!-- then attention 2015 -->
 
 will use Keras (Chollet 2015)
+
 
 
 ### Benchmark
@@ -254,8 +247,6 @@ require more training data.
 
 
 
-
-
 ## Methodology
 
 ### Data Preprocessing
@@ -265,19 +256,18 @@ characteristics about the data or input that needed to be addressed have been
 corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
-The raw Gutenberg files are downloaded, then cleaned, merged, and split into
+The raw Gutenberg files were downloaded, then cleaned, merged, and split into
 training, validation, and test sets.
 
 To clean the files, headers and footers with Project Gutenberg and license
-information are removed via regular expression searches for the delimiter
-strings. Some texts contain titlepages and tables of contents also, which are
+information were removed via regular expression searches for the delimiter
+strings. Some texts contain titlepages and tables of contents also, which were
 removed similarly where possible. 
 
-Once the files are cleaned, they are merged into a single file, which is then
-split into the training, validation, and test files. This is done by parsing the
-text into paragraphs, and apportioning them to the different files based on the
-desired proportions (e.g. for Gutenbergs, 95% training, 2.5% validation, 2.5%
-testing).
+Once the files were cleaned, they were merged into a single file, which was then
+split into the training, validation, and test files. This was done by parsing the
+text into paragraphs, and portioning them out to the different files based on the
+desired proportions (e.g. 95% training, 2.5% validation, 2.5% testing).
 
 
 ### Implementation
@@ -286,25 +276,24 @@ testing).
 with the given datasets or input data has been thoroughly documented.
 Complications that occurred during the coding process are discussed. -->
 
-
-The texts will first be preprocessed to remove punctuation and converted to
-lowercase. Better accuracy could be achieved by leaving text case as it is, but
+The texts were first preprocessed to remove punctuation and converted to
+lowercase - better accuracy could be achieved by leaving text case as it is, but
 this would increase the vocabulary size by a significant factor, and so require
 more training time.
 
-For the training step, the baseline trigram predictor will be fed all word
-triples, which will be accumulated in the nested dictionaries and converted to
-probabilities. For the RNN predictor, all word sequences or skip-grams will be
-fed to the network and trained until its output is close to the correct final
-word.
+For the training step, the baseline trigram predictor was fed all word
+triples, which were accumulated in the nested dictionaries and converted to
+probabilities. For the RNN predictor, all word sequences were fed to the
+network and trained for a certain number of epochs, or until the cross-entropy
+loss stopped improving for a certain number of epochs.
 
-For the testing step, the baseline predictor will be fed random tuples of words,
-and the top *k* predicted words will be compared against the actual word, and a
-*relevance* score tallied. For the RNN predictor, the same process will be used.
+For the testing step, the baseline and RNN predictors were fed word sequences
+from the test data, and the top *k* predicted words were compared against the
+actual word, and a *relevance* score tallied.
 
-Training sets of increasing sizes will be used - 1k, 10k, 100k, 1 million words,
-and the results recorded for comparison. Timing and memory information will also
-be recorded for all processes for later analysis.
+Training sets of increasing sizes were used - 1k, 10k, 100k, 1 million words,
+and the results recorded for comparison. Timing and memory information were also
+recorded for all processes for analysis.
 
 
 
@@ -315,12 +304,14 @@ documented. Both the initial and final solutions are reported, along with
 intermediate solutions, if necessary. -->
 
 
+show overfitting curve - too many epochs and loss starts to increase, so need to
+do early stopping - eg stop if loss doesn't decrease for n epochs.
+
 incl hyperparameter tuning here - list available parameters, possible ranges
 
-eg use grid search with sklearn keras wrapper to find good parameters with alice_ch1.txt
-
-then compare those parameters with original guesses on the whole gutenberg dataset here
-
+take initial stab at training, get scores
+then use grid search with sklearn keras wrapper to find good parameters with alice_ch1.txt
+then compare those parameters with original guesses on the whole gutenberg dataset
 
 
 
@@ -335,6 +326,9 @@ solution. -->
 
 for rnns show the Loss vs epoch graphs to show increasing accuracy
 
+show overfitting training curves - too much training -> overfitting
+
+robustness - ie how performs in the wild - try on some non-gutenberg text - compare diff models - ngrams, rnns
 
 
 
@@ -346,6 +340,9 @@ model and solution is significant enough to have adequately solved the problem.
 -->
 
 
+
+
+
 ## Conclusion
 
 ### Free-Form Visualization
@@ -353,37 +350,38 @@ model and solution is significant enough to have adequately solved the problem.
 <!-- A visualization has been provided that emphasizes an important quality
 about the project with thorough discussion. Visual cues are clearly defined. -->
 
+
+-> show t-SNE plots of word embeddings eg dog and cat. alice, rabbit, other
+   character names vs verbs, nouns, adjectives, etc
+
+-> add beam search
+
+
 Examples of text generated by the different models:
 
-n-gram (n=2)
-Not a sudden vibration in the gate , but in books .
-Hucheloup . `` and whatever , and the Italian , there was no additional contact information about the discovery
-And the old stockade . The lip was indubitable -- THE FOUNDATION , your breakfast ? The woman of
-Madeleine arrived there were all the neck was not the sister 's the banks of a bore a few
-She opened the brim and terrible quagmire was trying to my fancy it had n't know what may be
-Ballad of which sped I COULD HARDLY BELIEVE IN FAIRY LAND I was higher than you give thee From
+n-gram (n=2):
 
-n-gram (n=3)
-LIKE SUMMER TEMPESTS CAME HIS TEARS XII . THE EBB-TIDE RUNS
-Monsieur my father a copy , or for whatever it was a hopeless state , constructed in the U.S. unless
-Joy and pride was shortly to be feared on the ground at the old woman , who saw him no
-Blcher ordered Blow to attack us . Here was another , to such an authority in reference to what Boulatruelle
-A pile of stones , destined to weep .
-Dry happiness resembles the voice of the choir , as strange as anything that was easy to inspire my pupils
-My spirits rose as I lay with half-closed eyes . I was not so with me out of the hand
+- Not a sudden vibration in the gate , but in books .
+- Hucheloup . `` and whatever , and the Italian , there was no additional contact information about the discovery
+- She opened the brim and terrible quagmire was trying to my fancy it had n't know what may be
 
-n-gram (n=4)
-Terror had seized on the whole day , with intervals of listening ; and the gipsy never grudged it him .
-The glass must be violet for iron jewellery , and black for gold jewellery . 
-Dry happiness resembles dry bread . 
-Just like a rocket too , it burst in the air of splendidly coloured fire-flies , which sped hither and thither .
+n-gram (n=3):
 
+- Joy and pride was shortly to be feared on the ground at the old woman , who saw him no
+- Blcher ordered Blow to attack us . Here was another , to such an authority in reference to what Boulatruelle
+- Dry happiness resembles the voice of the choir , as strange as anything that was easy to inspire my pupils
 
-RNN
+n-gram (n=4):
 
-LSTM RNN
+- Terror had seized on the whole day , with intervals of listening ; and the gipsy never grudged it him .
+- The glass must be violet for iron jewellery , and black for gold jewellery . 
+- Dry happiness resembles dry bread . 
 
-GRU RNN
+RNN (n=10): ?
+
+LSTM
+
+GRU
 
 
 
