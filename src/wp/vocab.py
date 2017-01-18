@@ -26,8 +26,11 @@ class Vocab(object):
         self.nvocab = nvocab
 
         #. make class consts?
-        self.unknown_token = 'UNKNOWN'
-        self.end_token = 'END'
+        # self.unknown_token = 'UNKNOWN'
+        # self.end_token = 'END'
+        self.unknown_token = '~'
+        self.end_token = '@'
+        self.pad_token = '%'
 
         # get most common words for vocabulary
         token_freqs = nltk.FreqDist(tokens)
@@ -36,7 +39,7 @@ class Vocab(object):
         self.index_to_token = [token_count[0] for token_count in token_counts] # eg _________
         self.index_to_token.append(self.unknown_token)
         while len(self.index_to_token) < self.nvocab:
-            self.index_to_token.append('~') # pad out the vocabulary if needed
+            self.index_to_token.append(self.pad_token) # pad out the vocabulary if needed
         self.index_to_token.sort() #. just using for alphabet dataset
         # print(self.index_to_token)
         self.token_to_index = dict([(token,i) for i,token in enumerate(self.index_to_token)]) # eg _______

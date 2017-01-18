@@ -379,27 +379,35 @@ if __name__ == '__main__':
     # # build the abcd dataset with same test set as train set (data is duplicated in raw text file)
     # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
     # print(util.table(data.analyze()))
-    # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
-    # |--------+---------+----------------+--------------------+----------------+---------------|
-    # | text   |      10 | 2.0            | 5.0                | 6              | -15           |
+    # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # # |--------+---------+----------------+--------------------+----------------+---------------|
+    # # | text   |      10 | 2.0            | 5.0                | 6              | -15           |
 
     # # alphabet
     # data = Data('alphabet')
     # # build the alphabet dataset with same test set as train set (data is duplicated in raw text file)
     # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # print(util.table(data.analyze()))
+    # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # # |--------+---------+----------------+--------------------+----------------+---------------|
+    # # | text   |      53 | 2.0            | 26.5               | 28             | -11           |
+
+    # # animals
+    # data = Data('animals')
+    # print(util.table(data.analyze()))
+    # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # # |--------+---------+----------------+--------------------+----------------+---------------|
+    # # | text   |     150 | 5.1            | 6.2                | 67             | 3             |
 
     # # alice
     # data = Data('alice1')
     # # data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
     # print(util.table(data.analyze()))
-    # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
-    # |--------+---------+----------------+--------------------+----------------+---------------|
-    # | text   |    2044 | 5.6            | 23.2               | 843            | 8             |
+    # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
+    # # |--------+---------+----------------+--------------------+----------------+---------------|
+    # # | text   |    2044 | 5.6            | 23.2               | 843            | 8             |
 
 
-    # # animals
-    # data = Data('animals')
-    # print(util.table(data.analyze()))
     # print(data.readability()) # grade level
     # print(data.text())
     # print(data.sentences())
@@ -409,7 +417,6 @@ if __name__ == '__main__':
     # # print(data.text('train',20))
     # # print(data)
     # # print()
-
 
     # data = Data('gutenbergs')
     # with benchmark("prepare"):

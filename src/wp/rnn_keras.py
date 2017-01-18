@@ -33,41 +33,23 @@ class ShowLoss(keras.callbacks.Callback):
     A callback class to show loss, accuracy, and prediction during training.
     """
     #. pass in a pandas table and col formats, print last row each step using tabulate?
-    def __init__(self, m, x_validate, y_validate, epoch_interval=10):
+    def __init__(self, m, x_validate, y_validate, k, epoch_interval=10):
         self.m = m
         self.x_validate = x_validate
         self.y_validate = y_validate
+        self.k = k
         self.epoch_interval = epoch_interval
         self.rows = []
 
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
             loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-
-            # s = self.m.get_prediction(self.x_validate)
-            # yprobs = self.model.predict(x) # softmax probabilities
-            yprobs = self.model.predict(self.x_validate) # softmax probabilities
-            # yprobs = rnn.predict(x) # softmax probabilities
-            # print(yprobs[:3])
-            yonehot = util.cutoff(yprobs) # onehot encodings
-            # print(yonehot)
-            yiwords = [row.argmax() for row in yonehot] # iword values
-            # print(yiwords[:3])
-            # ywords = [vocab[iword] for iword in yiwords]
-            # ywords = [self.m.index_to_word[iword] for iword in yiwords]
-            ywords = self.m.vocab.get_tokens(yiwords)
-            # ywords = [vocab[iword] for iword in yiwords]
-            # print(ywords)
-            s = ' '.join(ywords)
-            # print(s)
-            # return s
-
-            relevance = util.get_relevance(self.y_validate, yprobs)
-
-            print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(epoch,loss,accuracy,relevance,s))
-            row = [epoch, loss, accuracy, relevance, s]
+            predictions = self.m.get_predictions(self.x_validate)
+            # relevance = util.get_relevance(self.y_validate, yprobs) #. pass k
+            relevance = util.get_relevance(self.y_validate, yprobs, k)
+            row = [epoch, loss, accuracy, relevance, predictions]
+            print("{: 6d} {:5.3f} {:5.3f} {:5.3f} {}".format(*row))
             self.rows.append(row)
-
 
 
 class RnnKeras(Model):
@@ -128,14 +110,11 @@ class RnnKeras(Model):
         Train the rnn and save it, or load from file if available.
         force_training - set True to retrain rnn (ie don't load from file)
         """
-
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
         else:
-
             self.batch_size = 1
             # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
-
             # self.epoch_interval = 10
             self.epoch_interval = 1
 
@@ -154,18 +133,15 @@ class RnnKeras(Model):
             with benchmark("Gradient descent finished") as b:
                 #. add early stopping
                 # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
-                show_loss = ShowLoss(self, x, y, self.epoch_interval) #. pass in validation dataset here, not x y
-                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[ShowLoss(self.epoch_interval)])
-                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0)
-                print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','s'))
-                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0,
-                                       callbacks=[show_loss])
+                show_loss = ShowLoss(self, x, y, self.k, self.epoch_interval) #. pass in validation dataset here, not x y
+                print("{:6} {:5} {:5} {:5} {}".format('epoch','loss','acc','relev','predictions'))
+                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
                 #. what is history obj?
                 # print(history)
 
             self.train_time = b.time
             self.trained = True
-            self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Prediction'])
+            self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Predictions'])
 
             # save the model
             self.save()
@@ -184,23 +160,19 @@ class RnnKeras(Model):
         Model.load(self)
         self.rnn = load_model(self.filename_h5)
 
-    # #. ?
-    # def get_prediction(self, x):
-    #     """
-    #     predict the next word in the sequence
-    #     x is onehot, eg ____________?
-    #     """
-    #     yprobs = self.rnn.predict(x) # softmax probabilities, eg ________
-    #     # print(yprobs)
-    #     yonehot = util.cutoff(yprobs) # onehot encodings, eg ________
-    #     # print(yonehot)
-    #     yiwords = [row.argmax() for row in yonehot] # iword values, eg ________
-    #     # print(yiwords)
-    #     ywords = self.vocab.get_tokens(yiwords) # eg ___________
-    #     # print(ywords)
-    #     s = ' '.join(ywords) # eg _____________
-    #     # print(s)
-    #     return s
+    def get_predictions(self, xonehots):
+        """
+        predict the next words in the given sequence.
+        called by ShowLoss callback class.
+        xonehots eg ____________
+        """
+        yprobs = self.rnn.predict(xonehots) # softmax probabilities, eg ______
+        yonehots = util.cutoff(yprobs) # onehot encodings, eg ______
+        yiwords = [row.argmax() for row in yonehots] # iword values, eg ______
+        ywords = self.vocab.get_tokens(yiwords) # eg _______
+        s = ' '.join(ywords) # eg ________
+        return s
+
 
     #. refactor!
     def predict(self, prompt):
@@ -222,53 +194,82 @@ if __name__=='__main__':
     np.random.seed(0)
     np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
-    # abcd
-    # vocab is 7 tokens: . END UNKNOWN a b c d
-    data = Data('abcd')
-    model = RnnKeras(data, n=3, nvocab=7, nhidden=4, nepochs=10)
-    # model = RnnKeras(data, n=2, nvocab=7, nhidden=4, nepochs=10)
+    # select dataset and build model
+
+    # data = Data('abcd') # vocab is 7 tokens: . END UNKNOWN a b c d
     # model = RnnKeras(data, n=3, nvocab=7, nhidden=4, nepochs=200) # works
-    model.train(force_training=True)
-    # model.train()
-    print('vocab',model.vocab)
+    # prompt = 'a b c'
+
+    # data = Data('alphabet')
+    # nepochs vs nhidden - cramming info into smaller hidden layer takes more work
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=30, nepochs=20) # works
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=10, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=5, nepochs=800) # nearly works
+    # nepochs vs n - increasing context doesn't require much work
+    # model = RnnKeras(data, n=3, nvocab=30, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=4, nvocab=30, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=5, nvocab=30, nhidden=15, nepochs=40) # works
+    # model = RnnKeras(data, n=6, nvocab=30, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=7, nvocab=30, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=8, nvocab=30, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=9, nvocab=30, nhidden=15, nepochs=50) # works
+    # model = RnnKeras(data, n=10, nvocab=30, nhidden=15, nepochs=60) # works
+    # model = RnnKeras(data, n=20, nvocab=30, nhidden=15, nepochs=60) # works
+    # prompt = 'a b c d e f g h i j k l m'
+
+    # data = Data('animals')
+    # model = RnnKeras(data, n=5, nvocab=60, nhidden=30, nepochs=100) # nearly works
+    # prompt = 'the cat and dog'
+
+    data = Data('alice1')
+    # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
+    # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
+    model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=1)
+    prompt = 'the white rabbit said'
+
+    # train model
+    # model.train(force_training=True)
+    model.train()
     print(util.table(model.train_results))
     print()
-    weights = model.rnn.get_weights()
-    U, W, b, V, c = weights
-    print('U')
-    print(U)
-    print('W')
-    print(W)
-    print('b')
-    print(b)
-    print()
-    print('V')
-    print(V)
-    print('c')
-    print(c)
-    print()
 
-    # predict next word after a prompt
-    prompt = 'a b c'
+    # # show vocab
+    # print('vocab',model.vocab)
+
+    # # show weight matrices
+    # weights = model.rnn.get_weights()
+    # U, W, b, V, c = weights
+    # print('U')
+    # print(U)
+    # print('W')
+    # print(W)
+    # print('b')
+    # print(b)
+    # print()
+    # print('V')
+    # print(V)
+    # print('c')
+    # print(c)
+    # print()
+
+    # predict next word after a prompt (define above)
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
     print(word_probs) # 'd' should be first in list
+    print()
 
-    model.test(test_amount=100)
+    # test the model against the test dataset
+    model.test(test_amount=1000)
     print('relevance',model.test_score)
+    print()
+
+    # show sample predictions
+    print('sample predictions')
     print(util.table(model.test_samples))
     print()
 
-
-    # data = Data('alphabet')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=50)
-
-    # data = Data('animals')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=10)
-
-    # data = Data('alice1')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=10)
 
     # data = Data('animals')
     # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)

@@ -14,7 +14,7 @@ from tabulate import tabulate
 
 
 #. a bit confusing - separate out fns?
-def get_relevance(actuals, probs, k=3):
+def get_relevance(actuals, probs, k):
     """
     Get relevance score for the given actual values and probabilities.
     Checks if the actual value is included in the k most probable values,
