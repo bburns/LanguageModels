@@ -62,7 +62,7 @@ class Data(object):
         }
         self.encodings = ['utf8', 'cp1252', 'latin1']
 
-    def prepare(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .split
+    def prepare(self, ptrain=0.9, pvalidate=0.1, ptest=0.1): # same defaults are also specified in .split
         """
         Clean, merge, and split raw data files into train, validate, test sets.
         """
@@ -140,7 +140,7 @@ class Data(object):
                         f_all.write(s)
         print('done.')
 
-    def split(self, ptrain=0.8, pvalidate=0.0, ptest=0.2): # same defaults are also specified in .prepare
+    def split(self, ptrain=0.9, pvalidate=0.1, ptest=0.1): # same defaults are also specified in .prepare
         """
         Split a textfile on sentences into train, validate, and test files.
         Will put resulting files in specified output folder with -train.txt etc appended.
@@ -292,7 +292,7 @@ class Data(object):
         Parse a data source into paragraphs and return in a list.
         """
         s = self.text(source, amount)
-        s = s.replace('\r\n',' ')
+        s = s.replace('\r\n','\n')
         paragraphs = re.split(r"\n\n+", s)
         return paragraphs
 
@@ -387,7 +387,7 @@ if __name__ == '__main__':
 
     # # abcd
     # data = Data('abcd')
-    # # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # data.prepare(ptrain=1/3, pvalidate=1/3, ptest=1/3)
     # # print(util.table(data.analyze()))
     # # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -398,7 +398,7 @@ if __name__ == '__main__':
 
     # # alphabet
     # data = Data('alphabet')
-    # data.prepare(ptrain=0.5, pvalidate=0, ptest=0.5)
+    # data.prepare(ptrain=1/3, pvalidate=1/3, ptest=1/3)
     # print(util.table(data.analyze()))
     # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     # # alice
     # data = Data('alice1')
-    # data.prepare(ptrain=0.9, pvalidate=0, ptest=0.1)
+    # data.prepare(ptrain=0.8, pvalidate=0.1, ptest=0.1)
     # print(util.table(data.analyze()))
     # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -426,7 +426,7 @@ if __name__ == '__main__':
     # # gutenbergs
     data = Data('gutenbergs')
     with benchmark("prepare"):
-        data.prepare(ptrain=0.95, pvalidate=0.025, ptest=0.025) # 6 secs
+        data.prepare(ptrain=0.95, pvalidate=0.025, ptest=0.025) # 3 secs
     # with benchmark("analyze"):
         # print(util.table(data.analyze())) # 25 secs
     # with benchmark("tokens"):
