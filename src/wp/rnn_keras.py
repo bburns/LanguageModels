@@ -28,45 +28,15 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
 
 
 
-class ShowLoss(keras.callbacks.Callback):
-    """
-    A callback class to show loss, accuracy, relevance, and predictions during training.
-    """
-    def __init__(self, m, x_validate, y_validate, k, fmt_rows, epoch_interval=10):
-        """
-        m - RnnKeras model (note: the Callback class defines .model as the Keras RNN model)
-        x_validate -
-        y_validate -
-        k -
-        fmt_rows -
-        epoch_interval -
-        """
-        self.m = m
-        self.x_validate = x_validate
-        self.y_validate = y_validate
-        self.k = k
-        self.fmt_rows = fmt_rows
-        self.epoch_interval = epoch_interval
-        self.rows = []
-
-    def on_epoch_begin(self, epoch, logs={}):
-        if epoch % self.epoch_interval == 0:
-            loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-            yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
-            relevance = util.get_relevance(self.y_validate, yprobs, self.k)
-            predictions = self.m.get_predictions(yprobs)[:40] #. rename fn
-            row = [epoch, loss, accuracy, relevance, predictions]
-            print(self.fmt_rows.format(*row))
-            self.rows.append(row)
-
-
 class RnnKeras(Model):
     """
     An RNN implemented with Keras - can be a SimpleRNN, LSTM, or GRU.
     """
 
     #. pass rnn type - SimpleRNN, LSTM, GRU
-    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
+    # def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
+    # def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=100, nhidden=25, nepochs=10, name_includes=[]):
+    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=100, nhidden=25, nepochs=10, rnn_type='Simple', name_includes=[]):
         """
         Create an RNN model
         data          - a Data object - source of training and testing data
@@ -84,6 +54,7 @@ class RnnKeras(Model):
         self.nvocab = nvocab
         self.nhidden = nhidden
         self.nepochs = nepochs
+        self.rnn_type = rnn_type
 
         # calculated values
         if not 'n' in name_includes:
@@ -100,11 +71,19 @@ class RnnKeras(Model):
         self.test_time = None
         self.vocab = None
 
+        rnn_classes = {
+            'Simple': SimpleRNN,
+            'LSTM': LSTM,
+            'GRU': GRU,
+        }
+        rnn_class = rnn_classes[self.rnn_type]
+
         # create the keras model
         print("Create model " + self.name)
         self.rnn = Sequential()
         #. change rnn type here - SimpleRNN, LSTM, or GRU
-        self.rnn.add(SimpleRNN(self.nhidden, input_dim=self.nvocab))
+        # self.rnn.add(SimpleRNN(self.nhidden, input_dim=self.nvocab))
+        self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
         # note: can't make a custom metric for relevance here because callback just passes y_true and y_pred, not probs.
@@ -123,13 +102,13 @@ class RnnKeras(Model):
         else:
             self.batch_size = 1
             # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
-            # self.epoch_interval = 10
-            self.epoch_interval = 1
+            self.epoch_interval = max(1,int(self.nepochs/20))
 
             print("Training model %s on %s of training data..." % (self.name, str(self.train_amount)))
 
             print("Getting training and validation tokens...")
             with benchmark("Prepared training data"):
+                # get training tokens
                 tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
                 self.vocab = vocab.Vocab(tokens, self.nvocab)
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
@@ -137,6 +116,7 @@ class RnnKeras(Model):
                 #. these would be huge arrays - simpler way?
                 x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
 
+                # get validation tokens
                 tokens = self.data.tokens('validate') # eg ['the','dog','barked',...]
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
                 onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
@@ -177,35 +157,73 @@ class RnnKeras(Model):
         Model.load(self)
         self.rnn = load_model(self.filename_h5)
 
+    #. refactor
     def get_predictions(self, yprobs):
         """
         predict the next words in the given sequence.
         called by ShowLoss callback class.
         xonehots eg ____________
         """
-        # yprobs = self.rnn.predict(xonehots) # softmax probabilities, eg ______
-        # yonehots = util.cutoff(yprobs) # onehot encodings, eg ______
-        # yiwords = [row.argmax() for row in yonehots] # iword values, eg ______
         yiwords = [row.argmax() for row in yprobs] # iword values, eg ______
         ywords = self.vocab.get_tokens(yiwords) # eg _______
         s = ' '.join(ywords) # eg ________
         return s
 
-    #. refactor!
+    #. refactor
     def predict(self, prompt):
         """
         Get the k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
         x, y = self.vocab.prompt_to_onehot(prompt, self.n) # eg ___________
+        # print('x')
+        # print(x)
+        # print('y')
+        # print(y)
         probs = self.rnn.predict_proba(x, verbose=0) # eg __________
+        # print('probs')
+        # print(probs)
         best_words = self.vocab.probs_to_word_probs(probs, self.k) # eg ____________
         return best_words
+
+
+class ShowLoss(keras.callbacks.Callback):
+    """
+    A callback class to show loss, accuracy, relevance, and predictions during training.
+    """
+    def __init__(self, m, x_validate, y_validate, k, fmt_rows, epoch_interval=10):
+        """
+        m - RnnKeras model (note: the Callback class defines .model as the Keras RNN model)
+        x_validate -
+        y_validate -
+        k -
+        fmt_rows -
+        epoch_interval - interval between printouts #. specify nlines, not interval
+        """
+        self.m = m
+        self.x_validate = x_validate
+        self.y_validate = y_validate
+        self.k = k
+        self.fmt_rows = fmt_rows
+        self.epoch_interval = epoch_interval
+        self.rows = []
+
+    def on_epoch_begin(self, epoch, logs={}):
+        if epoch % self.epoch_interval == 0:
+            loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
+            yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
+            relevance = util.get_relevance(self.y_validate, yprobs, self.k)
+            predictions = self.m.get_predictions(yprobs)[:60] #. rename fn
+            row = [epoch, loss, accuracy, relevance, predictions]
+            print(self.fmt_rows.format(*row))
+            self.rows.append(row)
+
 
 
 if __name__=='__main__':
 
     import matplotlib.pyplot as plt
+    plt.style.use('ggplot') # nicer style
     from data import Data
 
     np.random.seed(0)
@@ -216,7 +234,10 @@ if __name__=='__main__':
     # abcd
     # data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
     # prompt = 'a b c'
-    # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=200) # works
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=400) # works loss=0.6
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=800) # works loss=0.2
 
     # alphabet
     # data = Data('alphabet')
@@ -238,53 +259,59 @@ if __name__=='__main__':
     # model = RnnKeras(data, n=20, nvocab=27, nhidden=15, nepochs=60) # works
 
     # animals
-    data = Data('animals')
-    model = RnnKeras(data, n=5, nvocab=60, nhidden=30, nepochs=100) # nearly works
-    prompt = 'the cat and dog'
+    # data = Data('animals')
+    # model = RnnKeras(data, n=5, nvocab=60, nhidden=30, nepochs=100) # nearly works
+    # prompt = 'the cat and dog'
 
     # alice
-    # data = Data('alice1')
-    # prompt = 'the white rabbit ran away and'
+    data = Data('alice1') # has 800+ unique words
+    prompt = 'the white rabbit ran away and'
     # model = RnnKeras(data, n=4, nvocab=50, nhidden=25, nepochs=5) # fast and bad
     # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
     # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
     # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=3)
+    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5) # shows overfitting curve
+    # rnn_type
+    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='Simple')
+    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='LSTM')
+    model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='GRU')
 
 
     # train model
-    model.train(force_training=True)
-    # model.train()
+    # model.train(force_training=True)
+    model.train()
     # print(util.table(model.train_results))
     print()
 
-    # # show vocab
-    # print('vocab',model.vocab)
+    if model.nvocab<10:
+        # show vocab
+        print('vocab',model.vocab)
 
-    # # show weight matrices
-    # weights = model.rnn.get_weights()
-    # U, W, b, V, c = weights
-    # print('U')
-    # print(U)
-    # print('W')
-    # print(W)
-    # print('b')
-    # print(b)
-    # print()
-    # print('V')
-    # print(V)
-    # print('c')
-    # print(c)
-    # print()
+        # # show weight matrices
+        weights = model.rnn.get_weights()
+        U, W, b, V, c = weights
+        print('U')
+        print(U)
+        print('W')
+        print(W)
+        print('b')
+        print(b)
+        print()
+        print('V')
+        print(V)
+        print('c')
+        print(c)
+        print()
 
     # predict next word after a prompt (define above)
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
-    print(word_probs) # 'd' should be first in list
+    print(word_probs)
     print()
 
     # test the model against the test dataset
-    model.test(test_amount=1000)
+    model.test(test_amount=2000)
     print('relevance',model.test_score)
     print()
 
@@ -293,38 +320,13 @@ if __name__=='__main__':
     print(util.table(model.test_samples))
     print()
 
-
-    # data = Data('animals')
-    # model = RnnKeras(data, n=3, nvocab=30, nhidden=6, nepochs=25, train_amount=1000)
-    # model = RnnKeras(data, n=4, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
-    # model = RnnKeras(data, n=5, nvocab=30, nhidden=6, nepochs=50, train_amount=1000)
-    # data = Data('gutenbergs')
-
-    # model.train() # load model from file if available
-    # model.train(force_training=True)
-
-    # print(util.table(model.train_results))
-    # print()
-    # print(model.rnn.get_weights())
-    # print()
-
-    # # predict next word after a prompt
-    # # prompt = 'The cat'
-    # # prompt = 'The white rabbit'
-    # word_probs = model.predict(prompt)
-    # print('prediction')
-    # print(prompt)
-    # print(word_probs)
-
-    # works
-    # # plot training curves
+    # plot training curves
+    print(util.table(model.train_results))
     # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
     # plt.show()
 
-    # model.test(test_amount=100)
-    # print('relevance',model.test_score)
-    # print(util.table(model.test_samples))
-    # print()
+
+    #.
 
     # # Check loss calculations
     # # Limit to 1000 examples to save time

@@ -387,7 +387,7 @@ if __name__ == '__main__':
 
     # # abcd
     # data = Data('abcd')
-    # data.prepare(ptrain=1/3, pvalidate=1/3, ptest=1/3)
+    # # data.prepare(ptrain=1/3, pvalidate=1/3, ptest=1/3)
     # # print(util.table(data.analyze()))
     # # # | Text   |   Words | Chars / Word   | Words / Sentence   | Unique Words   | Grade Level   |
     # # # |--------+---------+----------------+--------------------+----------------+---------------|
@@ -424,9 +424,9 @@ if __name__ == '__main__':
     # print(data.tokens('train'))
 
     # # gutenbergs
-    data = Data('gutenbergs')
-    with benchmark("prepare"):
-        data.prepare(ptrain=0.95, pvalidate=0.025, ptest=0.025) # 3 secs
+    # data = Data('gutenbergs')
+    # with benchmark("prepare"):
+    #     data.prepare(ptrain=0.95, pvalidate=0.025, ptest=0.025) # 3 secs
     # with benchmark("analyze"):
         # print(util.table(data.analyze())) # 25 secs
     # with benchmark("tokens"):

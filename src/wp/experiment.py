@@ -10,6 +10,7 @@ from datetime import datetime
 
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.style.use('ggplot') # nicer style
 
 from benchmark import benchmark
 import transcript
@@ -114,11 +115,13 @@ class Experiment(object):
         print(self.test_scores)
         print()
 
+    #. refactor
     def plot(self, show=False):
-
         param_name = list(self.params.keys())[0]
-        plt.style.use('ggplot') # nicer style
         line_styles = ['-', '--', '-.', ':']
+
+        # plot training loss curves
+        # self.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
 
         # plot test scores
         self.test_scores.plot(kind='line', style=line_styles)
@@ -149,6 +152,7 @@ class Experiment(object):
         if show: plt.show()
         plt.savefig(self.plotfile_prefix + ' test_time.png')
         plt.close()
+
 
 
 
@@ -213,16 +217,29 @@ if __name__ == '__main__':
     # exper.plot(True)
 
 
-    # 2017-01-16 4pm
-    name = "keras rnn n values"
+    # # 2017-01-16 4pm
+    # name = "keras rnn n values"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'train_amount':10000}],
+    # ]
+    # data = wp.data.Data('animals')
+    # # data = wp.data.Data('gutenbergs')
+    # params = {'n':[1,2,3,4,5]}
+    # exper = Experiment(name, specs, data, params, test_amount=10000)
+    # # exper.run()
+    # exper.run(force_training=True)
+    # # exper.plot(True)
+
+    # # 2017-01-18 12pm
+    name = "alice1 n"
     specs = [
-        [wp.rnn_keras.RnnKeras, {'train_amount':10000}],
+        # [wp.rnn_keras.RnnKeras, {'train_amount':10000,'nvocab':100,'nhidden':25,'nepochs':10}],
+        [wp.rnn_keras.RnnKeras, {'train_amount':1.0,'nvocab':100,'nhidden':25,'nepochs':10}],
     ]
-    data = wp.data.Data('animals')
-    # data = wp.data.Data('gutenbergs')
-    params = {'n':[1,2,3,4,5]}
-    exper = Experiment(name, specs, data, params, test_amount=10000)
-    # exper.run()
-    exper.run(force_training=True)
-    # exper.plot(True)
+    data = wp.data.Data('alice1')
+    params = {'n':[2,3,4,5,6]}
+    exper = Experiment(name, specs, data, params)
+    exper.run()
+    # exper.run(force_training=True)
+    exper.plot(True)
 

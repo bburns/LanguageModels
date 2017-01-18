@@ -89,6 +89,10 @@ e.g. a perplexity of 100 corresponds roughly to a uniform choice from 100 words.
 <!-- sequence of words from the test set will be chosen at random, then fed to the -->
 <!-- predictor, and the most likely *k* words compared to the actual following word. -->
 
+-> accuracy = # exact predictions / # total predictions
+
+ie measures the number of predictions where the most likely prediction is the
+correct one, which is equivalent to relevance where *k* = 1.
 
 
 ## Analysis
@@ -217,13 +221,24 @@ softmax layer then converts these scores into probabilities, so the top *k* most
 likely words can be found for a given context.
 
 
+-> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs
+   accuracy, perplexity
+
+
 explain LSTM and GRU
 
-<!-- lstm's came in 1997 [cite] -->
-<!-- various types, incl gru 2014 - simpler [cite] -->
-<!-- then attention 2015 -->
+-> lstm's came in 1997 [cite]
 
-will use Keras (Chollet 2015)
+-> various types, incl gru 2014 - simpler [cite]
+
+
+
+-> then attention 2015?
+
+
+will use Keras (Chollet 2015), a library that simplifies the use of TensorFlow [cite], e.g. 
+
+-> compare Keras code vs TensorFlow for same simple RNN
 
 
 

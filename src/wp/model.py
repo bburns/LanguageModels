@@ -96,27 +96,24 @@ class Model(object):
         return df_losses
 
     #. refactor
-    def test(self, test_amount=1.0):
+    def test(self, test_amount=1.0, nsamples=10):
         """
-        Test the model and return the accuracy score.
+        Test the model and return the relevance score and some sample predictions.
         test_amount - amount of test data to use, in percent or nchars
+        nsamples - number of sample predictions to record in self.test_samples
         """
-        nsamples = 10 #. ?
-        # get the test tokens
-        tokens = self.data.tokens('test', test_amount)
+        tokens = self.data.tokens('test', test_amount) # get the test tokens
         ntokens = len(tokens)
-        npredictions = ntokens - self.n #..
+        npredictions = ntokens - self.n #.
         nsample_spacing = max(int(ntokens / nsamples), 1)
         samples = []
-        # run test on the models
         nright = 0
-        print("Testing model " + self.name + "...")
         sample_columns = ['Prompt','Predictions','Actual','Status']
-        # print(*sample_columns)
+        print("Testing model " + self.name + "...")
         with benchmark("Tested model " + self.name) as b: # time it
             for i in range(npredictions): # iterate over all test tokens
-                prompt = tokens[i:i+self.n-1] #..
-                actual = tokens[i+self.n-1] #..
+                prompt = tokens[i:i+self.n-1] #.
+                actual = tokens[i+self.n-1] #.
                 sprompt = ' '.join(prompt) if prompt else '(none)'
                 # token_probs = self.predict(prompt) # eg [('barked',0.031),('slept',0.025)...]
                 token_probs = self.predict(sprompt) # eg [('barked',0.031),('slept',0.025)...]
@@ -126,14 +123,15 @@ class Model(object):
                     passed = (actual in predicted_tokens)
                     if passed:
                         nright += 1
-                # add predictions to samples
+                # add sample predictions
                 if (i % nsample_spacing) == 0:
-                    # sprompt = ' '.join(prompt) if prompt else '(none)'
-                    spredictions = '  '.join(['%s (%.2f%%)' % (token_prob[0], token_prob[1]*100) \
+                    #. refactor
+                    # word = token_prob[0]
+                    # pct = token_prob[1]*100
+                    spredictions = '  '.join(['%s (%.1f%%)' % (token_prob[0], token_prob[1]*100) \
                                               for token_prob in token_probs]) if token_probs else '(none)'
                     spassed = 'OK' if passed else 'FAIL'
                     sample = [sprompt, spredictions, actual, spassed]
-                    # print(*sample)
                     samples.append(sample)
             relevance = nright / npredictions if npredictions>0 else 0
         self.test_time = b.time
