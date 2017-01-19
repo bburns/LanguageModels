@@ -313,7 +313,7 @@ class Data(object):
         """
         #. trim vocab here? ie use UNKNOWN where needed?
         #. use generators
-        with benchmark("Get tokens from data source"):
+        with benchmark("Get %s tokens from data source" % source):
             # # add END token to end of each sentence (#. why? not relevant to task of predicting next input)
             # sentences = self.sentences(source, amount)
             # tokens = []

@@ -57,8 +57,9 @@ class RnnKeras(Model):
         self.rnn_type = rnn_type
 
         # calculated values
-        if not 'n' in name_includes:
-            name_includes.append('n')
+        # if not 'n' in name_includes:
+            # name_includes.append('n')
+        name_includes = ['train_amount','n','k','nvocab','nhidden','nepochs','rnn_type']
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
         self.filetitle = '%s/rnn-(n-%d-train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d)' \
                          % (data.model_folder, self.n, str(train_amount), nvocab, nhidden, nepochs)
@@ -96,6 +97,12 @@ class RnnKeras(Model):
         """
         Train the rnn and save it, or load from file if available.
         force_training - set True to retrain rnn (ie don't load from file)
+        Returns nothing, but sets
+            self.vocab - a Vocab object containing the nvocab most used words
+            self.train_results - a dataframe with Loss, accuracy, relevance vs nepoch
+            self.train_time - total nsecs to train
+            self.trained - sets True
+        and saves the model with those values to a file.
         """
         if force_training==False and os.path.isfile(self.filename):
             self.load() # see model.py - will set self.load_time
@@ -104,7 +111,7 @@ class RnnKeras(Model):
             # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
             self.epoch_interval = max(1,int(self.nepochs/20))
 
-            print("Training model %s on %s of training data..." % (self.name, str(self.train_amount)))
+            print("Training model on %s of training data..." % str(self.train_amount))
 
             print("Getting training and validation tokens...")
             with benchmark("Prepared training data"):
@@ -135,13 +142,13 @@ class RnnKeras(Model):
                 history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
                 #. what is history obj?
                 # print(history)
+                #. add final Loss values - call show_loss here?
+                show_loss.on_epoch_begin(self.nepochs)
 
             self.train_time = b.time
             self.trained = True
             self.train_results = pd.DataFrame(show_loss.rows, columns=['Epoch','Loss','Accuracy','Relevance','Predictions'])
-
-            # save the model
-            self.save()
+            self.save() # save the model
 
     def save(self):
         """
@@ -187,6 +194,7 @@ class RnnKeras(Model):
         return best_words
 
 
+#. use logs to display model and calcs in tensorboard?
 class ShowLoss(keras.callbacks.Callback):
     """
     A callback class to show loss, accuracy, relevance, and predictions during training.
@@ -197,10 +205,10 @@ class ShowLoss(keras.callbacks.Callback):
         x_validate -
         y_validate -
         k -
-        fmt_rows -
-        epoch_interval - interval between printouts #. specify nlines, not interval
+        fmt_rows - string format for row with epoch, loss, accuracy, relevance, predictions
+        epoch_interval - interval between printouts #. should specify nlinesmax, not interval
         """
-        self.m = m
+        self.m = m #. get rid of this if possible - confusing
         self.x_validate = x_validate
         self.y_validate = y_validate
         self.k = k
@@ -278,8 +286,8 @@ if __name__=='__main__':
 
 
     # train model
-    # model.train(force_training=True)
-    model.train()
+    model.train(force_training=True)
+    # model.train()
     # print(util.table(model.train_results))
     print()
 
@@ -322,8 +330,10 @@ if __name__=='__main__':
 
     # plot training curves
     print(util.table(model.train_results))
-    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
-    # plt.show()
+    model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    plt.title(model.name)
+    plt.ylabel('Loss, Accuracy, Relevance')
+    plt.show()
 
 
     #.

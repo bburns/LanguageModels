@@ -321,6 +321,15 @@ intermediate solutions, if necessary. -->
 
 show overfitting curve - too many epochs and loss starts to increase, so need to
 do early stopping - eg stop if loss doesn't decrease for n epochs.
+because it's fittting to the test data, but loss is against the validation data. 
+so want to stop at the lowest loss point.
+
+**add penalty for 'complexity' (ie overfitting, as with decision trees etc) - complexity ~ more nodes, more layers, and larger weights
+
+could also do crossvalidation to get more accurate scores, but would add more training time
+
+"overfitting is a very common problem when the dataset is too small compared with the number of model parameters that need to be learned."
+so need more data, or simpler model
 
 incl hyperparameter tuning here - list available parameters, possible ranges
 

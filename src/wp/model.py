@@ -26,7 +26,7 @@ class Model(object):
         """
         folder = os.path.dirname(self.filename)
         util.mkdir(folder)
-        with benchmark("Save model " + self.name) as b:
+        with benchmark("Save model") as b:
             with open(self.filename, 'wb') as f:
                 d = {k:v for (k,v) in self.__dict__.items() if not k in exclude}
                 pickle.dump(d, f) # default protocol is 3
@@ -40,7 +40,7 @@ class Model(object):
         """
         if os.path.isfile(self.filename):
             print("Loading model " + self.name + "...")
-            with benchmark("Loaded model " + self.name) as b:
+            with benchmark("Loaded model") as b:
                 with open(self.filename, 'rb') as f:
                     d = pickle.load(f)
                     self.__dict__.update(d)
@@ -95,12 +95,16 @@ class Model(object):
         df_losses = pd.DataFrame(losses, columns=loss_columns)
         return df_losses
 
-    #. refactor
     def test(self, test_amount=1.0, nsamples=10):
         """
         Test the model and return the relevance score and some sample predictions.
         test_amount - amount of test data to use, in percent or nchars
         nsamples - number of sample predictions to record in self.test_samples
+        Returns nothing, but sets
+            self.test_time
+            self.test_samples
+            self.test_score
+        and saves the model with those values to a file.
         """
         tokens = self.data.tokens('test', test_amount) # get the test tokens
         ntokens = len(tokens)
@@ -110,8 +114,9 @@ class Model(object):
         nright = 0
         sample_columns = ['Prompt','Predictions','Actual','Status']
         print("Testing model " + self.name + "...")
-        with benchmark("Tested model " + self.name) as b: # time it
+        with benchmark("Tested model") as b: # time it
             for i in range(npredictions): # iterate over all test tokens
+                #. refactor
                 prompt = tokens[i:i+self.n-1] #.
                 actual = tokens[i+self.n-1] #.
                 sprompt = ' '.join(prompt) if prompt else '(none)'
@@ -138,4 +143,9 @@ class Model(object):
         self.test_score = relevance
         self.test_samples = pd.DataFrame(samples, columns=sample_columns)
         self.save() # save test time, score, samples
+
+if __name__=='__main__':
+    pass
+
+
 

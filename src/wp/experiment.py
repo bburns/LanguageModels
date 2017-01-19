@@ -55,6 +55,7 @@ class Experiment(object):
         print()
         param_name = list(self.params.keys())[0]
         param_values = self.params[param_name]
+        train_losses = pd.DataFrame(columns=['Epoch'])
         train_times = []
         test_times = []
         test_scores = []
@@ -81,8 +82,14 @@ class Experiment(object):
                 model = model_class(self.data, name_includes=name_includes, **params)
                 cols.append(model.name)
                 model.train(force_training) # loads/saves model as needed
-                # print(util.table(model.train_losses)) # print losses by epoch nicely
-                model.test(test_amount=self.test_amount) #. should this return results, or access as below?
+                # model.train_results # dataframe with loss vs epoch etc - want to save this to another table
+                tr = model.train_results[['Epoch','Loss']]
+                tr = tr.rename(columns={'Loss': model.name}) # rename Loss column to name of model
+                # print(tr)
+                train_losses = pd.merge(train_losses, tr, how='outer', on='Epoch')
+                # print(train_losses)
+                # print(util.table(model.train_results)) # print losses by epoch nicely
+                model.test(test_amount=self.test_amount) # will set properties, e.g. model.test_score
                 # print(util.table(model.test_samples))
                 print('Score', model.test_score)
                 print()
@@ -94,6 +101,7 @@ class Experiment(object):
             test_scores.append(test_score_row)
             print()
         # make pandas tables
+        self.train_losses = train_losses
         self.train_times = pd.DataFrame(train_times, index=rows, columns=cols)
         self.test_times = pd.DataFrame(test_times, index=rows, columns=cols)
         self.test_scores = pd.DataFrame(test_scores, index=rows, columns=cols)
@@ -104,6 +112,9 @@ class Experiment(object):
 
     def print_results(self):
         print('** Results')
+        print()
+        print('Train Losses')
+        print(self.train_losses)
         print()
         print('Train Times')
         print(self.train_times)
@@ -121,7 +132,13 @@ class Experiment(object):
         line_styles = ['-', '--', '-.', ':']
 
         # plot training loss curves
-        # self.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+        self.train_losses.plot(x='Epoch')
+        plt.title('Training Losses vs Epoch')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        if show: plt.show()
+        plt.savefig(self.plotfile_prefix + ' train_losses.png')
+        plt.close()
 
         # plot test scores
         self.test_scores.plot(kind='line', style=line_styles)
@@ -163,6 +180,7 @@ if __name__ == '__main__':
     import sys; sys.path.append('../')
     import wp
 
+
     # # 2017-01-04 1031
     # name = 'RNN hidden layer sizes'
     # specs = [
@@ -175,6 +193,7 @@ if __name__ == '__main__':
     # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
+
 
     # # 2017-01-04 1035
     # # surprisingly, accuracy went down as vocab went up, even with 40k training chars
@@ -190,6 +209,7 @@ if __name__ == '__main__':
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
 
+
     # # 2017-01-04 1100
     # name = "ngrams vs rnn"
     # specs = [
@@ -202,6 +222,7 @@ if __name__ == '__main__':
     # params = {'train_amount':[1000,2000,5000,10000,20000,40000,80000]}
     # exper = Experiment(name, specs, data, params, test_amount=1000)
     # exper.run()
+
 
     # # 2017-01-05 0700
     # name = "rnn n values"
@@ -230,16 +251,87 @@ if __name__ == '__main__':
     # exper.run(force_training=True)
     # # exper.plot(True)
 
+
     # # 2017-01-18 12pm
-    name = "alice1 n"
+    # name = "alice1 n"
+    # specs = [
+    #     # [wp.rnn_keras.RnnKeras, {'train_amount':10000,'nvocab':100,'nhidden':25,'nepochs':10}],
+    #     # [wp.rnn_keras.RnnKeras, {'train_amount':1.0,'nvocab':100,'nhidden':25,'nepochs':10}],
+    #     [wp.rnn_keras.RnnKeras, {'train_amount':0.25,'nvocab':100,'nhidden':25,'nepochs':10}],
+    #     [wp.rnn_keras.RnnKeras, {'train_amount':0.5,'nvocab':100,'nhidden':25,'nepochs':10}],
+    #     [wp.rnn_keras.RnnKeras, {'train_amount':1.0,'nvocab':100,'nhidden':25,'nepochs':10}],
+    # ]
+    # data = wp.data.Data('alice1')
+    # # params = {'n':[2,3,4,5,6]}
+    # params = {'n':[3,4,5,6]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # # exper.run(force_training=True)
+    # exper.plot(True)
+
+
+    # # 2017-01-18 5pm
+    # name = "train_amounts"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':100,'nhidden':25,'nepochs':10}],
+    # ]
+    # data = wp.data.Data('alice1')
+    # params = {'train_amount':[0.1,0.25,0.5,1.0]}
+    # # params = {'train_amount':[0.1]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # # exper.run(force_training=True)
+    # exper.plot(True)
+
+
+    # # 2017-01-18 504pm alice1
+    # name = "nvocab and nhidden"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':50,'nhidden':12,'nepochs':20}],
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':100,'nhidden':25,'nepochs':20}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':200,'nhidden':50,'nepochs':20}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':400,'nhidden':100,'nepochs':20}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':800,'nhidden':200,'nepochs':20}],
+    # ]
+    # data = wp.data.Data('alice1')
+    # # params = {'train_amount':[0.1,0.25,0.5,1.0]}
+    # params = {'train_amount':[1.0]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # # exper.run(force_training=True)
+    # exper.plot(True)
+
+
+    # # 2017-01-18 11pm alice1
+    # name = "nhidden"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':6,'nepochs':10}],
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':12,'nepochs':10}],
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':25,'nepochs':10}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':50,'nepochs':10}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':100,'nepochs':10}],
+    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':200,'nepochs':10}],
+    # ]
+    # data = wp.data.Data('alice1')
+    # # params = {'train_amount':[0.1,0.25,0.5,1.0]}
+    # params = {'train_amount':[1.0]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # # exper.run(force_training=True)
+    # exper.plot(True)
+
+
+    # # 2017-01-18 11pm gut
+    name = "train amount"
     specs = [
-        # [wp.rnn_keras.RnnKeras, {'train_amount':10000,'nvocab':100,'nhidden':25,'nepochs':10}],
-        [wp.rnn_keras.RnnKeras, {'train_amount':1.0,'nvocab':100,'nhidden':25,'nepochs':10}],
+        [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':25,'nepochs':5}],
     ]
-    data = wp.data.Data('alice1')
-    params = {'n':[2,3,4,5,6]}
+    data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[0.05,0.1,0.25,0.5,1.0]}
+    params = {'train_amount':[0.05,0.1]}
     exper = Experiment(name, specs, data, params)
     exper.run()
     # exper.run(force_training=True)
     exper.plot(True)
+
 
