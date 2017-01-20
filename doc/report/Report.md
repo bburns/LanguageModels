@@ -280,6 +280,8 @@ illustrate with a simple example from abcd dataset
 
 
 
+-> do big O analysis, estimate memory needed, # calcs, time
+
 
 
 
@@ -355,8 +357,9 @@ and the results recorded for comparison. Timing and memory information were also
 recorded for all processes for analysis.
 
 
--> do big O analysis, estimate memory needed, # calcs, time
 
+-> Experiment class, Ngram class, RnnKeras class
+keeps logs of experiments done, makes plots
 
 
 

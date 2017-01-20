@@ -16,7 +16,7 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
     import keras
     from keras.models import Sequential
     from keras.models import load_model
-    # from keras.layers.embeddings import Embedding
+    from keras.layers.embeddings import Embedding
     from keras.layers.recurrent import SimpleRNN, LSTM, GRU
     from keras.layers import Dense, Activation, Dropout
     from keras.callbacks import EarlyStopping
@@ -83,6 +83,20 @@ class RnnKeras(Model):
         # create the keras model
         print("Create model " + self.name)
         self.rnn = Sequential()
+
+        # Turn positive integers (indexes) into dense vectors of fixed size. eg. [[4], [20]] -> [[0.25, 0.1], [0.6, -0.2]]
+        # This layer can only be used as the first layer in a model.
+        # the model will take as input an integer matrix of size (batch,
+        # input_length). the largest integer (i.e. word index) in the input
+        # should be no larger than 999 (vocabulary size). now
+        # model.output_shape == (None, 10, 64), where None is the batch
+        # dimension.
+        # self.rnn.add(Embedding(1000, 64, input_length=10))
+        # input_dim=nvocab, output_dim=nhidden
+        # Input shape 2D tensor with shape: (nb_samples, sequence_length).
+        # Output shape 3D tensor with shape: (nb_samples, sequence_length, output_dim).
+        # self.rnn.add(Embedding(input_dim=1000, output_dim=64, input_length=10))
+
         self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
@@ -217,7 +231,6 @@ class ShowLoss(keras.callbacks.Callback):
 
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
-            # loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
             loss, accuracy, top_k_accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
             # yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
             # relevance = util.get_relevance(self.y_validate, yprobs, self.k)

@@ -127,7 +127,7 @@ class Experiment(object):
         print()
 
     #. refactor
-    def plot(self, show=False):
+    def plot(self, save=False):
         param_name = list(self.params.keys())[0]
         line_styles = ['-', '--', '-.', ':']
 
@@ -136,8 +136,8 @@ class Experiment(object):
         plt.title('Training Losses vs Epoch')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        if show: plt.show()
-        plt.savefig(self.plotfile_prefix + ' train_losses.png')
+        plt.show()
+        if save: plt.savefig(self.plotfile_prefix + ' train_losses.png')
         plt.close()
 
         # plot test scores
@@ -146,8 +146,8 @@ class Experiment(object):
         plt.title('Relevance vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('relevance')
-        if show: plt.show()
-        plt.savefig(self.plotfile_prefix + ' relevance.png')
+        plt.show()
+        if save: plt.savefig(self.plotfile_prefix + ' relevance.png')
         plt.close()
 
         # plot train times
@@ -156,8 +156,8 @@ class Experiment(object):
         plt.title('Train time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('train_time (sec)')
-        if show: plt.show()
-        plt.savefig(self.plotfile_prefix + ' train_time.png')
+        plt.show()
+        if save: plt.savefig(self.plotfile_prefix + ' train_time.png')
         plt.close()
 
         # plot test times
@@ -166,8 +166,8 @@ class Experiment(object):
         plt.title('Test time vs ' + param_name)
         plt.xlabel(param_name)
         plt.ylabel('test_time (sec)')
-        if show: plt.show()
-        plt.savefig(self.plotfile_prefix + ' test_time.png')
+        plt.show()
+        if save: plt.savefig(self.plotfile_prefix + ' test_time.png')
         plt.close()
 
 
@@ -334,5 +334,5 @@ if __name__ == '__main__':
     params = {'train_amount':[0.05]}
     exper = Experiment(name, specs, data, params)
     exper.run()
-    exper.plot(True)
+    exper.plot()
 
