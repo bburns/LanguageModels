@@ -86,11 +86,10 @@ class RnnKeras(Model):
         self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
+        def top_k_accuracy(y_true, y_pred):
+            return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
+        metrics = ['accuracy', top_k_accuracy]
         # note: categorical_crossentropy is faster than mean_squared_error.
-        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy','top_k_categorical_accuracy'])
-        def top_3_accuracy(y_true, y_pred):
-            return top_k_categorical_accuracy(y_true, y_pred, k=3)
-        metrics = ['accuracy', top_3_accuracy]
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=metrics)
 
 
@@ -139,7 +138,8 @@ class RnnKeras(Model):
                 fmt_header = "{:5}  {:6}  {:8}  {:9}  {}"
                 fmt_rows = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
                 print(fmt_header.format(*columns))
-                show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
+                # show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
+                show_loss = ShowLoss(self, x_validate, y_validate, fmt_rows, self.epoch_interval)
                 callbacks = [show_loss]
                 history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0)
                 # print(history.history) # dictionary with 'acc','top_3_accuracy','loss', but no epoch nums
@@ -198,20 +198,19 @@ class RnnKeras(Model):
 class ShowLoss(keras.callbacks.Callback):
     """
     A callback class to show loss, accuracy, relevance, and predictions during training.
+    Also saves them to a table in self.rows.
     """
-    def __init__(self, m, x_validate, y_validate, k, fmt_rows, epoch_interval=10):
+    def __init__(self, m, x_validate, y_validate, fmt_rows, epoch_interval=10):
         """
         m - RnnKeras model (note: the Callback class defines .model as the Keras RNN model)
         x_validate -
         y_validate -
-        k -
         fmt_rows - string format for row with epoch, loss, accuracy, relevance, predictions
         epoch_interval - interval between printouts #. should specify nlinesmax, not interval
         """
         self.m = m #. get rid of this if possible - confusing
         self.x_validate = x_validate
         self.y_validate = y_validate
-        self.k = k
         self.fmt_rows = fmt_rows
         self.epoch_interval = epoch_interval
         self.rows = []
@@ -219,11 +218,10 @@ class ShowLoss(keras.callbacks.Callback):
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
             # loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-            loss, accuracy, top_3_accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
+            loss, accuracy, top_k_accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
             # yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
             # relevance = util.get_relevance(self.y_validate, yprobs, self.k)
-            # assert relevance==top_3_accuracy # works
-            relevance = top_3_accuracy
+            relevance = top_k_accuracy
             yprobs = self.model.predict(self.x_validate[:40]) # softmax probabilities, eg ______
             predictions = self.m.get_predictions(yprobs)[:60] #. rename fn
             row = [epoch, loss, accuracy, relevance, predictions]
