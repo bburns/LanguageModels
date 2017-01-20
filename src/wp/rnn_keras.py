@@ -141,11 +141,9 @@ class RnnKeras(Model):
                 print(fmt_header.format(*columns))
                 show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
                 callbacks = [show_loss]
-                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=callbacks)
-                #. what is history obj?
-                # print(history)
-                #. add final Loss values - call show_loss here?
-                show_loss.on_epoch_begin(self.nepochs)
+                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0)
+                # print(history.history) # dictionary with 'acc','top_3_accuracy','loss', but no epoch nums
+                show_loss.on_epoch_begin(self.nepochs) # add final loss values to show_loss.rows
 
             self.train_time = b.time
             self.trained = True
