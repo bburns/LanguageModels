@@ -181,10 +181,10 @@ Recurrent Neural Networks were able to beat them in 2003, though at the cost of
 greater training time (Bengio 2003).
 
 A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
-context, while n-grams are limited to about 4 words of context (a 5-gram will
-give 4 words of context) - going beyond 5-grams requires increasing amounts of
-resources in terms of training data and storage space, as the resources required
-grow exponentially with the amount of context.
+context, while n-grams are effectively limited to about 4 words of context (a
+5-gram will give 4 words of context) - going beyond 5-grams requires increasing
+amounts of resources in terms of training data and storage space, as the
+resources required grow exponentially with the amount of context.
 
 An RNN is able to make predictions based on words further back in the sequence,
 e.g. 10 words, because it can represent words more compactly with an internal
@@ -201,8 +201,8 @@ predictions about the next word.
 
 ![RNN (LeCun 2015)](images/rnn_nature.jpg)
 
--> is this correct? read something different -> 
-
+<!-- is this correct about U? read something different.  -->
+<!-- what about matrix E the embedding layer? it's separate from U, eh? -->
 The matrix **U** amounts to a table of word embeddings in a vector space of many
 dimensions (which could be e.g. 50-300) - each word in the vocabulary
 corresponds with a row in the table, and the dot product between any two words
@@ -222,10 +222,7 @@ likely words can be found for a given context.
 -> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs
    accuracy, perplexity
 
-
-explain LSTM and GRU
-
--> lstm's came in 1997 [cite], gru 2014 - simpler [cite] (Chung 2014)
+-> explain LSTM and GRU briefly
 
 see http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
 incls diagrams
@@ -233,42 +230,16 @@ incls diagrams
 faster or need less data to generalize. On the other hand, if you have enough
 data, the greater expressive power of LSTMs may lead to better results."
 
+-> lstm's came in 1997 [cite], gru 2014 - simpler [cite] (Chung 2014)
 
-
--> then attention 2015?
-
+-> then attention 2015? discuss briefly, cite
 
 will use Keras (Chollet 2015), a library that simplifies the use of TensorFlow [cite], e.g. 
-
 -> compare Keras code vs TensorFlow for same simple RNN
+
 
 -> compare word-level with character-level rnn learning - maybe character level
    easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words.
-
-
-Objective Fns/Loss Fns
-https://keras.io/objectives/
-will use categorical cross entropy -
-illustrate with a simple example from abcd dataset
-
-Initialization
-uniform, gaussian, other
-
-Optimizers
-sgd - would work but too slow
-rmsprop - rare features get a larger gradient
-adam - like rmsprop with momentum
-we'll use adam
-
-Regularization
-eg keep weights from getting too large, because _________ (leads to overfitting?)
-L1, L2, other?
-early stopping is a form of regularization
-see https://keras.io/regularizers/
-
-Embeddings
-https://www.tensorflow.org/tutorials/word2vec/
-http://nlp.stanford.edu/projects/glove/
 
 
 
@@ -365,6 +336,33 @@ keeps logs of experiments done, makes plots
 <!-- The process of improving upon the algorithms and techniques used is clearly
 documented. Both the initial and final solutions are reported, along with
 intermediate solutions, if necessary. -->
+
+
+parameters
+
+Objective Fns/Loss Fns
+https://keras.io/objectives/
+will use categorical cross entropy -
+illustrate with a simple example from abcd dataset
+
+Initialization
+uniform, gaussian, other
+
+Optimizers
+sgd - would work but too slow
+rmsprop - rare features get a larger gradient
+adam - like rmsprop with momentum
+we'll use adam
+
+Regularization
+eg keep weights from getting too large, because _________ (leads to overfitting?)
+L1, L2, other?
+early stopping is a form of regularization
+see https://keras.io/regularizers/
+
+Embeddings
+https://www.tensorflow.org/tutorials/word2vec/
+http://nlp.stanford.edu/projects/glove/
 
 
 show overfitting curve - too many epochs and loss starts to increase, so need to
