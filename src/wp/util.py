@@ -13,39 +13,40 @@ import numpy as np
 from tabulate import tabulate
 
 
-#. a bit confusing - separate out fns? add example comments
-def get_relevance(actuals, probs, k):
-    """
-    Get relevance score for the given actual values and probabilities.
-    Checks if the actual value is included in the k most probable values,
-    for each row.
-    actuals - an array of one-hot encoded values, eg [[0 0 1], [0 1 0]]
-    probs   - an array of arrays of (value, probability) pairs
-    eg
-        actuals = np.array([[1,0,0,0],[0,1,0,0]]) # two one-hot encoded values
-        prob = [(0,0),(1,0.3),(2,0.3),(3,0.4)] # probabilities for 4 choices
-        probs = [prob, prob] # probabilities for 2 values
-        get_relevance(actual, probs) => 0.5
-    """
-    values = [row.argmax() for row in actuals] # get values, eg [2, 1]
-    nrelevant = 0
-    ntotal = 0
-    for value_probs, value in zip(probs, values):
-        pairs = [(value,prob) for (value,prob) in enumerate(value_probs)]
-        best_pairs = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
-        best_values = [pair[0] for pair in best_pairs]
-        relevant = (value in best_values) # t or f
-        nrelevant += int(relevant) # 1 or 0
-        ntotal += 1
-    relevance = nrelevant/ntotal if ntotal!=0 else 0
-    return relevance
-# actuals = np.array([[1,0,0,0],[0,1,0,0]]) # two values
-# prob = [(0,0),(1,0.3),(2,0.3),(3,0.4)]
-# probs = [prob, prob]
-# relevance = get_relevance(actuals, probs)
-# print('relevance',relevance)
-# assert(relevance==0.5)
-# stop
+# don't need - found top_k_categorical_accuracy
+# #. a bit confusing - separate out fns? add example comments
+# def get_relevance(actuals, probs, k):
+#     """
+#     Get relevance score for the given actual values and probabilities.
+#     Checks if the actual value is included in the k most probable values,
+#     for each row.
+#     actuals - an array of one-hot encoded values, eg [[0 0 1], [0 1 0]]
+#     probs   - an array of arrays of (value, probability) pairs
+#     eg
+#         actuals = np.array([[1,0,0,0],[0,1,0,0]]) # two one-hot encoded values
+#         prob = [(0,0),(1,0.3),(2,0.3),(3,0.4)] # probabilities for 4 choices
+#         probs = [prob, prob] # probabilities for 2 values
+#         get_relevance(actual, probs) => 0.5
+#     """
+#     values = [row.argmax() for row in actuals] # get values, eg [2, 1]
+#     nrelevant = 0
+#     ntotal = 0
+#     for value_probs, value in zip(probs, values):
+#         pairs = [(value,prob) for (value,prob) in enumerate(value_probs)]
+#         best_pairs = heapq.nlargest(k, pairs, key=lambda pair: pair[1])
+#         best_values = [pair[0] for pair in best_pairs]
+#         relevant = (value in best_values) # t or f
+#         nrelevant += int(relevant) # 1 or 0
+#         ntotal += 1
+#     relevance = nrelevant/ntotal if ntotal!=0 else 0
+#     return relevance
+# # actuals = np.array([[1,0,0,0],[0,1,0,0]]) # two values
+# # prob = [(0,0),(1,0.3),(2,0.3),(3,0.4)]
+# # probs = [prob, prob]
+# # relevance = get_relevance(actuals, probs)
+# # print('relevance',relevance)
+# # assert(relevance==0.5)
+# # stop
 
 
 # def cutoff(p):

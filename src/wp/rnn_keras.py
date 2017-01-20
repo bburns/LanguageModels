@@ -21,6 +21,7 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
     from keras.layers import Dense, Activation, Dropout
     from keras.callbacks import EarlyStopping
     from keras.utils.np_utils import to_categorical
+    from keras.metrics import top_k_categorical_accuracy
 
     from model import Model
     import util
@@ -82,15 +83,15 @@ class RnnKeras(Model):
         # create the keras model
         print("Create model " + self.name)
         self.rnn = Sequential()
-        #. change rnn type here - SimpleRNN, LSTM, or GRU
-        # self.rnn.add(SimpleRNN(self.nhidden, input_dim=self.nvocab))
         self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
-        # note: can't make a custom metric for relevance here because callback just passes y_true and y_pred, not probs.
-        # categorical_crossentropy is faster than mean_squared_error.
-        #. try different optimizers
-        self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        # note: categorical_crossentropy is faster than mean_squared_error.
+        # self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy','top_k_categorical_accuracy'])
+        def top_3_accuracy(y_true, y_pred):
+            return top_k_categorical_accuracy(y_true, y_pred, k=3)
+        metrics = ['accuracy', top_3_accuracy]
+        self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=metrics)
 
 
     def train(self, force_training=False):
@@ -136,8 +137,8 @@ class RnnKeras(Model):
                 # early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min') # stop if no improvement for 10 epochs
                 columns = ['Epoch','Loss','Accuracy','Relevance','Predictions']
                 fmt_header = "{:5}  {:6}  {:8}  {:9}  {}"
-                print(fmt_header.format(*columns))
                 fmt_rows = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
+                print(fmt_header.format(*columns))
                 show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
                 callbacks = [show_loss]
                 history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=callbacks)
@@ -219,9 +220,13 @@ class ShowLoss(keras.callbacks.Callback):
 
     def on_epoch_begin(self, epoch, logs={}):
         if epoch % self.epoch_interval == 0:
-            loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
-            yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
-            relevance = util.get_relevance(self.y_validate, yprobs, self.k)
+            # loss, accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
+            loss, accuracy, top_3_accuracy = self.model.evaluate(self.x_validate, self.y_validate, verbose=0)
+            # yprobs = self.model.predict(self.x_validate) # softmax probabilities, eg ______
+            # relevance = util.get_relevance(self.y_validate, yprobs, self.k)
+            # assert relevance==top_3_accuracy # works
+            relevance = top_3_accuracy
+            yprobs = self.model.predict(self.x_validate[:40]) # softmax probabilities, eg ______
             predictions = self.m.get_predictions(yprobs)[:60] #. rename fn
             row = [epoch, loss, accuracy, relevance, predictions]
             print(self.fmt_rows.format(*row))
@@ -243,8 +248,10 @@ if __name__=='__main__':
     # abcd
     data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
     prompt = 'a b c'
-    model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
-    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works
+    # cram it into lower dimensions...
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=3, nepochs=150) # works
+    model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=400) # works loss=0.6
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=800) # works loss=0.2
 
@@ -287,8 +294,8 @@ if __name__=='__main__':
 
 
     # train model
-    # model.train(force_training=True)
-    model.train()
+    model.train(force_training=True)
+    # model.train()
     # print(util.table(model.train_results))
     print()
 
