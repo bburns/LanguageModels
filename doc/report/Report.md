@@ -201,12 +201,14 @@ predictions about the next word.
 
 ![RNN (LeCun 2015)](images/rnn_nature.jpg)
 
+-> is this correct? read something different -> 
+
 The matrix **U** amounts to a table of word embeddings in a vector space of many
 dimensions (which could be e.g. 50-300) - each word in the vocabulary
 corresponds with a row in the table, and the dot product between any two words
 gives their similarity, once the network is trained. Alternatively, pre-trained
-word embeddings, such as word2vec (Mikolov 2013), can be used to save on
-training time.
+word embeddings, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014),
+can be used to save on training time.
 
 The matrix **W** acts as a filter on the internal hidden state, which represents
 the prior context.
@@ -244,39 +246,29 @@ will use Keras (Chollet 2015), a library that simplifies the use of TensorFlow [
    easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words.
 
 
+Objective Fns/Loss Fns
+https://keras.io/objectives/
+will use categorical cross entropy -
+illustrate with a simple example from abcd dataset
+
+Initialization
+uniform, gaussian, other
 
 Optimizers
-
 sgd - would work but too slow
 rmsprop - rare features get a larger gradient
 adam - like rmsprop with momentum
-
 we'll use adam
 
-
-Initialization
-
-uniform, gaussian, other
-
-
 Regularization
-
 eg keep weights from getting too large, because _________ (leads to overfitting?)
 L1, L2, other?
 early stopping is a form of regularization
 see https://keras.io/regularizers/
 
-
 Embeddings
 https://www.tensorflow.org/tutorials/word2vec/
-
-
-Objective Fns/Loss Fns
-
-https://keras.io/objectives/
-
-will use categorical cross entropy -
-illustrate with a simple example from abcd dataset
+http://nlp.stanford.edu/projects/glove/
 
 
 
@@ -513,6 +505,8 @@ better training/testing - distribute text by paragraphs, not sentences
 (Markov 1913) Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
 
 (Mikolov 2013) Mikolov, Tomas; et al. "Efficient Estimation of Word Representations in Vector Space". arXiv:1301.3781, 2013.
+
+(Pennington 2014) Pennington, Jeffrey et al.. "GloVe: Global Vectors for Word Representation". http://nlp.stanford.edu/projects/glove/ 2014
 
 >(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton" Project Para. Cornell Aeronautical Laboratory, 1957.
 
