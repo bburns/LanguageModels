@@ -283,6 +283,9 @@ illustrate with a simple example from abcd dataset
 -> do big O analysis, estimate memory needed, # calcs, time
 
 
+how to train RNN - use fwd and backprop?
+"The difference is recurrence. The RNN cannot be easily trained as if you try to compute gradient - you will soon figure out that in order to get a gradient on n'th step - you need to actually "unroll" your network history for n-1 previous steps. This technique, known as BPTT (backpropagation through time) is exactly this - direct application of backpropagation to RNN. Unfortunately this is both computationaly expensive as well as mathematically challenging (due to vanishing/exploding gradients). People are creating workaround on many levels, by for example introduction of specific types of RNN which can be efficiently trained (LSTM, GRU), or by modification of training procedure (such as gradient clamping). To sum up - theoreticaly you can do "typical" backprop in the mathematical sense, from programming perspective - this requires more work as you need to "unroll" your network through history. This is computationaly expensive, and hard to optimize in the mathematical sense."
+
 
 
 ### Benchmark
@@ -360,6 +363,8 @@ recorded for all processes for analysis.
 
 -> Experiment class, Ngram class, RnnKeras class
 keeps logs of experiments done, makes plots
+
+
 
 
 
