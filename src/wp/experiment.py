@@ -289,16 +289,11 @@ if __name__ == '__main__':
     # specs = [
     #     [wp.rnn_keras.RnnKeras, {'nvocab':50,'nhidden':12,'nepochs':20}],
     #     [wp.rnn_keras.RnnKeras, {'nvocab':100,'nhidden':25,'nepochs':20}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':200,'nhidden':50,'nepochs':20}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':400,'nhidden':100,'nepochs':20}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':800,'nhidden':200,'nepochs':20}],
     # ]
     # data = wp.data.Data('alice1')
-    # # params = {'train_amount':[0.1,0.25,0.5,1.0]}
     # params = {'train_amount':[1.0]}
     # exper = Experiment(name, specs, data, params)
     # exper.run()
-    # # exper.run(force_training=True)
     # exper.plot(True)
 
 
@@ -308,30 +303,36 @@ if __name__ == '__main__':
     #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':6,'nepochs':10}],
     #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':12,'nepochs':10}],
     #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':25,'nepochs':10}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':50,'nepochs':10}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':100,'nepochs':10}],
-    #     # [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':200,'nepochs':10}],
     # ]
     # data = wp.data.Data('alice1')
-    # # params = {'train_amount':[0.1,0.25,0.5,1.0]}
     # params = {'train_amount':[1.0]}
     # exper = Experiment(name, specs, data, params)
     # exper.run()
-    # # exper.run(force_training=True)
     # exper.plot(True)
 
 
-    # # 2017-01-18 11pm gut
+    # # 2017-01-18 11pm gut - roughly 1+ min per percent of training data -
+    # #   nepochs=2 is fine - mostly predicting unknowns though.
+    # name = "train amount"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':25,'nepochs':5}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[0.05,0.1]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # exper.plot(True)
+
+
+    # # 2017-01-19 1am gut - more vocab and hidden, fewer epochs
     name = "train amount"
     specs = [
-        [wp.rnn_keras.RnnKeras, {'nvocab':500,'nhidden':25,'nepochs':5}],
+        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':3}], # kills cpu & memory!
     ]
     data = wp.data.Data('gutenbergs')
-    # params = {'train_amount':[0.05,0.1,0.25,0.5,1.0]}
-    params = {'train_amount':[0.05,0.1]}
+    # params = {'train_amount':[0.05,0.1]}
+    params = {'train_amount':[0.05]}
     exper = Experiment(name, specs, data, params)
     exper.run()
-    # exper.run(force_training=True)
     exper.plot(True)
-
 

@@ -139,7 +139,8 @@ class RnnKeras(Model):
                 print(fmt_header.format(*columns))
                 fmt_rows = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
                 show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
-                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=[show_loss])
+                callbacks = [show_loss]
+                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0, callbacks=callbacks)
                 #. what is history obj?
                 # print(history)
                 #. add final Loss values - call show_loss here?
@@ -240,9 +241,9 @@ if __name__=='__main__':
     # select dataset and build model
 
     # abcd
-    # data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
-    # prompt = 'a b c'
-    # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
+    data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
+    prompt = 'a b c'
+    model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=400) # works loss=0.6
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=800) # works loss=0.2
@@ -272,8 +273,8 @@ if __name__=='__main__':
     # prompt = 'the cat and dog'
 
     # alice
-    data = Data('alice1') # has 800+ unique words
-    prompt = 'the white rabbit ran away and'
+    # data = Data('alice1') # has 800+ unique words
+    # prompt = 'the white rabbit ran away and'
     # model = RnnKeras(data, n=4, nvocab=50, nhidden=25, nepochs=5) # fast and bad
     # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
     # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
@@ -282,12 +283,12 @@ if __name__=='__main__':
     # rnn_type
     # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='Simple')
     # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='LSTM')
-    model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='GRU')
+    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='GRU')
 
 
     # train model
-    model.train(force_training=True)
-    # model.train()
+    # model.train(force_training=True)
+    model.train()
     # print(util.table(model.train_results))
     print()
 

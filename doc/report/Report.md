@@ -71,28 +71,24 @@ performance for a given amount of training time [cite!].
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-For evaluation of all models, a **relevance** score will be reported, for different
-training set sizes.
+The primary metric used to evaluate the performance of the models will be
+**relevance**, which we'll define as
 
 > **Relevance** = # correct predictions / # total predictions
 
-A prediction will be considered *correct* if the actual word is in the list of
-*k* most likely words - this is relevant to the task of presenting the user with
-a list of most likely next words as they are entering text. We'll use *k* = 3
-for evaluation.
+where a prediction will be considered *correct* if the actual word is in the
+list of *k* most likely words. This is relevant to the task of presenting the
+user with a list of most likely next words as they are entering text - we'll use
+*k* = 3 for evaluation.
 
-Results in the literature are often reported as *perplexity*, which gives an idea
+We'll also report the **accuracy** in places, which measures the number of
+predictions where the most likely prediction is the correct one (which is just
+*relevance* where *k* = 1).
+
+Results in the literature are often reported as **perplexity**, which gives an idea
 of how well the model has narrowed down the possible choices for the next word -
 e.g. a perplexity of 100 corresponds roughly to a uniform choice from 100 words.
-
-<!-- The dataset will be split into training and test sets - after training, a -->
-<!-- sequence of words from the test set will be chosen at random, then fed to the -->
-<!-- predictor, and the most likely *k* words compared to the actual following word. -->
-
--> accuracy = # exact predictions / # total predictions
-
-ie measures the number of predictions where the most likely prediction is the
-correct one, which is equivalent to relevance where *k* = 1.
+We'll report this as well to see how our models compare with those in the literature. 
 
 
 ## Analysis
@@ -180,9 +176,9 @@ plot against mean/median sentence lengths?
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
-Until recently, n-grams were state of the art in word prediction - Recurrent
-Neural Networks were able to beat them in 2003, though at the cost of greater
-training time (Bengio 2003).
+Until recently, n-grams were state of the art in word prediction [cite ] -
+Recurrent Neural Networks were able to beat them in 2003, though at the cost of
+greater training time (Bengio 2003).
 
 A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
 context, while n-grams are limited to about 4 words of context (a 5-gram will
@@ -227,9 +223,13 @@ likely words can be found for a given context.
 
 explain LSTM and GRU
 
--> lstm's came in 1997 [cite]
+-> lstm's came in 1997 [cite], gru 2014 - simpler [cite] (Chung 2014)
 
--> various types, incl gru 2014 - simpler [cite]
+see http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
+incls diagrams
+"GRUs have fewer parameters (U and W are smaller) and thus may train a bit
+faster or need less data to generalize. On the other hand, if you have enough
+data, the greater expressive power of LSTMs may lead to better results."
 
 
 
@@ -239,6 +239,47 @@ explain LSTM and GRU
 will use Keras (Chollet 2015), a library that simplifies the use of TensorFlow [cite], e.g. 
 
 -> compare Keras code vs TensorFlow for same simple RNN
+
+-> compare word-level with character-level rnn learning - maybe character level
+   easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words.
+
+
+
+Optimizers
+
+sgd - would work but too slow
+rmsprop - rare features get a larger gradient
+adam - like rmsprop with momentum
+
+we'll use adam
+
+
+Initialization
+
+uniform, gaussian, other
+
+
+Regularization
+
+eg keep weights from getting too large, because _________ (leads to overfitting?)
+L1, L2, other?
+early stopping is a form of regularization
+see https://keras.io/regularizers/
+
+
+Embeddings
+https://www.tensorflow.org/tutorials/word2vec/
+
+
+Objective Fns/Loss Fns
+
+https://keras.io/objectives/
+
+will use categorical cross entropy -
+illustrate with a simple example from abcd dataset
+
+
+
 
 
 
@@ -259,6 +300,9 @@ well with a million words of data - going to 4- or 5- grams would
 require more training data.
 
 -> find published results, history (when were these first developed, called n-grams, get citations)
+
+"n-gram models (Jelinek and Mercer, 1980;Katz 1987). See (Manning and Schutze, 1999) for a review."
+
 
 
 
@@ -309,6 +353,10 @@ actual word, and a *relevance* score tallied.
 Training sets of increasing sizes were used - 1k, 10k, 100k, 1 million words,
 and the results recorded for comparison. Timing and memory information were also
 recorded for all processes for analysis.
+
+
+-> do big O analysis, estimate memory needed, # calcs, time
+
 
 
 
@@ -446,6 +494,8 @@ better training/testing - distribute text by paragraphs, not sentences
 
 (Chollet 2015) Chollet, Francois, Keras, https://github.com/fchollet/keras, 2015
 
+(Chung 2014) Chung, Junyoung, et al. "Empirical evaluation of gated recurrent neural networks on sequence modeling." (2014) >>>>>>>>>link
+
 (Coleman 1975) Coleman, Meri; and Liau, T. L., "A computer readability formula designed for machine scoring", Journal of Applied Psychology, Vol. 60, pp. 283 - 284, 1975.
 
 (Gutenberg 2016) Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
@@ -456,13 +506,13 @@ better training/testing - distribute text by paragraphs, not sentences
 
 (Mikolov 2013) Mikolov, Tomas; et al. "Efficient Estimation of Word Representations in Vector Space". arXiv:1301.3781, 2013.
 
+>(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton" Project Para. Cornell Aeronautical Laboratory, 1957.
+
 (Shannon 1948) Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
 
+>(shri... 2014) shri with hinton on dropout 2014
 
-may need
-F. Rosenblatt. The perceptron, a perceiving and recognizing automaton Project Para. Cornell Aeronautical Laboratory, 1957.
 
-shri 2014 with hinton on dropout
 
 
 --------------------------------------------------------------------------------
