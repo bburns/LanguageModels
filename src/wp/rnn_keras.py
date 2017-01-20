@@ -81,42 +81,24 @@ class RnnKeras(Model):
         rnn_class = rnn_classes[self.rnn_type]
 
         # create the keras model
+        # note: the embedding layer turns positive integers (vocab indexes) into
+        # dense vectors of fixed size - its output is (None, n-1, nhidden).
         print("Create model " + self.name)
         self.rnn = Sequential()
-
-        # Turn positive integers (indexes) into dense vectors of fixed size. eg. [[4], [20]] -> [[0.25, 0.1], [0.6, -0.2]]
-        # This layer can only be used as the first layer in a model.
-        # the model will take as input an integer matrix of size (batch,
-        # input_length). the largest integer (i.e. word index) in the input
-        # should be no larger than 999 (vocabulary size). now
-        # model.output_shape == (None, 10, 64), where None is the batch
-        # dimension.
-        # self.rnn.add(Embedding(1000, 64, input_length=10))
-        # input_dim=nvocab, output_dim=nhidden
-        # Input shape 2D tensor with shape: (nb_samples, sequence_length).
-        # Output shape 3D tensor with shape: (nb_samples, sequence_length, output_dim).
-        # embedding_layer = Embedding(input_dim=nvocab, output_dim=nhidden, input_length=n, weights=[initial_weights])
-        # model.add(embedding_layer)
-        # self.rnn.add(Embedding(input_dim=1000, output_dim=64, input_length=10))
-        self.rnn.add(Embedding(input_dim=self.nvocab, output_dim=self.nhidden, input_length=self.n-1))
-        # self.rnn.add(Embedding(input_dim=self.nvocab, output_dim=self.nhidden))
-        # output shape will be (None,n-1,nhidden)
-        # print(self.rnn.layers[0].get_config())
-
-        # # self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
-        # self.rnn.add(rnn_class(self.nhidden, input_dim=self.nhidden)) # this is a SimpleRNN, LSTM, or GRU
+        # embedding_layer = Embedding(input_dim=self.nvocab, output_dim=self.nhidden, input_length=self.n-1, weights=[initial_weights])
+        embedding_layer = Embedding(input_dim=self.nvocab, output_dim=self.nhidden, input_length=self.n-1)
+        self.rnn.add(embedding_layer)
+        # self.rnn.layers[0].trainable = False # slows convergence a lot
         self.rnn.add(rnn_class(self.nhidden)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
         def top_k_accuracy(y_true, y_pred):
             return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
         metrics = ['accuracy', top_k_accuracy] #. loss is always the 0th metric returned from fit method, eh?
-        # note: categorical_crossentropy is faster than mean_squared_error.
+        # note: categorical_crossentropy converges faster than mean_squared_error.
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=metrics)
         # for layer in self.rnn.layers:
         #     print(layer.get_config())
-
-        # self.rnn.compile('rmsprop', 'mse') # compile model
 
     def train(self, force_training=False):
         """
@@ -278,13 +260,13 @@ if __name__=='__main__':
     # select dataset and build model
 
     # abcd
-    data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
-    prompt = 'a b c'
+    # data = Data('abcd') # vocab is 5 tokens: a b c d ~ (~ = unknown)
+    # prompt = 'a b c'
     # cram it into lower dimensions...
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=3, nepochs=150) # works
-    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works without embedding layer
-    model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=100) # works - 1/3 time as without embedding layer - why?
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works - no embedding layer
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=100) # works - 1/3 time with embedding layer - #. why?
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=400) # works loss=0.6
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=800) # works loss=0.2
 
@@ -295,7 +277,9 @@ if __name__=='__main__':
     # model = RnnKeras(data, n=3, nvocab=27, nhidden=30, nepochs=20) # works
     # model = RnnKeras(data, n=3, nvocab=27, nhidden=15, nepochs=40) # works
     # model = RnnKeras(data, n=3, nvocab=27, nhidden=10, nepochs=40) # works
-    # model = RnnKeras(data, n=3, nvocab=27, nhidden=5, nepochs=800) # nearly works
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=5, nepochs=800) # nearly works - no embedding layer
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=5, nepochs=500) # nearly works with embedding layer - stuck at .92 acc
+    # model = RnnKeras(data, n=3, nvocab=27, nhidden=6, nepochs=400) # works with embedding layer
     # nepochs vs n - increasing context doesn't require much work
     # model = RnnKeras(data, n=3, nvocab=27, nhidden=15, nepochs=40) # works
     # model = RnnKeras(data, n=4, nvocab=27, nhidden=15, nepochs=40) # works
@@ -313,17 +297,21 @@ if __name__=='__main__':
     # prompt = 'the cat and dog'
 
     # alice
-    # data = Data('alice1') # has 800+ unique words
-    # prompt = 'the white rabbit ran away and'
-    # model = RnnKeras(data, n=4, nvocab=50, nhidden=25, nepochs=5) # fast and bad
-    # model = RnnKeras(data, n=4, nvocab=100, nhidden=50, nepochs=10) # eh
-    # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=10)
-    # model = RnnKeras(data, n=5, nvocab=200, nhidden=100, nepochs=3)
-    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5) # shows overfitting curve
+    data = Data('alice1') # has 800+ unique words
+    prompt = 'the white rabbit ran away and alice fell down the'
+    # nhidden
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfitting, min 5.5
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=50, nepochs=5, rnn_type='GRU') # overfitting, min 5.6
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=25, nepochs=5, rnn_type='GRU') # overfitting, loss min 5.8
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=10, nepochs=5, rnn_type='GRU') # overfitting, loss min 5.7
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=5, nepochs=5, rnn_type='GRU') # overfitting, loss min 5.7
+    # n
+    # model = RnnKeras(data, n=5, nvocab=800, nhidden=100, nepochs=5, rnn_type='Simple') # min 5.7
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='Simple') # min 5.8
     # rnn_type
-    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='Simple')
-    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='LSTM')
-    # model = RnnKeras(data, n=5, nvocab=400, nhidden=100, nepochs=5, rnn_type='GRU')
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='Simple') # overfit 5.7
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='LSTM') # overfit 5.6
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfit 5.5 and much faster than LSTM << best
 
 
     # train model
@@ -356,13 +344,11 @@ if __name__=='__main__':
         print(c)
         print()
 
-    #. fix these
-
     # predict next word after a prompt (define above)
     word_probs = model.predict(prompt)
     print('prediction')
     print(prompt)
-    print(word_probs)
+    # print(word_probs)
     print()
 
     # test the model against the test dataset
