@@ -95,17 +95,28 @@ class RnnKeras(Model):
         # input_dim=nvocab, output_dim=nhidden
         # Input shape 2D tensor with shape: (nb_samples, sequence_length).
         # Output shape 3D tensor with shape: (nb_samples, sequence_length, output_dim).
+        # embedding_layer = Embedding(input_dim=nvocab, output_dim=nhidden, input_length=n, weights=[initial_weights])
+        # model.add(embedding_layer)
         # self.rnn.add(Embedding(input_dim=1000, output_dim=64, input_length=10))
+        self.rnn.add(Embedding(input_dim=self.nvocab, output_dim=self.nhidden, input_length=self.n-1))
+        # self.rnn.add(Embedding(input_dim=self.nvocab, output_dim=self.nhidden))
+        # output shape will be (None,n-1,nhidden)
+        # print(self.rnn.layers[0].get_config())
 
-        self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
+        # # self.rnn.add(rnn_class(self.nhidden, input_dim=self.nvocab)) # this is a SimpleRNN, LSTM, or GRU
+        # self.rnn.add(rnn_class(self.nhidden, input_dim=self.nhidden)) # this is a SimpleRNN, LSTM, or GRU
+        self.rnn.add(rnn_class(self.nhidden)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
         def top_k_accuracy(y_true, y_pred):
             return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
-        metrics = ['accuracy', top_k_accuracy]
+        metrics = ['accuracy', top_k_accuracy] #. loss is always the 0th metric returned from fit method, eh?
         # note: categorical_crossentropy is faster than mean_squared_error.
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=metrics)
+        # for layer in self.rnn.layers:
+        #     print(layer.get_config())
 
+        # self.rnn.compile('rmsprop', 'mse') # compile model
 
     def train(self, force_training=False):
         """
@@ -133,16 +144,22 @@ class RnnKeras(Model):
                 tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
                 self.vocab = vocab.Vocab(tokens, self.nvocab)
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
-                onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
                 #. these would be huge arrays - simpler way?
-                x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
+                # onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
+                # x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
+                x, y = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context, eg _________
+                y = to_categorical(y, self.nvocab)
+                print(x[:20]) # [[0 1] [1 2]]
+                print(y[:20]) # [[0 0 1 0] [0 0 0 1]]
 
                 # get validation tokens
                 tokens = self.data.tokens('validate') # eg ['the','dog','barked',...]
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
-                onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
                 #. these would be huge arrays - simpler way?
-                x_validate, y_validate = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
+                # onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
+                # x_validate, y_validate = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
+                x_validate, y_validate = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context, eg _________
+                y_validate = to_categorical(y_validate, self.nvocab)
 
             print("Starting gradient descent...")
             with benchmark("Gradient descent finished") as b:
@@ -152,11 +169,14 @@ class RnnKeras(Model):
                 fmt_header = "{:5}  {:6}  {:8}  {:9}  {}"
                 fmt_rows = "{: 5d}  {:6.3f}  {:8.3f}  {:9.3f}  {}"
                 print(fmt_header.format(*columns))
-                # show_loss = ShowLoss(self, x_validate, y_validate, self.k, fmt_rows, self.epoch_interval)
                 show_loss = ShowLoss(self, x_validate, y_validate, fmt_rows, self.epoch_interval)
                 callbacks = [show_loss]
-                history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0)
+                # history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0) # train model
+                self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0) # train model
+                # history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0) # train model
                 # print(history.history) # dictionary with 'acc','top_3_accuracy','loss', but no epoch nums
+                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0) # train model
+                # self.rnn.fit(x, y, nb_epoch=self.nepochs, verbose=0) # train model
                 show_loss.on_epoch_begin(self.nepochs) # add final loss values to show_loss.rows
 
             self.train_time = b.time
@@ -313,44 +333,48 @@ if __name__=='__main__':
         print('vocab',model.vocab)
 
         # # show weight matrices
+        print('weights')
         weights = model.rnn.get_weights()
-        U, W, b, V, c = weights
-        print('U')
-        print(U)
-        print('W')
-        print(W)
-        print('b')
-        print(b)
-        print()
-        print('V')
-        print(V)
-        print('c')
-        print(c)
-        print()
+        print(weights)
+        # U, W, b, V, c = weights
+        # print('U')
+        # print(U)
+        # print('W')
+        # print(W)
+        # print('b')
+        # print(b)
+        # print()
+        # print('V')
+        # print(V)
+        # print('c')
+        # print(c)
+        # print()
 
-    # predict next word after a prompt (define above)
-    word_probs = model.predict(prompt)
-    print('prediction')
-    print(prompt)
-    print(word_probs)
-    print()
+    #. fix these
 
-    # test the model against the test dataset
-    model.test(test_amount=2000)
-    print('relevance',model.test_score)
-    print()
+    # # predict next word after a prompt (define above)
+    # word_probs = model.predict(prompt)
+    # print('prediction')
+    # print(prompt)
+    # print(word_probs)
+    # print()
 
-    # show sample predictions
-    print('sample predictions')
-    print(util.table(model.test_samples))
-    print()
+    # # test the model against the test dataset
+    # model.test(test_amount=2000)
+    # print('relevance',model.test_score)
+    # print()
 
-    # plot training curves
-    print(util.table(model.train_results))
-    model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
-    plt.title(model.name)
-    plt.ylabel('Loss, Accuracy, Relevance')
-    plt.show()
+    # # show sample predictions
+    # print('sample predictions')
+    # print(util.table(model.test_samples))
+    # print()
+
+    # # plot training curves
+    # print(util.table(model.train_results))
+    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    # plt.title(model.name)
+    # plt.ylabel('Loss, Accuracy, Relevance')
+    # plt.show()
 
 
     #.
