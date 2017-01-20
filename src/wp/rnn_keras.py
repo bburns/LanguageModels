@@ -210,17 +210,20 @@ class RnnKeras(Model):
         s = ' '.join(ywords) # eg ________
         return s
 
-    #. refactor
+    #.. refactor
     def predict(self, prompt):
         """
         Get the k most likely next tokens following the given string.
         eg model.predict('The cat') -> [('slept',0.12), ('barked',0.08), ('meowed',0.07)]
         """
-        x, y = self.vocab.prompt_to_onehot(prompt, self.n) # eg ___________
+        s = prompt.lower()
+        #. use nltk tokenizer to handle commas, etc, or use a Vocab class
+        tokens = s.split()
+        tokens.append(self.vocab.unknown_token) # will be predicting this value
+        itokens = self.vocab.get_itokens(tokens)
+        x, _ = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context
         # print('x')
         # print(x)
-        # print('y')
-        # print(y)
         probs = self.rnn.predict_proba(x, verbose=0) # eg __________
         # print('probs')
         # print(probs)
@@ -280,7 +283,8 @@ if __name__=='__main__':
     # cram it into lower dimensions...
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=4, nepochs=40) # works
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=3, nepochs=150) # works
-    model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works
+    # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=300) # works without embedding layer
+    model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=100) # works - 1/3 time as without embedding layer - why?
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=400) # works loss=0.6
     # model = RnnKeras(data, n=3, nvocab=5, nhidden=2, nepochs=800) # works loss=0.2
 
@@ -335,46 +339,48 @@ if __name__=='__main__':
         # # show weight matrices
         print('weights')
         weights = model.rnn.get_weights()
-        print(weights)
-        # U, W, b, V, c = weights
-        # print('U')
-        # print(U)
-        # print('W')
-        # print(W)
-        # print('b')
-        # print(b)
-        # print()
-        # print('V')
-        # print(V)
-        # print('c')
-        # print(c)
-        # print()
+        # print(weights)
+        E, U, W, b, V, c = weights #. ?
+        print('E')
+        print(E)
+        print('U')
+        print(U)
+        print('W')
+        print(W)
+        print('b')
+        print(b)
+        print()
+        print('V')
+        print(V)
+        print('c')
+        print(c)
+        print()
 
     #. fix these
 
-    # # predict next word after a prompt (define above)
-    # word_probs = model.predict(prompt)
-    # print('prediction')
-    # print(prompt)
-    # print(word_probs)
-    # print()
+    # predict next word after a prompt (define above)
+    word_probs = model.predict(prompt)
+    print('prediction')
+    print(prompt)
+    print(word_probs)
+    print()
 
-    # # test the model against the test dataset
-    # model.test(test_amount=2000)
-    # print('relevance',model.test_score)
-    # print()
+    # test the model against the test dataset
+    model.test(test_amount=2000)
+    print('relevance',model.test_score)
+    print()
 
-    # # show sample predictions
-    # print('sample predictions')
-    # print(util.table(model.test_samples))
-    # print()
+    # show sample predictions
+    print('sample predictions')
+    print(util.table(model.test_samples))
+    print()
 
-    # # plot training curves
-    # print(util.table(model.train_results))
-    # model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
-    # plt.title(model.name)
-    # plt.ylabel('Loss, Accuracy, Relevance')
-    # plt.show()
+    # plot training curves
+    print(util.table(model.train_results))
+    model.train_results.plot(x='Epoch',y=['Loss','Accuracy','Relevance'])
+    plt.title(model.name)
+    plt.ylabel('Loss, Accuracy, Relevance')
+    plt.show()
 
 
     #.
