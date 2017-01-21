@@ -34,8 +34,8 @@ class Vocab(object):
         token_freqs = nltk.FreqDist(tokens)
         token_counts = token_freqs.most_common(self.nvocab-1) # eg ________
         self.index_to_token = [token_count[0] for token_count in token_counts] # eg _________
-        self.index_to_token.insert(0, self.unknown_token) # unknown_token / OOV will always be at index 0
-        print(self.index_to_token)
+        self.index_to_token.insert(0, self.unknown_token) # so unknown_token/~/OOV will always be at index 0
+        # print(self.index_to_token)
         while len(self.index_to_token) < self.nvocab:
             self.index_to_token.append(self.pad_token) # pad out the vocabulary if needed
         # self.index_to_token.sort() #. just using for alphabet dataset

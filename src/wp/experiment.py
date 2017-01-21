@@ -350,19 +350,30 @@ if __name__ == '__main__':
     # exper.run()
     # exper.plot()
 
-    # 2017-01-21 12pm gut - simple vs gru
-    name = "train amount, gru"
-    specs = [
-        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'Simple'}],
-        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'GRU'}],
-    ]
-    data = wp.data.Data('gutenbergs')
-    params = {'train_amount':[0.01,0.02,0.03]}
-    # params = {'train_amount':[0.01]}
-    exper = Experiment(name, specs, data, params, test_amount=5000)
-    exper.run()
-    exper.plot()
+    # # 2017-01-21 12pm gut - simple vs gru
+    # name = "train amount, gru"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'Simple'}], # faster to train
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'GRU'}], # more accurate
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # params = {'train_amount':[0.01,0.02,0.03]}
+    # # params = {'train_amount':[0.01]}
+    # exper = Experiment(name, specs, data, params, test_amount=5000)
+    # exper.run()
+    # exper.plot()
 
 
     #. larger vocab size
+    # 2017-01-21 2pm gut
+    name = "larger vocab"
+    specs = [
+        [wp.rnn_keras.RnnKeras, {'nvocab':4000,'nhidden':50,'nepochs':2, 'rnn_type':'Simple'}],
+        # [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'GRU'}],
+    ]
+    data = wp.data.Data('gutenbergs')
+    params = {'train_amount':[0.01,0.02]}
+    exper = Experiment(name, specs, data, params, test_amount=5000)
+    exper.run()
+    exper.plot()
 
