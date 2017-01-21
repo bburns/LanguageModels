@@ -47,6 +47,30 @@ domain, different corpora might be more appropriate, e.g. training on a
 chat/texting corpus would be good for a phone text entry application.
 
 
+"The main advantage of NNLMs over n-grams is that history is no longer seen as
+exact sequence of n - 1 words H, but rather as a projection of H into some lower
+dimensional space. This reduces number of parameters in the model that have to
+be trained, resulting in automatic clustering of similar histories." mikolov 2012 thesis
+The hidden layer of RNN represents all previous
+history and not just n -1 previous words, thus the model can theoretically represent long
+context patterns
+however the error gradients quickly vanish as they get backpropagated in time
+(in rare cases the errors can explode), so several steps of unfolding are
+sufficient (this is sometimes referred to as truncated BPTT). While for word
+based LMs, it seems to be sufficient to unfold network for about 5 time steps,
+it is interesting to notice that this still allows the network to learn to store
+information for more than 5 time steps.
+Similarly, network that is trained by normal backpropagation can be seen as a
+network trained with one unfolding step, and still as we will see later, even
+this allows the network to learn longer context patterns, such as 4-gram
+information.
+A simple solution to the exploding gradient problem is to truncate values of the
+gradients. In my experiments, I did limit maximum size of gradients of errors
+that get accumulated in the hidden neurons to be in a range < -15; 15 >. This
+greatly increases stability of the training, and otherwise it would not be
+possible to train RNN LMs successfully on large data sets.
+
+
 ### Problem Statement
 
 <!-- The problem which needs to be solved is clearly defined.
@@ -130,6 +154,9 @@ The Gutenberg text number is listed in parentheses, and the texts can be found
 online - e.g. Alice in Wonderland can be found at
 http://www.gutenberg.org/etext/28885.
 
+
+
+
 Some sample text:
 
 > "Speak English!" said the Eaglet. "I don't know the meaning of half those long words, and, what's more, I don't believe you do either!" - *Alice in Wonderland* (Shortest words)
@@ -166,6 +193,8 @@ how calculate? ngrams?
 -> information content of english - shannon paper
 use to compare texts?
 plot against mean/median sentence lengths?
+
+
 
 
 
@@ -323,11 +352,41 @@ and the results recorded for comparison. Timing and memory information were also
 recorded for all processes for analysis.
 
 
+"Input vector x(t) represents word in time t encoded using 1-of-N coding and
+previous context layer - size of vector x is equal to size of vocabulary V (this
+can be in practice 30000 -200000) plus size of context layer. Size of context
+(hidden) layer s is usually 30 - 500 hidden units. Based on our experiments,
+size of hidden layer should reflect amount of training data - for large amounts
+of data, large hidden layer is needed
+In our experiments, networks do not overtrain significantly, even if very large
+hidden layers are used - regularization of networks to penalize large weights
+did not provide any significant improvements.
+The training algorithm described here is also referred to as truncated
+backpropagation through time with t = 1. It is not optimal, as weights of
+network are updated based on error vector computed only for current time step.
+To overcome this simplification, backpropagation through time (BPTT) algorithm
+is commonly used (see Boden for details)
+in some experiments we have
+achieved almost twice perplexity reduction over n-gram models by using a
+recurrent network instead of a feedforward network.
+it
+takes around 6 hours for our basic implementation to train RNN model based on
+Brown corpus (800K words, 100 hidden units and vocabulary threshold 5), while
+Bengio reports 113 days for basic implementation and 26 hours with importance
+sampling , when using similar data and size of neural network. [ie FNN]
+we denote modified Kneser-Ney smoothed 5-gram as KN5
+RNN 90/2, indicate that the hidden layer size is 90 and threshold for merging
+words to rare token is 2.
+we use open vocabulary language models (unknown words are assigned small
+probability).
+However, it does not seem that simple recurrent neural networks can capture
+truly long context information, as cache models still provide complementary
+information even to dynamic models trained with BPTT.
+"
+mikolov 2010
 
 -> Experiment class, Ngram class, RnnKeras class
 keeps logs of experiments done, makes plots
-
-
 
 
 

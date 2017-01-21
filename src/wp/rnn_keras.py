@@ -126,9 +126,6 @@ class RnnKeras(Model):
                 tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
                 self.vocab = vocab.Vocab(tokens, self.nvocab)
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
-                #. these would be huge arrays - simpler way?
-                # onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
-                # x, y = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
                 x, y = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context, eg _________
                 y = to_categorical(y, self.nvocab)
                 print(x[:20]) # [[0 1] [1 2]]
@@ -137,9 +134,6 @@ class RnnKeras(Model):
                 # get validation tokens
                 tokens = self.data.tokens('validate') # eg ['the','dog','barked',...]
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
-                #. these would be huge arrays - simpler way?
-                # onehot = keras.utils.np_utils.to_categorical(itokens, self.nvocab) # one-hot encoding, eg _______
-                # x_validate, y_validate = self.vocab.create_dataset(onehot, self.n-1) # n-1 = amount of lookback / context, eg _________
                 x_validate, y_validate = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context, eg _________
                 y_validate = to_categorical(y_validate, self.nvocab)
 
@@ -154,11 +148,8 @@ class RnnKeras(Model):
                 show_loss = ShowLoss(self, x_validate, y_validate, fmt_rows, self.epoch_interval)
                 callbacks = [show_loss]
                 # history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0) # train model
+                # print(history.history) # dictionary with 'acc','top_k_accuracy','loss'
                 self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, callbacks=callbacks, verbose=0) # train model
-                # history = self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0) # train model
-                # print(history.history) # dictionary with 'acc','top_3_accuracy','loss', but no epoch nums
-                # self.rnn.fit(x, y, nb_epoch=self.nepochs, batch_size=self.batch_size, verbose=0) # train model
-                # self.rnn.fit(x, y, nb_epoch=self.nepochs, verbose=0) # train model
                 show_loss.on_epoch_begin(self.nepochs) # add final loss values to show_loss.rows
 
             self.train_time = b.time
@@ -311,8 +302,9 @@ if __name__=='__main__':
     # rnn_type
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='Simple') # overfit 5.7
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='LSTM') # overfit 5.6
-    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfit 5.5 and much faster than LSTM << best
+    model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfit 5.5 and much faster than LSTM << best
 
+    # model.summary()
 
     # train model
     model.train(force_training=True)
