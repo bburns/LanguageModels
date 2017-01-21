@@ -28,16 +28,17 @@ with benchmark('import'): # 19 secs cold, 4 secs warm
     import vocab
 
 
+# needs to be defined outside of class
+def top_k_accuracy(y_true, y_pred):
+    # return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
+    return top_k_categorical_accuracy(y_true, y_pred, k=3)
 
 class RnnKeras(Model):
     """
     An RNN implemented with Keras - can be a SimpleRNN, LSTM, or GRU.
     """
 
-    #. pass rnn type - SimpleRNN, LSTM, GRU
-    # def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=1000, nhidden=100, nepochs=10, name_includes=[]):
-    # def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=100, nhidden=25, nepochs=10, name_includes=[]):
-    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=100, nhidden=25, nepochs=10, rnn_type='Simple', name_includes=[]):
+    def __init__(self, data, train_amount=1.0, n=3, k=3, nvocab=100, nhidden=25, nepochs=10, rnn_type='Simple'):
         """
         Create an RNN model
         data          - a Data object - source of training and testing data
@@ -45,7 +46,7 @@ class RnnKeras(Model):
         nvocab        - max number of vocabulary words to learn
         nhidden       - number of units in the hidden layer
         nepochs       - number of times to run through training data
-        name_includes - list of properties to include in model name, eg ['nhidden']
+        rnn_type      - type of RNN - Simple, LSTM, GRU
         """
         # arguments
         self.data = data
@@ -62,8 +63,7 @@ class RnnKeras(Model):
             # name_includes.append('n')
         name_includes = ['train_amount','n','k','nvocab','nhidden','nepochs','rnn_type']
         self.name = "RNN-" + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'RNN-nhidden-10'
-        self.filetitle = '%s/rnn-(n-%d-train_amount-%s-nvocab-%d-nhidden-%d-nepochs-%d)' \
-                         % (data.model_folder, self.n, str(train_amount), nvocab, nhidden, nepochs)
+        self.filetitle = data.model_folder + '/' + self.name
         self.filename = self.filetitle + '.pickle'
         self.filename_h5 = self.filetitle + '.h5'
         self.trained = False
@@ -92,8 +92,8 @@ class RnnKeras(Model):
         self.rnn.add(rnn_class(self.nhidden)) # this is a SimpleRNN, LSTM, or GRU
         self.rnn.add(Dense(self.nvocab)) #. this isn't part of the RNN already?
         self.rnn.add(Activation('softmax'))
-        def top_k_accuracy(y_true, y_pred):
-            return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
+        # def top_k_accuracy(y_true, y_pred):
+        #     return top_k_categorical_accuracy(y_true, y_pred, k=self.k)
         metrics = ['accuracy', top_k_accuracy] #. loss is always the 0th metric returned from fit method, eh?
         # note: categorical_crossentropy converges faster than mean_squared_error.
         self.rnn.compile(loss='categorical_crossentropy', optimizer='adam', metrics=metrics)
@@ -112,7 +112,7 @@ class RnnKeras(Model):
         and saves the model with those values to a file.
         """
         if force_training==False and os.path.isfile(self.filename):
-            self.load() # see model.py - will set self.load_time
+            self.load()
         else:
             self.batch_size = 1
             # self.batch_size = 25  #. much slower convergence than 1 - why? what does this do?
@@ -124,12 +124,12 @@ class RnnKeras(Model):
             with benchmark("Prepared training data"):
                 # get training tokens
                 tokens = self.data.tokens('train', self.train_amount) # eg ['the','dog','barked',...]
-                self.vocab = vocab.Vocab(tokens, self.nvocab)
+                self.vocab = vocab.Vocab(tokens, self.nvocab) # gets saved with model
                 itokens = self.vocab.get_itokens(tokens) # eg [1,4,3,...]
                 x, y = self.vocab.create_dataset(itokens, self.n-1) # n-1 = amount of lookback / context, eg _________
                 y = to_categorical(y, self.nvocab)
-                print(x[:20]) # [[0 1] [1 2]]
-                print(y[:20]) # [[0 0 1 0] [0 0 0 1]]
+                # print(x[:20]) # [[0 1] [1 2]]
+                # print(y[:20]) # [[0 0 1 0] [0 0 0 1]]
 
                 # get validation tokens
                 tokens = self.data.tokens('validate') # eg ['the','dog','barked',...]
@@ -169,7 +169,8 @@ class RnnKeras(Model):
         Load the model from file - overrides base model class method.
         """
         Model.load(self)
-        self.rnn = load_model(self.filename_h5)
+        # self.rnn = load_model(self.filename_h5)
+        self.rnn = load_model(self.filename_h5, custom_objects={'top_k_accuracy': top_k_accuracy})
 
     #. refactor
     def get_predictions(self, yprobs):
@@ -288,8 +289,8 @@ if __name__=='__main__':
     # prompt = 'the cat and dog'
 
     # alice
-    data = Data('alice1') # has 800+ unique words
-    prompt = 'the white rabbit ran away and alice fell down the'
+    # data = Data('alice1') # has 800+ unique words
+    # prompt = 'the white rabbit ran away and alice fell down the'
     # nhidden
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfitting, min 5.5
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=50, nepochs=5, rnn_type='GRU') # overfitting, min 5.6
@@ -302,9 +303,13 @@ if __name__=='__main__':
     # rnn_type
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='Simple') # overfit 5.7
     # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='LSTM') # overfit 5.6
-    model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfit 5.5 and much faster than LSTM << best
+    # model = RnnKeras(data, n=10, nvocab=800, nhidden=100, nepochs=5, rnn_type='GRU') # overfit 5.5 and much faster than LSTM << best
 
-    # model.summary()
+    # gutenbergs
+    data = Data('gutenbergs')
+    prompt = 'they were running down the hill when john tripped and'
+    model = RnnKeras(data, n=10, nvocab=1000, nhidden=50, nepochs=5, rnn_type='GRU')
+
 
     # train model
     model.train(force_training=True)
@@ -344,7 +349,7 @@ if __name__=='__main__':
     print()
 
     # test the model against the test dataset
-    model.test(test_amount=2000)
+    model.test(test_amount=5000)
     print('relevance',model.test_score)
     print()
 

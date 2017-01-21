@@ -38,6 +38,7 @@ class Ngram(model.Model):
         self.n = n  # the n in n-gram
         self.k = k
         self.train_amount = train_amount
+        #. update this to follow rnnkeras convention
         self.name = "ngram (n=%d)" % n
         if name_includes:
             self.name += '-' + '-'.join([key+'-'+str(self.__dict__[key]) for key in name_includes]) # eg 'train_amount-1000'

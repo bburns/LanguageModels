@@ -74,16 +74,17 @@ class Experiment(object):
             #. get data using this param value here?
             for (model_class, model_params) in self.model_specs:
                 # get a dict with all parameter names and values
-                # name_includes = model_params.keys() # eg ['train_amount']
-                name_includes = list(model_params.keys()) # eg ['train_amount']
                 params = model_params.copy()
                 params[param_name] = param_value
                 print(params)
-                model = model_class(self.data, name_includes=name_includes, **params)
+                model = model_class(self.data, **params)
                 cols.append(model.name)
                 model.train(force_training) # loads/saves model as needed
                 # model.train_results # dataframe with loss vs epoch etc - want to save this to another table
                 tr = model.train_results[['Epoch','Loss']]
+                # print(params)
+                # print(model.name)
+                # print(model.rnn_type)
                 tr = tr.rename(columns={'Loss': model.name}) # rename Loss column to name of model
                 # print(tr)
                 train_losses = pd.merge(train_losses, tr, how='outer', on='Epoch')
@@ -96,6 +97,7 @@ class Experiment(object):
                 train_time_row.append(model.train_time)
                 test_time_row.append(model.test_time)
                 test_score_row.append(model.test_score)
+                # del model
             train_times.append(train_time_row)
             test_times.append(test_time_row)
             test_scores.append(test_score_row)
@@ -325,14 +327,42 @@ if __name__ == '__main__':
 
 
     # # 2017-01-19 1am gut - more vocab and hidden, fewer epochs
-    name = "train amount"
+    # name = "train amount"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':3}], # kills cpu & memory!
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # # params = {'train_amount':[0.05,0.1]}
+    # params = {'train_amount':[0.05]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # exper.plot()
+
+    # # 2017-01-21 8am gut - removed one-hot from input
+    # name = "train amount"
+    # specs = [
+    #     [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':3}],
+    # ]
+    # data = wp.data.Data('gutenbergs')
+    # # params = {'train_amount':[0.05,0.1]}
+    # params = {'train_amount':[0.01,0.02,0.03,0.04,0.05]}
+    # exper = Experiment(name, specs, data, params)
+    # exper.run()
+    # exper.plot()
+
+    # 2017-01-21 12pm gut - simple vs gru
+    name = "train amount, gru"
     specs = [
-        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':3}], # kills cpu & memory!
+        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'Simple'}],
+        [wp.rnn_keras.RnnKeras, {'nvocab':1000,'nhidden':50,'nepochs':2, 'rnn_type':'GRU'}],
     ]
     data = wp.data.Data('gutenbergs')
-    # params = {'train_amount':[0.05,0.1]}
-    params = {'train_amount':[0.05]}
-    exper = Experiment(name, specs, data, params)
+    params = {'train_amount':[0.01,0.02,0.03]}
+    # params = {'train_amount':[0.01]}
+    exper = Experiment(name, specs, data, params, test_amount=5000)
     exper.run()
     exper.plot()
+
+
+    #. larger vocab size
 
