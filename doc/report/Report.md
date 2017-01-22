@@ -23,6 +23,7 @@ Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
 "Language modeling---or more specifically, history-based language modeling (as opposed to full sentence models)---is the task of predicting the next word in a text given the previous words."
+"Language modeling is the art of determining the probability of a sequence of words."
 
 Word prediction is the task of predicting the most likely words following the
 preceding text. This has many applications, such as suggesting the next word as
