@@ -418,6 +418,8 @@ eg keep weights from getting too large, because _________ (leads to overfitting?
 L1, L2, other?
 early stopping is a form of regularization
 see https://keras.io/regularizers/
+dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting. [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
+
 
 Embeddings
 https://www.tensorflow.org/tutorials/word2vec/
