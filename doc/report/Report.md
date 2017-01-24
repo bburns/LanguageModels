@@ -22,21 +22,19 @@ January 1, 2016
 Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
-"Language modeling---or more specifically, history-based language modeling (as opposed to full sentence models)---is the task of predicting the next word in a text given the previous words."
-"Language modeling is the art of determining the probability of a sequence of words."
-
 Word prediction is the task of predicting the most likely words following the
-preceding text. This has many applications, such as suggesting the next word as
-text is entered, as an aid in resolving ambiguity in speech and handwriting
-recognition, or machine translation.
+preceding text - in the literature this is known as Language modeling. It has
+many applications, such as suggesting the next word as text is entered, as an
+aid in resolving ambiguity in speech and handwriting recognition, and machine
+translation.
 
 The generation of a likely word given prior words goes back to Claude Shannon's
 work on information theory (Shannon 1948) based in part on Markov models
-introduced by Andrei Markov (Markov 1913) - counts of encountered word tuples are
-used to estimate the conditional probability of seeing a word given the prior
-words. These so called n-grams formed the basis of commercial word prediction
-software in the 1980's, eventually supplemented with similar syntax and part of
-speech predictions (Carlberger 1997).
+introduced by Andrei Markov (Markov 1913) - counts of encountered word sequences
+are used to estimate the conditional probability of seeing a word given the
+prior words. These so called n-grams formed the basis of commercial word
+prediction software in the 1980's, eventually supplemented with similar syntax
+and part of speech predictions (Carlberger 1997).
 
 More recently, distributed representations of words have been used in recurrent
 neural networks (RNNs), which can better handle data sparsity and allow more of
@@ -47,7 +45,13 @@ evaluate the models - we'll be using a million words from books digitized by the
 Gutenberg Project (Gutenberg 2016) for evaluation. Others use larger corpora,
 e.g. Google's billion word corpus (Chelba 2013). Depending on the problem
 domain, different corpora might be more appropriate, e.g. training on a
-chat/texting corpus would be good for a phone text entry application.
+chat/texting corpus would be more applicable for a phone text entry application.
+
+
+<!-- "Language modeling---or more specifically, history-based language modeling (as -->
+<!-- opposed to full sentence models)---is the task of predicting the next word in a -->
+<!-- text given the previous words." -->
+<!-- "Language modeling is the art of determining the probability of a sequence of words." -->
 
 
 "The main advantage of NNLMs over n-grams is that history is no longer seen as
@@ -59,7 +63,8 @@ history and not just n -1 previous words, thus the model can theoretically repre
 context patterns
 however the error gradients quickly vanish as they get backpropagated in time
 (in rare cases the errors can explode), so several steps of unfolding are
-sufficient (this is sometimes referred to as truncated BPTT). While for word
+sufficient (this is sometimes referred to as truncated BPTT).
+**While for word
 based LMs, it seems to be sufficient to unfold network for about 5 time steps,
 it is interesting to notice that this still allows the network to learn to store
 information for more than 5 time steps.
@@ -72,7 +77,7 @@ gradients. In my experiments, I did limit maximum size of gradients of errors
 that get accumulated in the hidden neurons to be in a range < -15; 15 >. This
 greatly increases stability of the training, and otherwise it would not be
 possible to train RNN LMs successfully on large data sets.
-
+(Mikolov 2012)
 
 ### Problem Statement
 
@@ -98,8 +103,11 @@ performance for a given amount of training time [cite!].
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-The primary metric used to evaluate the performance of the models will be
-**relevance**, which we'll define as
+The metrics used to evaluate the performance of the models are relevance,
+accuracy, and perplexity.
+
+The primary metric used to evaluate the models is **relevance**, which we'll
+define as
 
 > **Relevance** = # correct predictions / # total predictions
 
@@ -108,9 +116,9 @@ list of *k* most likely words. This is relevant to the task of presenting the
 user with a list of most likely next words as they are entering text - we'll use
 *k* = 3 for evaluation.
 
-We'll also report the **accuracy** in places, which measures the number of
-predictions where the most likely prediction is the correct one (which is just
-*relevance* where *k* = 1).
+We'll also report the **accuracy**, which measures the number of predictions
+where the most likely prediction is the correct one (which is *relevance* where
+*k* = 1).
 
 Results in the literature are often reported as **perplexity**, which gives an idea
 of how well the model has narrowed down the possible choices for the next word -
@@ -128,10 +136,13 @@ _Abnormalities_ or characteristics about the data or input that need to
 be addressed have been identified. -->
 
 The training and testing data are obtained from ten books from Project
-Gutenberg, totalling 1,008,825 words -
+Gutenberg, totalling roughly one million words -
 
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
 <!-- this is output from print(util.table(data.analyze())) -->
+
+
+-> subtract one from chars/word for space!
 
 \small
 
@@ -151,13 +162,12 @@ Gutenberg, totalling 1,008,825 words -
 
 \normalsize
 
-The grade level is calculated using the Coleman-Liau Index (Coleman 1975).
+The grade level is calculated using the Coleman-Liau Index (Coleman 1975), which
+is based on the average word and sentence lengths.
 
 The Gutenberg text number is listed in parentheses, and the texts can be found
 online - e.g. Alice in Wonderland can be found at
 http://www.gutenberg.org/etext/28885.
-
-
 
 
 Some sample text:
@@ -178,13 +188,15 @@ Some sample text:
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
-![Sentence length distributions](images/sentence_lengths_boxplot.png)
+<!-- The sentence length distributions for the different texts are as follows - note -->
+<!-- that both of M. R. James' works have similar sentence length distributions. -->
+
+<!-- ![Sentence length distributions](images/sentence_lengths_boxplot.png) -->
 
 
-make a histogram of sentence lengths
-but why?
-keyword is *relevant* - what vis would be relevant for this problem?
-and *thorough discussion* - needs to be something interesting. 
+<!-- the keyword is *relevant* - what vis would be relevant for this problem? -->
+<!-- and *thorough discussion* - needs to be something interesting.  -->
+
 
 we're doing word prediction
 maybe something more like information content?
@@ -197,9 +209,18 @@ how calculate? ngrams?
 use to compare texts?
 plot against mean/median sentence lengths?
 
+what if compressed the text and compared percent reduction against something? 
+but also depends on length of text. 
+
+
+say alphabet is 26 characters, which is log_2 of 26 = (log 26 2) = 4.70 bits/character
+say each word is 5 characters - if completely random, then this would be (* 5 4.70) 23.5 bits per word
+this would be the 
 
 
 
+->t-sne plot of some words using the glove 50dim word vectors - eg some agents
+  (rabbit, Alice) verbs (said, was, fell), adjectives (white, tall, short, mad)
 
 
 
@@ -218,8 +239,8 @@ context, while n-grams are effectively limited to about 4 words of context (a
 amounts of resources in terms of training data and storage space, as the
 resources required grow exponentially with the amount of context.
 
-An RNN is able to make predictions based on words further back in the sequence,
-e.g. 10 words, because it can represent words more compactly with an internal
+An RNN is able to make predictions based on words using arbitrarily long
+context, because it can represent words more compactly with an internal
 representation (embedding in a vector space), which also allows words to have
 arbitrary degrees of similarities to other words. Hence, for instance, a cat can
 be predicted to 'sleep', even if the model was only trained on a dog sleeping,
@@ -233,8 +254,9 @@ predictions about the next word.
 
 ![RNN (LeCun 2015)](images/rnn_nature.jpg)
 
-<!-- is this correct about U? read something different.  -->
-<!-- what about matrix E the embedding layer? it's separate from U, eh? -->
+-> is this correct about U? read something different. what about matrix E the
+   embedding layer? it's separate from U...
+
 The matrix **U** amounts to a table of word embeddings in a vector space of many
 dimensions (which could be e.g. 50-300) - each word in the vocabulary
 corresponds with a row in the table, and the dot product between any two words
@@ -243,7 +265,7 @@ word embeddings, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014),
 can be used to save on training time.
 
 The matrix **W** acts as a filter on the internal hidden state, which represents
-the prior context.
+the prior context of arbitrary length.
 
 The matrix **V** allows each word in the vocabulary to 'vote' on how likely it
 thinks it will be next, based on the context (current + previous words). The
@@ -251,23 +273,24 @@ softmax layer then converts these scores into probabilities, so the top *k* most
 likely words can be found for a given context.
 
 
+A LSTM (Long Short-Term Memory) RNN (Hochreiter 1997) works similarly, but has a
+'memory cell' at the center, which has 'switches' for storing memory, or
+forgetting memory, and the state of the switches can be learned along with the
+rest of the parameters. This turns out to be easier to train than plain RNN's,
+which have problems with vanishing and exploding gradients, which make them slow
+and difficult to train.
+
+A GRU (Gated Recurrent Unit) RNN (Chung 2014) is similar to an LSTM, but has
+fewer parameters, so is a bit easier to train - so this is what we will use for our
+base RNN.
+
 -> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs
    accuracy, perplexity
 
--> explain LSTM and GRU briefly
-
 see http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
 incls diagrams
-"GRUs have fewer parameters (U and W are smaller) and thus may train a bit
-faster or need less data to generalize. On the other hand, if you have enough
-data, the greater expressive power of LSTMs may lead to better results."
-
--> lstm's came in 1997 [cite], gru 2014 - simpler [cite] (Chung 2014)
 
 -> then attention 2015? discuss briefly, cite
-
-will use Keras (Chollet 2015), a library that simplifies the use of TensorFlow [cite], e.g. 
--> compare Keras code vs TensorFlow for same simple RNN
 
 
 -> compare word-level with character-level rnn learning - maybe character level
@@ -315,41 +338,21 @@ characteristics about the data or input that needed to be addressed have been
 corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
-read texts into string,
-headers and footers left in as noise
-tokenize to top nvocab words
-oov words are NOT RECORDED
-punctuation treated as separate tokens
-lowercased - could leave in case but would reduce the amount of vocabulary that could be learned for same time and memory
+The text files were downloaded from the Gutenberg site - they each contain
+header and footer information separate from the actual text, including a
+Gutenberg license, but these are left in place, and read together into a single
+Python UTF-8 string. The string is split into paragraphs, which are then
+shuffled randomly - this will allow the RNN to learn more context than if the
+text was split on sentences and scrambled.
 
-The texts were first preprocessed to remove punctuation and converted to
-lowercase - better accuracy could be achieved by leaving text case as it is, but
-this would increase the vocabulary size by a significant factor, and so require
-more training time.
+The paragraphs are combined, and the text is converted to lowercase to increase
+the amount of vocabulary that can be learned for a given amount of time and
+memory. The text is then tokenized to the top NVOCAB words - the rarer words are
+**not recorded** - punctuation marks are treated as separate tokens.
 
-
-split into train, validation, test sets - 
-
-x_train will be O(N*nelements) ~ 10 * 1mil * 8bytes = 80mb
-y_train one-hot will be O(nelements*NVOCAB) ~ 1mil * 10k * 8bytes = 80gb ! even 1k vocab -> 8gb
-so need to use generators
-unless use sparse_categorical_crossentropy, then y_train would just be O(nelements) ~ 1mil ~ 8mb
-
-
-
-
-<!-- The raw Gutenberg files were downloaded, then cleaned, merged, and split into -->
-<!-- training, validation, and test sets. -->
-
-<!-- To clean the files, headers and footers with Project Gutenberg and license -->
-<!-- information were removed via regular expression searches for the delimiter -->
-<!-- strings. Some texts contain titlepages and tables of contents also, which were -->
-<!-- removed similarly where possible.  -->
-
-<!-- Once the files were cleaned, they were merged into a single file, which was then -->
-<!-- split into the training, validation, and test files. This was done by parsing the -->
-<!-- text into paragraphs, and portioning them out to the different files based on the -->
-<!-- desired proportions (e.g. 95% training, 2.5% validation, 2.5% testing). -->
+The sequence of tokens is then split into training, validation, and test sets -
+the validation and test sets were set at 10,000 tokens, so the training set has
+roughly 1,000,000 tokens.
 
 
 ### Implementation
@@ -358,19 +361,51 @@ unless use sparse_categorical_crossentropy, then y_train would just be O(nelemen
 with the given datasets or input data has been thoroughly documented.
 Complications that occurred during the coding process are discussed. -->
 
+
+The RNN was implemented with Python using Keras (Chollet 2015) with a TensorFlow
+backend (Abadi 2015). Different architectures and parameters were explored, and
+compared based on their loss and accuracy scores. The most promising model was
+then selected for further analysis.
+
+-> compare Keras code vs TensorFlow for a simple RNN?
+
+Keras is a wrapper around TensorFlow that simplifies its use - e.g.
+
+
+The basic architecture of the RNN is a word embedding input layer, then a GRU
+RNN with one or two layers, a densely connected output layer, and a softmax
+layer to convert the outputs to probabilities.
+
+The RNN was initially implemented using one-hot encoded token sequences, but
+this proved to be infeasible memory-wise - the training labels needed to store ~
+ntraining_elements * nvocab integers, which would be ~ 1e6 * 1e4 = 1e10 integers,
+or roughly 1e11 bytes = 100 GB, too large for a 16 GB system. 
+
+Fortunately Keras/TensorFlow allows the use of 'sparse' sequences, so they can
+be fed sequences of integers, and output the same.
+
+<!-- x_train will be O(N*nelements) ~ 10 * 1mil * 8bytes = 80mb -->
+<!-- y_train one-hot will be O(nelements*NVOCAB) ~ 1mil * 10k * 8bytes = 80gb ! even 1k vocab -> 8gb -->
+<!-- so need to use generators -->
+<!-- unless use sparse_categorical_crossentropy, then y_train would just be O(nelements) ~ 1mil ~ 8mb -->
+
+
 Training
 
-For the training step, the baseline trigram predictor was fed all word
-triples, which were accumulated in the nested dictionaries and converted to
-probabilities. For the RNN predictor, all word sequences were fed to the
-network and trained for a certain number of epochs, or until the cross-entropy
-loss stopped improving for a certain number of epochs.
+For the training step, the training sequence was fed to the network, which was
+trained for a certain number of epochs.
+
+
+
+
+
+Each epoch
 
 Testing
 
-For the testing step, the baseline and RNN predictors were fed word sequences
-from the test data, and the top *k* predicted words were compared against the
-actual word, and a *relevance* score tallied.
+For the testing step, the RNN predictors were fed word sequences from the test
+data, and the top *k* predicted words were compared against the actual word, and
+a *relevance* score tallied.
 
 <!-- Training sets of increasing sizes were used - 1k, 10k, 100k, 1 million words, -->
 <!-- and the results recorded for comparison. Timing and memory information were also -->
@@ -414,6 +449,12 @@ mikolov 2010
 keeps logs of experiments done, makes plots
 
 
+N-gram baseline
+
+For the training step, the baseline trigram predictor was fed all word
+triples, which were accumulated in the nested dictionaries and converted to
+probabilities. 
+
 
 ### Refinement
 
@@ -444,7 +485,7 @@ L1, L2, other?
 early stopping is a form of regularization
 see https://keras.io/regularizers/
 dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting. [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
-
+(Srivatsava 2014)
 
 Embeddings
 https://www.tensorflow.org/tutorials/word2vec/
@@ -485,6 +526,19 @@ for rnns show the Loss vs epoch graphs to show increasing accuracy
 show overfitting training curves - too much training -> overfitting
 
 robustness - ie how performs in the wild - try on some non-gutenberg text - compare diff models - ngrams, rnns
+
+
+perplexity
+
+"The lowest perplexity that has been published on the Brown Corpus (1 million
+words of American English of varying topics and genres) as of 1992 is indeed
+about 247 per word, corresponding to a cross-entropy of log2 247 = 7.95 bits per
+word or 1.75 bits per letter using a trigram model. It is often possible to
+achieve lower perplexity on more specialized corpora, as they are more
+predictable."
+uh... what's more uptodate value
+
+
 
 
 
@@ -548,7 +602,9 @@ one or two particular aspects of the project they found interesting or
 difficult. -->
 
 it took a while to set up a good test harness and data preprocessing pipeline.
+then getting good architecture and parameters took a while, because each epoch took so long ~30mins
 
+**"Have in mind, however, that depending on your application, moving away from traditional n-grams with smoothing techniques may not be the best approach, since the state-of-the-art RNN-based models can be very slow to train."
 
 
 
@@ -568,35 +624,41 @@ better training/testing - distribute text by paragraphs, not sentences
 
 ## References
 
+(Abadi 2015) Abadi, Martin, et al. "TensorFlow: Large-scale machine learning on heterogeneous systems." Software available from tensorflow.org, 2015.
+
 (Bengio 2003) Bengio, Yoshua, et al. "A neural probabilistic language model." Journal of Machine Learning Research, Feb 2003.
 
-(Bird 2009) Bird, Steven, Edward Loper and Ewan Klein, Natural Language Processing with Python ("NLTK Book"). O'Reilly Media Inc., 2009. http://nltk.org/book
+(Bird 2009) Bird, Steven, Edward Loper and Ewan Klein, "Natural Language Processing with Python (NLTK Book)." O'Reilly Media Inc., 2009. http://nltk.org/book
 
 (Carlberger 1997) Carlberger, Alice, et al. "Profet, a new generation of word prediction: An evaluation study." Proceedings, ACL Workshop on Natural Language Processing for Communication Aids, 1997.
 
 (Chelba 2013) Chelba, Ciprian, et al. "One billion word benchmark for measuring progress in statistical language modeling." arXiv preprint arXiv:1312.3005, 2013.
 
-(Chollet 2015) Chollet, Francois, Keras, https://github.com/fchollet/keras, 2015
+(Chollet 2015) Chollet, Francois, "Keras." https://github.com/fchollet/keras, 2015
 
-(Chung 2014) Chung, Junyoung, et al. "Empirical evaluation of gated recurrent neural networks on sequence modeling." (2014) >>>>>>>>>link
+(Chung 2014) Chung, Junyoung, et al. "Empirical evaluation of gated recurrent neural networks on sequence modeling." (2014) _______________link
 
-(Coleman 1975) Coleman, Meri; and Liau, T. L., "A computer readability formula designed for machine scoring", Journal of Applied Psychology, Vol. 60, pp. 283 - 284, 1975.
+(Coleman 1975) Coleman, Meri; and Liau, T. L., "A computer readability formula designed for machine scoring." Journal of Applied Psychology, Vol. 60, pp. 283 - 284, 1975.
 
 (Gutenberg 2016) Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
 
-(LeCun 2015) LeCun, Bengio, Hinton, "Deep learning", Nature 521, 436 - 444 (28 May 2015) doi:10.1038/nature14539
+(Hochreiter 1997) Hochreiter, Sepp, "Long Short-Term Memory." Neural Computation 9(8), 1997. 
+
+(LeCun 2015) LeCun, Bengio, Hinton, "Deep learning." Nature 521, 436 - 444 (28 May 2015) doi:10.1038/nature14539
 
 (Markov 1913) Markov, Andrei, "An example of statistical investigation of the text Eugene Onegin concerning the connection of samples in chains." Bulletin of the Imperial Academy of Sciences of St. Petersburg, Vol 7 No 3, 1913. English translation by Nitussov, Alexander et al., Science in Context, Vol 19 No 4, 2006
 
-(Mikolov 2013) Mikolov, Tomas; et al. "Efficient Estimation of Word Representations in Vector Space". arXiv:1301.3781, 2013.
+(Mikolov 2012) Mikolov, Tomas, PhD thesis, "Statistical Language Models Based on Neural Networks." http://www.fit.vutbr.cz/~imikolov/rnnlm/thesis.pdf, 2012
 
-(Pennington 2014) Pennington, Jeffrey et al.. "GloVe: Global Vectors for Word Representation". http://nlp.stanford.edu/projects/glove/ 2014
+(Mikolov 2013) Mikolov, Tomas; et al. "Efficient Estimation of Word Representations in Vector Space." arXiv:1301.3781, 2013.
 
->(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton" Project Para. Cornell Aeronautical Laboratory, 1957.
+(Pennington 2014) Pennington, Jeffrey et al.. "GloVe: Global Vectors for Word Representation." http://nlp.stanford.edu/projects/glove/, 2014
+
+>(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton." Project Para. Cornell Aeronautical Laboratory, 1957.
 
 (Shannon 1948) Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
 
->(shri... 2014) shri with hinton on dropout 2014
+(Srivatsava 2014) Srivatsava, Nitish, "Dropout: A Simple Way to Prevent Neural Networks from Overfitting." Journal of Machine Learning Research 15, 2014. 
 
 
 
