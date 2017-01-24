@@ -315,18 +315,41 @@ characteristics about the data or input that needed to be addressed have been
 corrected. If no data preprocessing is necessary, it has been clearly justified.
 -->
 
-The raw Gutenberg files were downloaded, then cleaned, merged, and split into
-training, validation, and test sets.
+read texts into string,
+headers and footers left in as noise
+tokenize to top nvocab words
+oov words are NOT RECORDED
+punctuation treated as separate tokens
+lowercased - could leave in case but would reduce the amount of vocabulary that could be learned for same time and memory
 
-To clean the files, headers and footers with Project Gutenberg and license
-information were removed via regular expression searches for the delimiter
-strings. Some texts contain titlepages and tables of contents also, which were
-removed similarly where possible. 
+The texts were first preprocessed to remove punctuation and converted to
+lowercase - better accuracy could be achieved by leaving text case as it is, but
+this would increase the vocabulary size by a significant factor, and so require
+more training time.
 
-Once the files were cleaned, they were merged into a single file, which was then
-split into the training, validation, and test files. This was done by parsing the
-text into paragraphs, and portioning them out to the different files based on the
-desired proportions (e.g. 95% training, 2.5% validation, 2.5% testing).
+
+split into train, validation, test sets - 
+
+x_train will be O(N*nelements) ~ 10 * 1mil * 8bytes = 80mb
+y_train one-hot will be O(nelements*NVOCAB) ~ 1mil * 10k * 8bytes = 80gb ! even 1k vocab -> 8gb
+so need to use generators
+unless use sparse_categorical_crossentropy, then y_train would just be O(nelements) ~ 1mil ~ 8mb
+
+
+
+
+<!-- The raw Gutenberg files were downloaded, then cleaned, merged, and split into -->
+<!-- training, validation, and test sets. -->
+
+<!-- To clean the files, headers and footers with Project Gutenberg and license -->
+<!-- information were removed via regular expression searches for the delimiter -->
+<!-- strings. Some texts contain titlepages and tables of contents also, which were -->
+<!-- removed similarly where possible.  -->
+
+<!-- Once the files were cleaned, they were merged into a single file, which was then -->
+<!-- split into the training, validation, and test files. This was done by parsing the -->
+<!-- text into paragraphs, and portioning them out to the different files based on the -->
+<!-- desired proportions (e.g. 95% training, 2.5% validation, 2.5% testing). -->
 
 
 ### Implementation
@@ -335,10 +358,7 @@ desired proportions (e.g. 95% training, 2.5% validation, 2.5% testing).
 with the given datasets or input data has been thoroughly documented.
 Complications that occurred during the coding process are discussed. -->
 
-The texts were first preprocessed to remove punctuation and converted to
-lowercase - better accuracy could be achieved by leaving text case as it is, but
-this would increase the vocabulary size by a significant factor, and so require
-more training time.
+Training
 
 For the training step, the baseline trigram predictor was fed all word
 triples, which were accumulated in the nested dictionaries and converted to
@@ -346,13 +366,15 @@ probabilities. For the RNN predictor, all word sequences were fed to the
 network and trained for a certain number of epochs, or until the cross-entropy
 loss stopped improving for a certain number of epochs.
 
+Testing
+
 For the testing step, the baseline and RNN predictors were fed word sequences
 from the test data, and the top *k* predicted words were compared against the
 actual word, and a *relevance* score tallied.
 
-Training sets of increasing sizes were used - 1k, 10k, 100k, 1 million words,
-and the results recorded for comparison. Timing and memory information were also
-recorded for all processes for analysis.
+<!-- Training sets of increasing sizes were used - 1k, 10k, 100k, 1 million words, -->
+<!-- and the results recorded for comparison. Timing and memory information were also -->
+<!-- recorded for all processes for analysis. -->
 
 
 "Input vector x(t) represents word in time t encoded using 1-of-N coding and
