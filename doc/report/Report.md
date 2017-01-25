@@ -79,6 +79,7 @@ greatly increases stability of the training, and otherwise it would not be
 possible to train RNN LMs successfully on large data sets.
 (Mikolov 2012)
 
+
 ### Problem Statement
 
 <!-- The problem which needs to be solved is clearly defined.
@@ -141,24 +142,23 @@ Gutenberg, totalling roughly one million words -
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
 <!-- this is output from print(util.table(data.analyze())) -->
 
-
 -> subtract one from chars/word for space!
 
 \small
 
-| Text                                                         |   Words | Chars / Word   | Words / Sentence   | Unique Words   |   Grade Level |
-|--------------------------------------------------------------+---------+----------------+--------------------+----------------+---------------|
-| 1851 Nathaniel Hawthorne The House of the Seven Gables (G77) |   96217 | 6.2            | 21.2               | 22214          |            12 |
-| 1862 Victor Hugo Les Miserables (G135)                       |  516244 | 6.2            | 14.6               | 82177          |            10 |
-| 1865 Lewis Carroll Alice in Wonderland (G28885)              |   26758 | 5.6            | 16.4               | 6346           |             9 |
-| 1883 Robert Louis Stevenson Treasure Island (G120)           |   62826 | 5.7            | 16.9               | 13894          |             8 |
-| 1898 Henry James The Turn of the Screw (G209)                |   38663 | 5.9            | 15.4               | 9417           |             8 |
-| 1899 Joseph Conrad Heart of Darkness (G219)                  |   34833 | 6.0            | 14.5               | 9871           |             9 |
-| 1905 M R James Ghost Stories of an Antiquary (G8486)         |   42338 | 5.9            | 19.6               | 10882          |             9 |
-| 1907 Arthur Machen The Hill of Dreams (G13969)               |   60528 | 6.0            | 25.7               | 14406          |            10 |
-| 1908 Kenneth Graham The Wind in the Willows (G289)           |   54160 | 5.9            | 16.8               | 13102          |             9 |
-| 1919 P G Woodhouse My Man Jeeves (G8164)                     |   46947 | 5.8            | 10.1               | 10917          |             8 |
-| 1920 M R James A Thin Ghost and Others (G20387)              |   29311 | 5.7            | 21.3               | 7767           |             8 |
+| Text                                                         |    Words | Letters / Word  | Words / Sentence  |  Unique Words  |   Grade Level |
+|--------------------------------------------------------------+----------+-----------------+-------------------+----------------+---------------|
+| 1851 Nathaniel Hawthorne The House of the Seven Gables (G77) |   96,217 | 5.2             | 21.2              |        22,214  |            12 |
+| 1862 Victor Hugo Les Miserables (G135)                       |  516,244 | 5.2             | 14.6              |        82,177  |            10 |
+| 1865 Lewis Carroll Alice in Wonderland (G28885)              |   26,758 | 4.6             | 16.4              |         6,346  |             9 |
+| 1883 Robert Louis Stevenson Treasure Island (G120)           |   62,826 | 4.7             | 16.9              |        13,894  |             8 |
+| 1898 Henry James The Turn of the Screw (G209)                |   38,663 | 4.9             | 15.4              |         9,417  |             8 |
+| 1899 Joseph Conrad Heart of Darkness (G219)                  |   34,833 | 5.0             | 14.5              |         9,871  |             9 |
+| 1905 M R James Ghost Stories of an Antiquary (G8486)         |   42,338 | 4.9             | 19.6              |        10,882  |             9 |
+| 1907 Arthur Machen The Hill of Dreams (G13969)               |   60,528 | 5.0             | 25.7              |        14,406  |            10 |
+| 1908 Kenneth Graham The Wind in the Willows (G289)           |   54,160 | 4.9             | 16.8              |        13,102  |             9 |
+| 1919 P G Woodhouse My Man Jeeves (G8164)                     |   46,947 | 4.8             | 10.1              |        10,917  |             8 |
+| 1920 M R James A Thin Ghost and Others (G20387)              |   29,311 | 4.7             | 21.3              |         7,767  |             8 |
 
 \normalsize
 
@@ -237,9 +237,9 @@ the adjectives, verbs, and nouns/agents are all grouped together:
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
-Until recently, n-grams were state of the art in word prediction [cite ] -
-Recurrent Neural Networks were able to beat them in 2003, though at the cost of
-greater training time (Bengio 2003).
+Until recently, n-grams were state of the art in word prediction - Recurrent
+Neural Networks were able to beat them in 2003, though at the cost of greater
+training time (Bengio 2003).
 
 A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
 context, while n-grams are effectively limited to about 4 words of context (a
