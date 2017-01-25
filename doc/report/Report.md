@@ -162,6 +162,13 @@ Gutenberg, totalling roughly one million words -
 
 \normalsize
 
+
+
+
+
+
+
+
 The grade level is calculated using the Coleman-Liau Index (Coleman 1975), which
 is based on the average word and sentence lengths.
 
