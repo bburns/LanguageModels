@@ -163,12 +163,6 @@ Gutenberg, totalling roughly one million words -
 \normalsize
 
 
-
-
-
-
-
-
 The grade level is calculated using the Coleman-Liau Index (Coleman 1975), which
 is based on the average word and sentence lengths.
 
@@ -200,35 +194,42 @@ discussion. Visual cues are clearly defined. -->
 
 <!-- ![Sentence length distributions](images/sentence_lengths_boxplot.png) -->
 
+Neural networks are able to represent words in a vector space, e.g. as an array
+of 300 floating point numbers - this allows similar words to be closer together
+in vector space, and to trigger similar following words. Pre-trained word
+embeddings, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014), can be
+used to save on training time.
+
+For this project we'll use 50-dimensional word vectors from GloVe - this plot
+shows some sample word embeddings projected to 2 dimensions using PCA - note how
+the adjectives, verbs, and nouns/agents are all grouped together:
+
+![Sample word embeddings](images/word_embeddings.png)
+
+
 
 <!-- the keyword is *relevant* - what vis would be relevant for this problem? -->
 <!-- and *thorough discussion* - needs to be something interesting.  -->
 
 
-we're doing word prediction
-maybe something more like information content?
-ie how compressible the text is?
-ie how predictable it is?
-cf pure randomness (log2 26 ~ (log 26 2) ~ 4.7bits?)
-how calculate? ngrams? 
+<!-- we're doing word prediction -->
+<!-- maybe something more like information content? -->
+<!-- ie how compressible the text is? -->
+<!-- ie how predictable it is? -->
+<!-- cf pure randomness (log2 26 ~ (log 26 2) ~ 4.7bits?) -->
+<!-- how calculate? ngrams?  -->
 
--> information content of english - shannon paper
-use to compare texts?
-plot against mean/median sentence lengths?
+<!-- -> information content of english - shannon paper -->
+<!-- use to compare texts? -->
+<!-- plot against mean/median sentence lengths? -->
 
-what if compressed the text and compared percent reduction against something? 
-but also depends on length of text. 
-
-
-say alphabet is 26 characters, which is log_2 of 26 = (log 26 2) = 4.70 bits/character
-say each word is 5 characters - if completely random, then this would be (* 5 4.70) 23.5 bits per word
-this would be the 
+<!-- what if compressed the text and compared percent reduction against something?  -->
+<!-- but also depends on length of text.  -->
 
 
-
-->t-sne plot of some words using the glove 50dim word vectors - eg some agents
-  (rabbit, Alice) verbs (said, was, fell), adjectives (white, tall, short, mad)
-
+<!-- say alphabet is 26 characters, which is log_2 of 26 = (log 26 2) = 4.70 bits/character -->
+<!-- say each word is 5 characters - if completely random, then this would be (* 5 4.70) 23.5 bits per word -->
+<!-- this would be the  -->
 
 
 ### Algorithms and Techniques
@@ -268,8 +269,7 @@ The matrix **U** amounts to a table of word embeddings in a vector space of many
 dimensions (which could be e.g. 50-300) - each word in the vocabulary
 corresponds with a row in the table, and the dot product between any two words
 gives their similarity, once the network is trained. Alternatively, pre-trained
-word embeddings, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014),
-can be used to save on training time.
+word embeddings can be used to save on training time.
 
 The matrix **W** acts as a filter on the internal hidden state, which represents
 the prior context of arbitrary length.
