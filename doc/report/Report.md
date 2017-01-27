@@ -23,9 +23,9 @@ Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
 Word prediction is the task of predicting the most likely words following the
-preceding text - in the literature this is known as Language modeling. It has
-many applications, such as suggesting the next word as text is entered, as an
-aid in resolving ambiguity in speech and handwriting recognition, and machine
+preceding text - this is also known as *language modeling*. It has many
+applications, such as suggesting the next word as text is entered, as an aid in
+resolving ambiguity in speech and handwriting recognition, and in machine
 translation.
 
 The generation of a likely word given prior words goes back to Claude Shannon's
@@ -36,9 +36,30 @@ prior words. These so called n-grams formed the basis of commercial word
 prediction software in the 1980's, eventually supplemented with similar syntax
 and part of speech predictions (Carlberger 1997).
 
-More recently, distributed representations of words have been used in recurrent
-neural networks (RNNs), which can better handle data sparsity and allow more of
-the context to affect the prediction (Bengio 2003).
+More recently, distributed representations of words have been used (so called
+*word embeddings*), in which each word is represented by a vector in some
+low-dimensional vector space (e.g. as a vector of 100 floating point numbers) -
+these can better handle data sparsity and allow more of the context to affect
+the prediction, as they can represent similar words as being close together in
+vector space. Hence, for instance, a cat can be predicted to 'sleep', even if
+the model was only trained on a dog sleeping, due to the similarity of the words
+'dog' and 'cat'.
+
+Feed-forward networks with a fixed amount of context were initially used (Bengio
+2003), then Recurrent Neural Networks (RNNs) as training them became more
+feasible [cite]. <<<<<<< An RNN can make predictions based on arbitrary
+amounts of context because it effectively stores the history of everything it's
+seen.
+
+Both learn word vectors as they are trained, though pre-trained word embeddings
+are available, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014), which
+can be used in place of the input layer to save on training time. These have
+only become available recently, due to the computational complexity of
+calculating them.
+
+The rest of the neural network learns the language model - it effectively learns
+a function that maps a sequence of input word vectors to the probability of
+the next word in the sequence, over the whole vocabulary.
 
 The problem is a supervised learning task, and any text can be used to train and
 evaluate the models - we'll be using a million words from books digitized by the
@@ -53,31 +74,30 @@ chat/texting corpus would be more applicable for a phone text entry application.
 <!-- text given the previous words." -->
 <!-- "Language modeling is the art of determining the probability of a sequence of words." -->
 
-
-"The main advantage of NNLMs over n-grams is that history is no longer seen as
-exact sequence of n - 1 words H, but rather as a projection of H into some lower
-dimensional space. This reduces number of parameters in the model that have to
-be trained, resulting in automatic clustering of similar histories." mikolov 2012 thesis
-The hidden layer of RNN represents all previous
-history and not just n -1 previous words, thus the model can theoretically represent long
-context patterns
-however the error gradients quickly vanish as they get backpropagated in time
-(in rare cases the errors can explode), so several steps of unfolding are
-sufficient (this is sometimes referred to as truncated BPTT).
-**While for word
-based LMs, it seems to be sufficient to unfold network for about 5 time steps,
-it is interesting to notice that this still allows the network to learn to store
-information for more than 5 time steps.
-Similarly, network that is trained by normal backpropagation can be seen as a
-network trained with one unfolding step, and still as we will see later, even
-this allows the network to learn longer context patterns, such as 4-gram
-information.
-A simple solution to the exploding gradient problem is to truncate values of the
-gradients. In my experiments, I did limit maximum size of gradients of errors
-that get accumulated in the hidden neurons to be in a range < -15; 15 >. This
-greatly increases stability of the training, and otherwise it would not be
-possible to train RNN LMs successfully on large data sets.
-(Mikolov 2012)
+<!-- "The main advantage of NNLMs over n-grams is that history is no longer seen as -->
+<!-- exact sequence of n - 1 words H, but rather as a projection of H into some lower -->
+<!-- dimensional space. This reduces number of parameters in the model that have to -->
+<!-- be trained, resulting in automatic clustering of similar histories." mikolov 2012 thesis -->
+<!-- The hidden layer of RNN represents all previous -->
+<!-- history and not just n -1 previous words, thus the model can theoretically represent long -->
+<!-- context patterns -->
+<!-- however the error gradients quickly vanish as they get backpropagated in time -->
+<!-- (in rare cases the errors can explode), so several steps of unfolding are -->
+<!-- sufficient (this is sometimes referred to as truncated BPTT). -->
+<!-- **While for word -->
+<!-- based LMs, it seems to be sufficient to unfold network for about 5 time steps, -->
+<!-- it is interesting to notice that this still allows the network to learn to store -->
+<!-- information for more than 5 time steps. -->
+<!-- Similarly, network that is trained by normal backpropagation can be seen as a -->
+<!-- network trained with one unfolding step, and still as we will see later, even -->
+<!-- this allows the network to learn longer context patterns, such as 4-gram -->
+<!-- information. -->
+<!-- A simple solution to the exploding gradient problem is to truncate values of the -->
+<!-- gradients. In my experiments, I did limit maximum size of gradients of errors -->
+<!-- that get accumulated in the hidden neurons to be in a range < -15; 15 >. This -->
+<!-- greatly increases stability of the training, and otherwise it would not be -->
+<!-- possible to train RNN LMs successfully on large data sets. -->
+<!-- (Mikolov 2012) -->
 
 
 ### Problem Statement
@@ -86,17 +106,27 @@ possible to train RNN LMs successfully on large data sets.
 A strategy for solving the problem,
 including discussion of the expected solution, has been made. -->
 
-Problem: Given a sequence of *n* words, predict the *k* most likely next words
-and their probabilities.
+Given a sequence of words, we'll make a prediction for the *k* most likely next
+words and their probabilities.
 
-For example, for the sequence "The dog", a solution might be
+For example, for the sequence "The dog" and *k*=3, a solution might be
 (barked 10%, slept 9%, ran 8%).
 
-We'll use some different neural network architectures to find the most likely
-next words - a standard Recurrent Neural Network (RNN), a Long Short-Term Memory
-(LSTM) RNN, and a GRU (Gated Recurrent Unit) RNN - and compare these against
-some baseline n-gram models. The GRU RNN is expected to offer the best
-performance for a given amount of training time [cite!].
+We'll use an RNN to make the predictions - different architectures will be
+trained on a training set, tuned on a validation set, and tested on a hold-out
+test set, and the results compared against a baseline n-gram model, with the best
+model chosen for more complete analysis.
+
+A GRU (Gated Recurrent Unit) RNN is expected to offer the best performance for a
+given amount of training time, due to its ability to backpropagate the training
+information further than a simple RNN, and its relatively low number of
+parameters compared to an LSTM (Long Short-Term Memory) RNN.
+
+<!-- We'll use some different neural network architectures to find the most likely -->
+<!-- next words - a standard Recurrent Neural Network (RNN), a Long Short-Term Memory -->
+<!-- (LSTM) RNN, and a GRU (Gated Recurrent Unit) RNN - and compare these against -->
+<!-- some baseline n-gram models. The GRU RNN is expected to offer the best -->
+<!-- performance for a given amount of training time [cite!]. -->
 
 
 ### Metrics
@@ -104,27 +134,48 @@ performance for a given amount of training time [cite!].
 <!-- Metrics used to measure performance of a model or result are clearly
 defined. Metrics are justified based on the characteristics of the problem. -->
 
-The metrics used to evaluate the performance of the models are relevance,
-accuracy, and perplexity.
+The metrics used to evaluate the performance of the models will be
+*cross-entropy*, *perplexity*, *accuracy*, and *relevance*.
 
-The primary metric used to evaluate the models is **relevance**, which we'll
-define as
+*Cross-entropy* is a measure of the similarity of two probability
+distributions - in this case the actual next word and our predictions for the
+next word and their probabilities. A lower value indicates less surprise, and
+so, greater fit. It can be estimated for a model from 
 
-> **Relevance** = # correct predictions / # total predictions
+\begin{align*}
+H(T,q)=-\sum _{{i=1}}^{N}{\frac  {1}{N}}\ln q(x_{i})
+\end{align*}
 
-where a prediction will be considered *correct* if the actual word is in the
-list of *k* most likely words. This is relevant to the task of presenting the
-user with a list of most likely next words as they are entering text - we'll use
-*k* = 3 for evaluation.
+with *T*=training set, *N*=length of training sequence, and *q*=word distribution
+predicted by model. 
 
-We'll also report the **accuracy**, which measures the number of predictions
-where the most likely prediction is the correct one (which is *relevance* where
-*k* = 1).
+*Perplexity* is simply the exponential of cross-entropy, which gives an
+indication of how well the model has narrowed down the possible choices for the
+next word - e.g. a perplexity of 300 corresponds roughly to a uniform choice
+from 300 words - it can be estimated with 
 
-Results in the literature are often reported as **perplexity**, which gives an idea
-of how well the model has narrowed down the possible choices for the next word -
-e.g. a perplexity of 100 corresponds roughly to a uniform choice from 100 words.
-We'll report this as well to see how our models compare with those in the literature. 
+\begin{align*}
+perplexity = e^H(T,q)
+\end{align*}
+
+(Note: some sources use $log_2$ for the cross-entropy, in which case $2^H$
+is used here).
+
+*Accuracy* is the average number of predictions where the highest probability
+next word matches the actual next word:
+
+\begin{align*}
+accuracy = \# correct / \# total
+\end{align*}
+
+*Relevance* will be defined similarly to accuracy, but allowing any of the top
+*k* words to be counted as correct - this is relevant to the task of presenting
+the user with a list of most likely next words as they are entering text - we'll
+use *k* = 3 for evaluation:
+
+\begin{align*}
+relevance = \# correct\, (in\, top\, k\, words) / \# total
+\end{align*}
 
 
 ## Analysis
@@ -140,9 +191,7 @@ The training and testing data are obtained from ten books from Project
 Gutenberg, totalling roughly one million words -
 
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
-<!-- this is output from print(util.table(data.analyze())) -->
-
--> subtract one from chars/word for space!
+<!-- this is output from print(util.table(data.analyze())), then adjusted -->
 
 \small
 
@@ -173,14 +222,13 @@ http://www.gutenberg.org/etext/28885.
 
 Some sample text:
 
-> "Speak English!" said the Eaglet. "I don't know the meaning of half those long words, and, what's more, I don't believe you do either!" - *Alice in Wonderland* (Shortest words)
+> "Speak English!" said the Eaglet. "I don't know the meaning of half those long words, and, what's more, I don't believe you do either!" - *Alice in Wonderland* (shortest words)
 
-> I went up and passed the time of day. "Well, well, well, what?" I said. "Why, Mr. Wooster! How do you do?" - *My Man Jeeves* (Shortest sentences)
+> I went up and passed the time of day. "Well, well, well, what?" I said. "Why, Mr. Wooster! How do you do?" - *My Man Jeeves* (shortest sentences)
 
-> From the eminence of the lane, skirting the brow of a hill, he looked down into deep valleys and dingles, and beyond, across the trees, to remoter country, wild bare hills and dark wooded lands meeting the grey still sky. - *The Hill of Dreams* (Longest sentences)
+> From the eminence of the lane, skirting the brow of a hill, he looked down into deep valleys and dingles, and beyond, across the trees, to remoter country, wild bare hills and dark wooded lands meeting the grey still sky. - *The Hill of Dreams* (longest sentences)
 
-> He was one of the martyrs to that terrible delusion, which should teach us, among its other morals, that the influential classes, and those who take upon themselves to be leaders of the people, are fully liable to all the passionate error that has ever characterized the maddest mob. - *The House of the Seven Gables* (Highest grade level)
-
+<!-- > He was one of the martyrs to that terrible delusion, which should teach us, among its other morals, that the influential classes, and those who take upon themselves to be leaders of the people, are fully liable to all the passionate error that has ever characterized the maddest mob. - *The House of the Seven Gables* (highest grade level) -->
 
 
 ### Exploratory Visualization
@@ -189,47 +237,12 @@ Some sample text:
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
-<!-- The sentence length distributions for the different texts are as follows - note -->
-<!-- that both of M. R. James' works have similar sentence length distributions. -->
-
-<!-- ![Sentence length distributions](images/sentence_lengths_boxplot.png) -->
-
-Neural networks are able to represent words in a vector space, e.g. as an array
-of 300 floating point numbers - this allows similar words to be closer together
-in vector space, and to trigger similar following words. Pre-trained word
-embeddings, such as word2vec (Mikolov 2013) or GloVe (Pennington 2014), can be
-used to save on training time.
-
-For this project we'll use 50-dimensional word vectors from GloVe - this plot
-shows some sample word embeddings projected to 2 dimensions using PCA - note how
-the adjectives, verbs, and nouns/agents are all grouped together:
+For this project we'll use 50-dimensional word vectors from GloVe (Pennington
+2014) - this plot shows some sample word embeddings projected to 2 dimensions
+using PCA - note how the adjectives, verbs, and nouns/agents are grouped
+closely together, indicating their similarity:
 
 ![Sample word embeddings](images/word_embeddings.png)
-
-
-
-<!-- the keyword is *relevant* - what vis would be relevant for this problem? -->
-<!-- and *thorough discussion* - needs to be something interesting.  -->
-
-
-<!-- we're doing word prediction -->
-<!-- maybe something more like information content? -->
-<!-- ie how compressible the text is? -->
-<!-- ie how predictable it is? -->
-<!-- cf pure randomness (log2 26 ~ (log 26 2) ~ 4.7bits?) -->
-<!-- how calculate? ngrams?  -->
-
-<!-- -> information content of english - shannon paper -->
-<!-- use to compare texts? -->
-<!-- plot against mean/median sentence lengths? -->
-
-<!-- what if compressed the text and compared percent reduction against something?  -->
-<!-- but also depends on length of text.  -->
-
-
-<!-- say alphabet is 26 characters, which is log_2 of 26 = (log 26 2) = 4.70 bits/character -->
-<!-- say each word is 5 characters - if completely random, then this would be (* 5 4.70) 23.5 bits per word -->
-<!-- this would be the  -->
 
 
 ### Algorithms and Techniques
@@ -237,47 +250,64 @@ the adjectives, verbs, and nouns/agents are all grouped together:
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
-Until recently, n-grams were state of the art in word prediction - Recurrent
-Neural Networks were able to beat them in 2003, though at the cost of greater
-training time (Bengio 2003).
+Until recently, n-grams were state of the art in word prediction - RNNs were
+able to beat them in 2003, though at the cost of greater training time (Bengio
+2003).
 
-A Recurrent Neural Network (RNN) is able to remember arbitrary amounts of
-context, while n-grams are effectively limited to about 4 words of context (a
-5-gram will give 4 words of context) - going beyond 5-grams requires increasing
-amounts of resources in terms of training data and storage space, as the
-resources required grow exponentially with the amount of context.
+An RNN is able to remember arbitrary amounts of context, while n-grams are
+effectively limited to about 4 words of context (a 5-gram will give 4 words of
+context) - higher n-grams require increasing amounts of resources in terms of
+training data and storage space, as the resources required grow exponentially
+with the amount of context.
 
-An RNN is able to make predictions based on words using arbitrarily long
-context, because it can represent words more compactly with an internal
-representation (embedding in a vector space), which also allows words to have
-arbitrary degrees of similarities to other words. Hence, for instance, a cat can
-be predicted to 'sleep', even if the model was only trained on a dog sleeping,
-due to the similarity of the words 'dog' and 'cat'.
-
-An RNN 'unfolds' to a neural network of arbitrary depth, depending on how far
-back in a sequence it is trained. It keeps track of what it has seen through a
-hidden state at each step in a sequence - this is combined with the current
-token's representation (by addition) and the sum is then used to make
+An RNN 'unfolds' to a neural network of arbitrary depth for training (called
+*Backpropagation Through Time (BPTT)*). It keeps track of the words it has seen
+through a hidden state at each step in a sequence - this is combined with the
+current word's representation (by addition) and the sum is then used to make
 predictions about the next word.
 
 ![RNN (LeCun 2015)](images/rnn_nature.jpg)
 
--> is this correct about U? read something different. what about matrix E the
-   embedding layer? it's separate from U...
+<!-- -> is this correct about U? read something different. what about matrix E the -->
+<!--    embedding layer? it's separate from U... -->
 
-The matrix **U** amounts to a table of word embeddings in a vector space of many
-dimensions (which could be e.g. 50-300) - each word in the vocabulary
-corresponds with a row in the table, and the dot product between any two words
-gives their similarity, once the network is trained. Alternatively, pre-trained
-word embeddings can be used to save on training time.
+<!-- The matrix **U** amounts to a table of word embeddings in a vector space of many -->
+<!-- dimensions (which could be e.g. 50-300) - each word in the vocabulary -->
+<!-- corresponds with a row in the table, and the dot product between any two words -->
+<!-- gives their similarity, once the network is trained. Alternatively, pre-trained -->
+<!-- word embeddings can be used in an input layer to save on training time. -->
 
-The matrix **W** acts as a filter on the internal hidden state, which represents
-the prior context of arbitrary length.
+<!-- The matrix **W** acts as a filter on the internal hidden state, which represents -->
+<!-- the prior context of arbitrary length. -->
 
-The matrix **V** allows each word in the vocabulary to 'vote' on how likely it
-thinks it will be next, based on the context (current + previous words). The
-softmax layer then converts these scores into probabilities, so the top *k* most
-likely words can be found for a given context.
+<!-- The matrix **V** allows each word in the vocabulary to 'vote' on how likely it -->
+<!-- thinks it will be next, based on the context (current + previous words). The -->
+<!-- softmax layer then converts these scores into probabilities, so the top *k* most -->
+<!-- likely words can be found for a given context. -->
+
+The input will be from the training sequence, which selects a row from a matrix
+*E*, which contains the word embeddings for the top *NVOCAB* words in the
+training text. This is fed to the matrix *U*, 
+
+
+
+To learn the parameters for the matrices *U*, *V*, and *W*, we will define an
+error function (called a loss function) to be the *categorical cross-entropy loss*,
+and use BPTT to update the weights based on the amount of error between the
+outputs and the true values.
+
+Note: if the hidden layer and number of parameters are too large, the model will
+be prone to overfitting without sufficient data - but if it's too small, it may
+have a high bias error - the best number of parameters will be somewhere in the middle. 
+
+
+"Learning the parameters for our network means finding parameters (W_1, b_1, W_2, b_2) that minimize the error on our training data. But how do we define the error? We call the function that measures our error the loss function. A common choice with the softmax output is the categorical cross-entropy loss (also known as negative log likelihood). By finding parameters that minimize the loss we maximize the likelihood of our training data."
+
+**(if hidden layer is too big, will be prone to overfitting - if too small, prone to high bias error - what's the correct size? have to find with trial and error? do a complexity plot and pick the minimum - then use that for the final model!)
+
+
+
+
 
 
 A LSTM (Long Short-Term Memory) RNN (Hochreiter 1997) works similarly, but has a
@@ -288,29 +318,18 @@ which have problems with vanishing and exploding gradients, which make them slow
 and difficult to train.
 
 A GRU (Gated Recurrent Unit) RNN (Chung 2014) is similar to an LSTM, but has
-fewer parameters, so is a bit easier to train - so this is what we will use for our
+fewer parameters and is a bit easier to train, so this is what we will use for our
 base RNN.
 
--> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs
-   accuracy, perplexity
+<!-- -> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs -->
+<!--    accuracy, perplexity -->
 
-see http://www.wildml.com/2015/10/recurrent-neural-network-tutorial-part-4-implementing-a-grulstm-rnn-with-python-and-theano/
-incls diagrams
+<!-- -> then attention 2015? discuss briefly, cite -->
 
--> then attention 2015? discuss briefly, cite
+<!-- -> compare word-level with character-level rnn learning - maybe character level -->
+<!--    easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words. -->
 
-
--> compare word-level with character-level rnn learning - maybe character level
-   easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words.
-
-
-
--> do big O analysis, estimate memory needed, # calcs, time
-
-
-how to train RNN - use fwd and backprop?
-"The difference is recurrence. The RNN cannot be easily trained as if you try to compute gradient - you will soon figure out that in order to get a gradient on n'th step - you need to actually "unroll" your network history for n-1 previous steps. This technique, known as BPTT (backpropagation through time) is exactly this - direct application of backpropagation to RNN. Unfortunately this is both computationaly expensive as well as mathematically challenging (due to vanishing/exploding gradients). People are creating workaround on many levels, by for example introduction of specific types of RNN which can be efficiently trained (LSTM, GRU), or by modification of training procedure (such as gradient clamping). To sum up - theoreticaly you can do "typical" backprop in the mathematical sense, from programming perspective - this requires more work as you need to "unroll" your network through history. This is computationaly expensive, and hard to optimize in the mathematical sense."
-
+<!-- -> do big O analysis, estimate memory needed, # calcs, time -->
 
 
 ### Benchmark
@@ -331,8 +350,11 @@ require more training data.
 
 -> find published results, history (when were these first developed, called n-grams, get citations)
 
-"n-gram models (Jelinek and Mercer, 1980;Katz 1987). See (Manning and Schutze, 1999) for a review."
+"n-gram models (Jelinek and Mercer, 1980; Katz 1987). See (Manning and Schutze, 1999) for a review."
 
+
+-> another benchmark could just be guessing the most likely word, 'the' - how
+well would that work? what perplexity?
 
 
 
@@ -491,7 +513,9 @@ eg keep weights from getting too large, because _________ (leads to overfitting?
 L1, L2, other?
 early stopping is a form of regularization
 see https://keras.io/regularizers/
-dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting. [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
+dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting."
+"Since a fully connected layer occupies most of the parameters, it is prone to overfitting. The dropout method is introduced to prevent overfitting. "
+see [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
 (Srivatsava 2014)
 
 Embeddings
