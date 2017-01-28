@@ -484,5 +484,8 @@ if __name__ == '__main__':
     # print('train:',indexed_sentences)
     # print()
 
+    s = "the dog slept."
+    tokens = tokenize.word_tokenize(s)
+    print(tokens)
 
     pass

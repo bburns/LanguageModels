@@ -623,6 +623,10 @@ one or two particular aspects of the project they found interesting or
 difficult. -->
 
 it took a while to set up a good test harness and data preprocessing pipeline.
+initially developed as python programs/classes, but realized it was overkill and went with simpler notebooks.
+had lots of issues with unicode/latin1/cp1252/utf8 of the gutenberg texts
+
+
 then getting good architecture and parameters took a while, because each epoch took so long ~30mins
 
 **"Have in mind, however, that depending on your application, moving away from traditional n-grams with smoothing techniques may not be the best approach, since the state-of-the-art RNN-based models can be very slow to train."
