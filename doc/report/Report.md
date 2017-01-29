@@ -622,17 +622,19 @@ GRU
 one or two particular aspects of the project they found interesting or
 difficult. -->
 
-it took a while to set up a good test harness and data preprocessing pipeline.
-initially developed as python programs/classes, but realized it was overkill and went with simpler notebooks.
-had lots of issues with unicode/latin1/cp1252/utf8 of the gutenberg texts
+The most difficult part of this problem was getting a good project
+infrastructure set up - I initially developed a set of Python modules and
+classes to handle the data preprocessing and transformations, tokenization, and
+record results of experiments, but the main problem was that each step needed to
+be saved to disk so that I could develop the models without having to rerun the
+expensive steps. I eventually realized it was overkill to develop a separate
+program like that and just went with a simpler Jupyter notebook.
 
-
-then getting good architecture and parameters took a while, because each epoch took so long ~30mins
-
-**"Have in mind, however, that depending on your application, moving away from traditional n-grams with smoothing techniques may not be the best approach, since the state-of-the-art RNN-based models can be very slow to train."
-
-
-
+Also, it was difficult to experiment with different model architectures, since
+each epoch is so expensive - they took about 30 minutes for the full dataset on
+my laptop. When I was initially developing the code I tried running simpler
+problems for speed but they would immediately start overfitting, so they weren't
+very helpful.
 
 
 ### Improvement
@@ -643,10 +645,18 @@ and compared/contrasted to the current solution. -->
 
 train longer, more vocabulary, more hidden nodes
 
+put on amazone instance
+
 online learning (?) - ie learn new vocab words like phone does
 
 better training/testing - distribute text by paragraphs, not sentences
 
+One thing worth noting is that with current hardware limitations, moving away
+from n-grams with smoothing might not be the best approach for an application,
+since state-of-the-art RNN models can be so slow to train, and the n-grams do
+perform pretty well.
+
+-> but compare performance of RNN vs ngrams once trained, in terms of memory and speed!
 
 
 
