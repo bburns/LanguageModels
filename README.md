@@ -34,22 +34,30 @@ The base Python used is the Anaconda 3 distribution with Python 3.5 - the follow
 - tabulate
 - h5py
 
+The NLTK Punkt tokenizer may need to be installed, in which case:
+
+    $ python
+    >>> import nltk
+    >>> nltk.download('punkt')
+
 Additional libraries installed with pip install:
 
-- tensorflow
 - keras - wrapper around TensorFlow
-- textstat - calculates Coleman-Liau Index for texts (grade level readability)
-- pydot - to visualize Keras models
-- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository - add to repo with `nbstripout --install`
+- tensorflow
+
+<!-- - textstat - calculates Coleman-Liau Index for texts (grade level readability) -->
+<!-- - pydot - to visualize Keras models -->
 
 Additional programs used:
 
-- dot - to visualize Keras models
+<!-- - dot - to visualize Keras models -->
+- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository - pip install, then add to repo with `nbstripout --install`
 
 Additional data used:
 
 - GloVe - Wikipedia 2014 + Gigaword 5 (6B tokens, 400K vocab, uncased, 50d, 100d, 200d, & 300d vectors, 822 MB download): glove.6B.zip
 http://nlp.stanford.edu/projects/glove/
+http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
 
 
 

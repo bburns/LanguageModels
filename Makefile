@@ -54,23 +54,45 @@ server:
 
 # download, unzip, and prepare data files for training, validating, and testing
 
-data: download unzip split
+
+data: folders download unzip split
 
 # word vectors
-word_vectors_folder  = data/word_vectors
-word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
-word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
-word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
+# word_vectors_folder  = _vectors
+# word_vectors_url     = https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing
+# word_vectors_zipfile = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin.gz
+# word_vectors_file    = $(word_vectors_folder)/GoogleNews-vectors-negative300.bin
+# unzip: $(word_vectors_file)
+# $(word_vectors_file): $(word_vectors_zipfile)
+# 	gzip -k -d $(word_vectors_zipfile)
+# 	touch $(word_vectors_file)
+# download: $(word_vectors_zipfile)
+# $(word_vectors_zipfile):
+# 	wget -O $(word_vectors_zipfile) $(word_vectors_url)
+# 	touch $(word_vectors_zipfile)
 
-unzip: $(word_vectors_file)
-$(word_vectors_file): $(word_vectors_zipfile)
-	gzip -k -d $(word_vectors_zipfile)
-	touch $(word_vectors_file)
+glove_vectors_folder  = _vectors/glove.6B
+glove_vectors_url     = http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
+glove_vectors_zipfile = $(glove_vectors_folder)/glove.6B.zip
+glove_vectors_file    = $(glove_vectors_folder)/glove.6B.50d.txt
 
-download: $(word_vectors_zipfile)
-$(word_vectors_zipfile):
-	wget -O $(word_vectors_zipfile) $(word_vectors_url)
-	touch $(word_vectors_zipfile)
+MKDIR_P = mkdir -p
+.PHONY: folders
+# all: folders
+folders: $(glove_vectors_folder)
+$(glove_vectors_folder):
+	$(MKDIR_P) $(glove_vectors_folder)
+
+#	gzip -k -d $(glove_vectors_zipfile)
+unzip: $(glove_vectors_file)
+$(glove_vectors_file): $(glove_vectors_zipfile)
+	unzip $(glove_vectors_zipfile) -d $(glove_vectors_folder)
+	touch $(glove_vectors_file)
+
+download: $(glove_vectors_zipfile)
+$(glove_vectors_zipfile):
+	wget -O $(glove_vectors_zipfile) $(glove_vectors_url)
+	touch $(glove_vectors_zipfile)
 
 # split:
 # 	python src/split.py --ptrain 0.8 --pvalidate 0.1 --ptest 0.1 data/processed/all.txt data/split
