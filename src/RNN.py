@@ -60,26 +60,27 @@ import util
 # Set Parameters
 # --------------------------------------------------------------------------------
 
-DATASET       = 'gutenbergs'
-# DATASET     = 'alice1'
-TRAIN_AMOUNT  = 0.001 # percent of training data to use (for debugging), 0.0 to 1.0
-NEPOCHS       = 3
-LAYERS        = 2 # number of RNN layers, 1 to 3
-DROPOUT       = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
-NVOCAB        = 10000 # number of vocabulary words to use
-EMBEDDING_DIM = 50 # dimension of embedding layer - 50, 100, 150, 200
-TRAINABLE     = False # train word embedding matrix? if True will slow down training ~2x
-NHIDDEN       = EMBEDDING_DIM # seems to work best
-N             = 5 # amount to unfold recurrent network
-RNN_CLASS     = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
-BATCH_SIZE    = 32 # size of batch to use for training
-INITIAL_EPOCH = 0 # to continue training
-PATIENCE      = 3 # stop after this many epochs of no improvement
-#LOSS_FN      = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
-LOSS_FN       = 'sparse_categorical_crossentropy'
-OPTIMIZER     = 'adam'
-NVALIDATE     = 10000 # number of tokens to use for validation
-NTEST         = 10000 # number of tokens to use for testing
+DATASET          = 'gutenbergs'
+# DATASET        = 'alice1'
+TRAIN_AMOUNT     = 1.0 # percent of training data to use (for debugging), 0.0 to 1.0
+NEPOCHS          = 1 # number of epochs to train model
+LAYERS           = 2 # number of RNN layers, 1 to 3
+DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
+NVOCAB           = 10000 # number of vocabulary words to use
+EMBEDDING_DIM    = 50 # dimension of embedding layer - 50, 100, 150, 200
+TRAINABLE        = False # train word embedding matrix? if True will slow down training ~2x
+NHIDDEN          = EMBEDDING_DIM # seems to work best
+N                = 5 # amount to unfold recurrent network
+RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
+BATCH_SIZE       = 32 # size of batch to use for training
+INITIAL_EPOCH    = 0 # to continue training
+PATIENCE         = 3 # stop after this many epochs of no improvement
+#LOSS_FN         = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
+LOSS_FN          = 'sparse_categorical_crossentropy'
+OPTIMIZER        = 'adam'
+VALIDATION_SPLIT = 0.01 # percent of training data to use for validation (~10k tokens)
+# NVALIDATE        = 10000 # number of tokens to use for validation
+NTEST            = 10000 # number of tokens to use for testing
 
 #TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
 
@@ -102,8 +103,10 @@ data = datamodule.Data(DATASET)
 data.prepare(nvocab=NVOCAB) # ~15sec to tokenize
 
 # split data into train, validate, test sets
-x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=N, nvalidate=NVALIDATE,
-                                                                      ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
+# x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=N, nvalidate=NVALIDATE,
+                                                                      # ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
+x_train, y_train, x_test, y_test = data.split(n=N, ntest=NTEST,
+                                              train_amount=TRAIN_AMOUNT, debug=debug)
 
 
 # --------------------------------------------------------------------------------
@@ -221,9 +224,10 @@ callbacks = [print_sentence, checkpoint, early_stopping]
 
 print('Training model...')
 try:
-    #. pass validation% instead of fixed array
+    #. pass validation% here instead of fixed array
     history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, nb_epoch=NEPOCHS,
-                        validation_data=(x_validate, y_validate),
+                        # validation_data=(x_validate, y_validate),
+                        validation_split=VALIDATION_SPLIT,
                         callbacks=callbacks)
 except KeyboardInterrupt:
     pass

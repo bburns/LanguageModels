@@ -1,22 +1,33 @@
 
 """
-n-gram word prediction model
-
-Stores a sparse multidimensional array of token counts.
-The sparse array is implemented as a dict of dicts.
+N-gram word prediction model
+Stores a sparse multidimensional array (dict of dict) of token counts.
 """
+
+
+# --------------------------------------------------------------------------------
+# Import
+# --------------------------------------------------------------------------------
+
 
 import os
 import random
 from pprint import pprint, pformat
 
+import numpy as np
+import pandas as pd
 import nltk
 from nltk import tokenize
-import tabulate
+from tabulate import tabulate
 
 import util
 from benchmark import benchmark
 
+
+#. this class could be in a separate file, ngram_model.py, to be more like rnn.py
+# --------------------------------------------------------------------------------
+# define ngram class
+# --------------------------------------------------------------------------------
 
 class Ngram():
 
@@ -30,7 +41,7 @@ class Ngram():
         self.n = n
         self._d = {} # dictionary of dictionary of ... of counts
 
-    def train(self, train_amount=1.0, debug=0):
+    def fit(self, train_amount=1.0, debug=0):
         """
         Train the model
         """
@@ -39,9 +50,9 @@ class Ngram():
         tuples = nltk.ngrams(tokens, self.n)
         for tuple in tuples:
             self._increment_count(tuple) # add ngram counts to model
-        if debug:
-            print('d keys',list(self._d.keys())[:5])
-            print('d values',list(self._d.values())[:5])
+        # if debug:
+            # print('d keys',list(self._d.keys())[:5])
+            # print('d values',list(self._d.values())[:5])
 
     def _increment_count(self, tuple):
         """
@@ -80,18 +91,78 @@ class Ngram():
                 d = {}
         nvocab = self.data.nvocab
         ntotal = sum(d.values()) # total occurrences of subsequent tokens
-        probs = [[]]
+        # probs = [[]]
+        probs = np.zeros((1,nvocab))
         for iword in range(nvocab):
             ncount = d.get(iword)
             if ncount:
                 pct = ncount/ntotal if ntotal!=0 else 0
             else:
                 pct = 0.0
-            probs[0].append(pct)
+            # probs[0].append(pct)
+            probs[0,iword] = pct
         return probs
 
 
-
+    def test(self, nsamples=10):
+        """
+        Test the model and return the accuracy, relevance score and some sample predictions.
+        nsamples - number of sample predictions to record in self.test_samples
+        Returns nothing, but sets
+            self.test_time
+            self.test_samples
+            self.test_accuracy
+            self.test_relevance
+        and saves the model with those values to a file.
+        """
+        tokens = self.data.sequence
+        ntokens = len(tokens)
+        npredictions = ntokens - self.n #.
+        nsample_spacing = max(int(ntokens / nsamples), 1)
+        samples = []
+        naccurate = 0
+        nrelevant = 0
+        sample_columns = ['Prompt','Predictions','Actual','Status']
+        print("Testing model n=%d..." % self.n)
+        for i in range(npredictions): # iterate over all test tokens
+            #. refactor
+            prompt = tokens[i:i+self.n-1]
+            actual = tokens[i+self.n-1]
+            probs = self.predict_proba([prompt])
+            iword_probs = util.get_best_iword_probs(probs, k=3)
+            accurate = False
+            if iword_probs: # can be None
+                predicted_tokens = [token_prob[0] for token_prob in iword_probs]
+                accurate = (actual == predicted_tokens[0])
+                if accurate:
+                    naccurate += 1
+                relevant = (actual in predicted_tokens)
+                if relevant:
+                    nrelevant += 1
+            # add sample predictions
+            if (i % nsample_spacing) == 0:
+                sprompt = ' '.join([self.data.iword_to_word[iword] for iword in prompt])
+                sactual = self.data.iword_to_word[actual]
+                #. refactor
+                # word = token_prob[0]
+                # pct = token_prob[1]*100
+                if iword_probs:
+                    spredictions = '  '.join(['%s (%.1f%%)' % \
+                                              # (iword_prob[0], iword_prob[1]*100) \
+                                              (self.data.iword_to_word[iword_prob[0]], iword_prob[1]*100) \
+                                              for iword_prob in iword_probs])
+                else:
+                    spredictions = '(none)'
+                saccurate = 'OK' if accurate else 'FAIL'
+                sample = [sprompt, spredictions, sactual, saccurate]
+                samples.append(sample)
+        relevance = nrelevant / npredictions if npredictions>0 else 0
+        accuracy = naccurate / npredictions if npredictions>0 else 0
+        # self.test_time = b.time
+        self.test_accuracy = accuracy
+        self.test_relevance = relevance
+        self.test_samples = pd.DataFrame(samples, columns=sample_columns)
+        # self.save() # save test time, score, samples
 
     # def generate_token(self, tokens):
     #     """
@@ -171,61 +242,38 @@ class Ngram():
     #     best_tokens = util.get_best_tokens(d, self.k)
     #     return best_tokens
 
-    # def __str__(self):
-    #     """
-    #     Return string representation of model.
-    #     """
-    #     propnames = "name data n train_amount trained train_time \
-    #                  load_time save_time test_time test_score filename".split()
-    #     rows = []
-    #     for propname in propnames:
-    #         propvalue = self.__dict__[propname]
-    #         row = [propname, propvalue]
-    #         rows.append(row)
-    #     s = tabulate.tabulate(rows, ['Property', 'Value'])
-    #     # s = str(rows)
-    #     # s =
-    #     # s = self.name + '\n'
-    #     # s +=
-    #     # self.data = data # lightweight interface for data files
-    #     # self.n = n  # the n in n-gram
-    #     # self.train_amount = train_amount
-    #     # self._d = {} # dictionary of dictionary of ... of counts
-    #     # self.trained = False
-    #     # self.name = "ngram (n=%d)" % n
-    #     # self.filename = "%s/ngram-(n-%d-amount-%.4f).pickle" % (data.model_folder, n, train_amount)
-    #     # print("Create model " + self.name)
-    #     return s
-
 
 
 if __name__ == '__main__':
 
     from data import Data
     data = Data('alice1')
-    data.prepare(nvocab=20)
+    # data = Data('gutenbergs')
+    data.prepare(nvocab=10000)
 
-    # n=1
-    # if 1:
-    # for n in (1,2,3,4,5):
-    for n in (1,2):
+    for n in (1,2,3,4,5):
         model = Ngram(data, n=n)
-        model.train(debug=1)
 
-        util.uprint('Final epoch generated text:', util.generate_text(model, data, n))
+        #. pass validation%
+        model.fit(debug=1)
+
+        util.uprint(util.generate_text(model, data, n))
         print()
-        # model.test(test_amount=2000)
-        # print('accuracy:', model.test_accuracy)
-        # print('relevance:', model.test_relevance)
+
+        #. need to report validation accuracy here, not test accuracy!
+        model.test()
+        print('accuracy:', model.test_accuracy)
+        print('relevance:', model.test_relevance)
+
         # print('sample predictions:')
         # df = model.test_samples
         # print(tabulate(model.test_samples, showindex=False, headers=df.columns))
-        # # print(df)
-        # # print(model._d)
-        # s = model.generate()
-        # # print('generate:', s)
-        # print('generate:', repr(s)) # weird symbols sometimes crash print
-        # print()
 
+        # print('generated text:')
+        # nsentences = 10
+        # nwords_to_generate = 20
+        # k = 10
+        # for i in range(nsentences):
+        #     util.uprint(model.generate(nwords_to_generate, k)) # weird symbols can crash print
 
 
