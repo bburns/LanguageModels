@@ -246,7 +246,7 @@ class Ngram():
             # if next=='.': #. magic
                 # break
         # sentence = ' '.join(output)
-        sentence = output
+        sentence = ' '.join([self.data.iword_to_word[iword] for iword in output])
         return sentence
 
     # # def predict(self, tokens):
@@ -278,12 +278,12 @@ class Ngram():
 # Set Parameters
 # --------------------------------------------------------------------------------
 
-debug = 1
+debug = 0
 
 DATASET      = 'gutenbergs'
-TRAIN_AMOUNT = 0.01
+TRAIN_AMOUNT = 1
 NVOCAB       = 10000
-NTEST        = 1000
+NTEST        = 2000
 
 # --------------------------------------------------------------------------------
 # Get Data
@@ -319,7 +319,7 @@ for n in (1,2,3,4,5):
 
     print('sample predictions:')
     df = model.test_samples
-    print(util.table(model.test_samples))
+    util.uprint(util.table(model.test_samples))
 
     print('generated text:')
     nsentences = 10

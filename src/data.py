@@ -17,6 +17,8 @@ import numpy as np
 import nltk
 from nltk import tokenize
 
+import util
+
 
 class Data():
 
@@ -112,65 +114,6 @@ class Data():
             del words
 
 
-    # def split(self, n, nvalidate, ntest, train_amount=1.0, debug=False):
-    #     """
-    #     Split sequence into train, validate, test sets.
-    #     n - size of subsequences
-    #     nvalidate - number of validation sequences
-    #     ntest - number of test sequences
-    #     train_amount - percentage of the total training sequence to use
-    #     """
-
-    #     nelements = len(self.sequence)
-    #     ntrain_total = nelements - nvalidate - ntest
-    #     if ntrain_total<0: ntrain_total = nelements # for debugging cases
-    #     ntrain = int(ntrain_total * train_amount)
-
-    #     if debug:
-    #         print('total training tokens available:',ntrain_total)
-    #         print('ntraining tokens that will be used:',ntrain)
-    #         print('nvalidation tokens:', nvalidate)
-    #         print('ntest tokens:', ntest)
-
-    #     def create_dataset(sequence, n, noffset, nelements):
-    #         """
-    #         Convert a sequence of values into an x,y dataset.
-    #         sequence - sequence of integers representing words.
-    #         noffset - starting point
-    #         nelements - how much of the sequence to process
-    #         ncontext - size of subsequences
-    #         e.g. create_dataset([0,1,2,3,4,5,6,7,8,9], 2, 6, 3) =>
-    #              ([[2 3 4],[3 4 5],[4 5 6]], [5 6 7])
-    #         """
-    #         ncontext = n-1
-    #         xs, ys = [], []
-    #         noffset = max(0, noffset) # for debugging cases
-    #         nelements = min(nelements, len(sequence)) # ditto
-    #         for i in range(noffset, noffset + nelements - ncontext):
-    #             x = sequence[i:i+ncontext]
-    #             y = sequence[i+ncontext]
-    #             xs.append(x)
-    #             ys.append(y)
-    #         x_set = np.array(xs)
-    #         y_set = np.array(ys)
-    #         return x_set, y_set
-
-    #     print('Create train, validate, test sets...') # ~5sec
-    #     x_train, y_train = create_dataset(self.sequence, n=n, noffset=0, nelements=ntrain)
-    #     x_validate, y_validate = create_dataset(self.sequence, n=n, noffset=-ntest-nvalidate, nelements=nvalidate)
-    #     x_test, y_test = create_dataset(self.sequence, n=n, noffset=-ntest, nelements=ntest)
-
-    #     if debug:
-    #         print('train data size:',len(x_train))
-    #         print('validation data size:',len(x_validate)) # nvalidate - (n-1)
-    #         print('test data size:',len(x_test)) # ditto
-    #         print('x_train sample:')
-    #         print(x_train[:5])
-    #         print('y_train sample:')
-    #         print(y_train[:5])
-
-    #     return x_train, y_train, x_validate, y_validate, x_test, y_test
-
     def split(self, n, ntest, train_amount=1.0, debug=False):
         """
         Split sequence into train and test sets.
@@ -189,32 +132,9 @@ class Data():
             print('ntraining tokens that will be used:',ntrain)
             print('ntest tokens:', ntest)
 
-        def create_dataset(sequence, n, noffset, nelements):
-            """
-            Convert a sequence of values into an x,y dataset.
-            sequence - sequence of integers representing words.
-            noffset - starting point
-            nelements - how much of the sequence to process
-            ncontext - size of subsequences
-            e.g. create_dataset([0,1,2,3,4,5,6,7,8,9], 2, 6, 3) =>
-                 ([[2 3 4],[3 4 5],[4 5 6]], [5 6 7])
-            """
-            ncontext = n-1
-            xs, ys = [], []
-            noffset = max(0, noffset) # for debugging cases
-            nelements = min(nelements, len(sequence)) # ditto
-            for i in range(noffset, noffset + nelements - ncontext):
-                x = sequence[i:i+ncontext]
-                y = sequence[i+ncontext]
-                xs.append(x)
-                ys.append(y)
-            x_set = np.array(xs)
-            y_set = np.array(ys)
-            return x_set, y_set
-
         print('Create train and test sets...') # ~5sec
-        x_train, y_train = create_dataset(self.sequence, n=n, noffset=0, nelements=ntrain)
-        x_test, y_test = create_dataset(self.sequence, n=n, noffset=-ntest, nelements=ntest)
+        x_train, y_train = util.create_dataset(self.sequence, n=n, noffset=0, nelements=ntrain)
+        x_test, y_test = util.create_dataset(self.sequence, n=n, noffset=ntrain, nelements=ntest)
 
         if debug:
             print('train data size:',len(x_train))

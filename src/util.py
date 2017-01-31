@@ -13,6 +13,31 @@ import numpy as np
 from tabulate import tabulate
 
 
+
+def create_dataset(sequence, n, noffset, nelements):
+    """
+    Convert a sequence of values into an x,y dataset.
+    sequence - sequence of integers
+    noffset - starting point
+    nelements - how much of the sequence to process
+    ncontext - size of subsequences
+    e.g. create_dataset([0,1,2,3,4,5,6,7,8,9], 2, 6, 3) =>
+         ([[2 3 4],[3 4 5],[4 5 6]], [5 6 7])
+    """
+    ncontext = n-1
+    xs, ys = [], []
+    noffset = max(0, noffset) # for debugging cases
+    nelements = min(nelements, len(sequence)) # ditto
+    for i in range(noffset, noffset + nelements - ncontext):
+        x = sequence[i:i+ncontext]
+        y = sequence[i+ncontext]
+        xs.append(x)
+        ys.append(y)
+    x_set = np.array(xs)
+    y_set = np.array(ys)
+    return x_set, y_set
+
+
 def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
     """
     Print strings with different encodings.
