@@ -41,7 +41,8 @@ class Data(object):
         """
         self.name = name
         escape = '../../' # escape from the Experiment subfolder, where this is called from
-        dataset_folder = escape + 'data/' + name + '/'
+        # dataset_folder = escape + 'data/' + name + '/'
+        dataset_folder = escape + 'data/old/' + name + '/'
         model_folder = escape + 'models/' + name + '/'
         self.model_folder   = model_folder
         self.raw_folder     = dataset_folder + '1-raw/'
@@ -285,6 +286,7 @@ class Data(object):
         # with open(filename, 'rb') as f:
         with open(filename, 'r') as f:
             s = f.read(nchars)
+            s = s.lower()
         return s
 
     def paragraphs(self, source='merged', amount=1.0):

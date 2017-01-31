@@ -149,7 +149,8 @@ class Ngram(model.Model):
         """
         Generate sentence of random text.
         """
-        start1 = 'END' #. magic
+        # start1 = 'END' #. magic
+        start1 = '.' #. magic
         output = []
         input = [start1]
         if self.n>=3:
@@ -160,12 +161,17 @@ class Ngram(model.Model):
             start3 = random.choice(list(self._d[start1][start2].keys()))
             input.append(start3)
             output.append(start3)
+        if self.n>=5:
+            start4 = random.choice(list(self._d[start1][start2][start3].keys()))
+            input.append(start4)
+            output.append(start4)
         while True:
             next = self.generate_token(input)
             input.pop(0)
             input.append(next)
             output.append(next)
-            if next=='END': #. magic
+            # if next=='END': #. magic
+            if next=='.': #. magic
                 break
         sentence = ' '.join(output)
         return sentence
@@ -173,7 +179,7 @@ class Ngram(model.Model):
     # def predict(self, tokens):
     def predict(self, prompt):
         """
-        Get the most likely next k tokens following the given string.
+        Get the k most likely subsequent tokens following the given string.
         """
         #. use Vocab class?
         s = prompt.lower()
@@ -261,18 +267,21 @@ if __name__ == '__main__':
 
     from tabulate import tabulate
 
-    for n in (1,2,3):
-        # model = Ngram(data, n=n)
-        model = Ngram(data, n=n, train_amount=6000)
+    for n in (1,2,3,4,5):
+        model = Ngram(data, n=n)
+        # model = Ngram(data, n=n, train_amount=6000)
         model.train()
         model.test(test_amount=2000)
-        print('accuracy:', model.test_score)
+        print('accuracy:', model.test_accuracy)
+        print('relevance:', model.test_relevance)
+        print('sample predictions:')
         df = model.test_samples
         print(tabulate(model.test_samples, showindex=False, headers=df.columns))
         # print(df)
         # print(model._d)
         s = model.generate()
-        print('generate:', s)
+        # print('generate:', s)
+        print('generate:', repr(s)) # weird symbols sometimes crash print
         print()
 
 

@@ -1,14 +1,14 @@
+
 # Word Prediction Using RNNs
-# 
 # Read texts, train an RNN, plot results, and generate sentences.
-# 
+ 
 
 # Set Parameters
 
 TRAIN_AMOUNT = 1.0
-NEPOCHS = 2
-LAYERS = 1
-DROPOUT = 0
+NEPOCHS = 10
+LAYERS = 2
+DROPOUT = 0.1
 NVOCAB = 10000
 EMBEDDING_DIM = 50
 NHIDDEN = EMBEDDING_DIM
@@ -17,7 +17,7 @@ RNN_CLASS_NAME = 'GRU'
 BATCH_SIZE = 32
 INITIAL_EPOCH = 0 # to continue training
 TRAINABLE = False # train word embedding matrix? if True will slow down training ~2x
-PATIENCE = 10 # stop after this many epochs of no improvement
+PATIENCE = 3 # stop after this many epochs of no improvement
 LOSS_FN = 'sparse_categorical_crossentropy'
 OPTIMIZER = 'adam'
 NVALIDATE = 10000
@@ -118,13 +118,13 @@ print('done')
 print('first tokens',tokens[:100])
 
 
-# find the top NVOCAB words ~1sec
+# find the top NVOCAB-1 words ~1sec
 
 token_freqs = nltk.FreqDist(tokens)
-token_counts = token_freqs.most_common(NVOCAB)
+token_counts = token_freqs.most_common(NVOCAB-1)
 
 index_to_token = [token_count[0] for token_count in token_counts]
-index_to_token.insert(0, '~') # insert oov/unknown token at position 0
+index_to_token.insert(0, '') # oov/unknown at position 0
 token_to_index = dict([(token,i) for i,token in enumerate(index_to_token)])
 
 print('start of index_to_token',index_to_token[:10])
@@ -279,6 +279,13 @@ elif LAYERS==2:
     model.add(Dropout(DROPOUT))
     model.add(RNN_CLASS(NHIDDEN))
     model.add(Dropout(DROPOUT))
+elif LAYERS==3:
+    model.add(RNN_CLASS(NHIDDEN, return_sequences=True))
+    model.add(Dropout(DROPOUT))
+    model.add(RNN_CLASS(NHIDDEN, return_sequences=True))
+    model.add(Dropout(DROPOUT))
+    model.add(RNN_CLASS(NHIDDEN))
+    model.add(Dropout(DROPOUT))
     
 # output layer - convert nhidden to nvocab
 model.add(Dense(NVOCAB)) 
@@ -369,10 +376,10 @@ class Print_Sentence(Callback):
 
 print_sentence = Print_Sentence()
 checkpoint = ModelCheckpoint(MODEL_FILE, monitor='val_acc', save_best_only=True, mode='max')
-#early_stopping = EarlyStopping(monitor='val_acc', patience=PATIENCE)
+early_stopping = EarlyStopping(monitor='val_acc', patience=PATIENCE)
 #batch_recorder = BatchRecorder()
 
-callbacks = [print_sentence, checkpoint]
+callbacks = [print_sentence, checkpoint, early_stopping]
 
 
 print('training model...')
@@ -401,16 +408,13 @@ print()
 print('final perplexity',np.exp(history.history['val_loss']))
 
 
-
 # Generate Text
 
 nsentences = 10
-nwords_to_generate = 10
+nwords_to_generate = 20
 k = 10
 for i in range(nsentences):
     print(generate_text(model, nwords_to_generate, k))
-
-
 
 
 # Plot Results

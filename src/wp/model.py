@@ -97,13 +97,14 @@ class Model(object):
 
     def test(self, test_amount=1.0, nsamples=10):
         """
-        Test the model and return the relevance score and some sample predictions.
+        Test the model and return the accuracy, relevance score and some sample predictions.
         test_amount - amount of test data to use, in percent or nchars
         nsamples - number of sample predictions to record in self.test_samples
         Returns nothing, but sets
             self.test_time
             self.test_samples
-            self.test_score
+            self.test_accuracy
+            self.test_relevance
         and saves the model with those values to a file.
         """
         tokens = self.data.tokens('test', test_amount) # get the test tokens
@@ -111,7 +112,8 @@ class Model(object):
         npredictions = ntokens - self.n #.
         nsample_spacing = max(int(ntokens / nsamples), 1)
         samples = []
-        nright = 0
+        naccurate = 0
+        nrelevant = 0
         sample_columns = ['Prompt','Predictions','Actual','Status']
         print("Testing model " + self.name + "...")
         with benchmark("Tested model") as b: # time it
@@ -122,12 +124,15 @@ class Model(object):
                 sprompt = ' '.join(prompt) if prompt else '(none)'
                 # token_probs = self.predict(prompt) # eg [('barked',0.031),('slept',0.025)...]
                 token_probs = self.predict(sprompt) # eg [('barked',0.031),('slept',0.025)...]
-                passed = False
+                accurate = False
                 if token_probs: # can be None
                     predicted_tokens = [token_prob[0] for token_prob in token_probs]
-                    passed = (actual in predicted_tokens)
-                    if passed:
-                        nright += 1
+                    accurate = (actual == predicted_tokens[0])
+                    if accurate:
+                        naccurate += 1
+                    relevant = (actual in predicted_tokens)
+                    if relevant:
+                        nrelevant += 1
                 # add sample predictions
                 if (i % nsample_spacing) == 0:
                     #. refactor
@@ -135,12 +140,14 @@ class Model(object):
                     # pct = token_prob[1]*100
                     spredictions = '  '.join(['%s (%.1f%%)' % (token_prob[0], token_prob[1]*100) \
                                               for token_prob in token_probs]) if token_probs else '(none)'
-                    spassed = 'OK' if passed else 'FAIL'
-                    sample = [sprompt, spredictions, actual, spassed]
+                    saccurate = 'OK' if accurate else 'FAIL'
+                    sample = [sprompt, spredictions, actual, saccurate]
                     samples.append(sample)
-            relevance = nright / npredictions if npredictions>0 else 0
+            relevance = nrelevant / npredictions if npredictions>0 else 0
+            accuracy = naccurate / npredictions if npredictions>0 else 0
         self.test_time = b.time
-        self.test_score = relevance
+        self.test_accuracy = accuracy
+        self.test_relevance = relevance
         self.test_samples = pd.DataFrame(samples, columns=sample_columns)
         self.save() # save test time, score, samples
 
