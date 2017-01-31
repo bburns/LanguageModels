@@ -80,32 +80,32 @@ class Data():
             if itoken:
                 self.sequence.append(itoken)
         nelements = len(self.sequence)
-        sequence = np.array(self.sequence, dtype=np.int)
+        self.sequence = np.array(self.sequence, dtype=np.int)
         if debug:
             print('nelements:',nelements)
             print('start of sequence:')
             print(self.sequence[:100])
 
         #.
-        word_to_iword = token_to_index
-        iword_to_word = {iword:word for iword,word in enumerate(index_to_token)}
+        self.word_to_iword = token_to_index
+        self.iword_to_word = {iword:word for iword,word in enumerate(index_to_token)}
 
         if debug:
-            print('unique tokens in tokenized text:', len(word_to_iword)) # eg 190,000
-            print('iword "the":', word_to_iword['the'])
-            print('iword ".":',word_to_iword['.'])
-            print('word 1:',iword_to_word[1])
+            print('unique tokens in tokenized text:', len(self.word_to_iword)) # eg 190,000
+            print('iword "the":', self.word_to_iword['the'])
+            print('iword ".":',self.word_to_iword['.'])
+            print('word 1:',self.iword_to_word[1])
 
             print('most common words:')
             for i in range(1,10):
-                print(i,iword_to_word[i])
+                print(i,self.iword_to_word[i])
 
             print('least common words:')
-            nunique = len(word_to_iword)
+            nunique = len(self.word_to_iword)
             for i in range(nunique-1, nunique-10, -1):
-                print(i,iword_to_word[i])
+                print(i,self.iword_to_word[i])
 
-            words = sorted(list(word_to_iword.keys()))
+            words = sorted(list(self.word_to_iword.keys()))
             print('first words in dictionary',words[:50])
             print('sample words in dictionary',random.sample(words,50))
             del words
