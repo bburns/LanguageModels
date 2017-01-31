@@ -244,9 +244,9 @@ class Ngram():
 debug = 0
 
 DATASET      = 'gutenbergs'
-TRAIN_AMOUNT = .01
+TRAIN_AMOUNT = 1
 NVOCAB       = 10000
-NTEST        = 2000
+NTEST        = 5000
 
 # --------------------------------------------------------------------------------
 # Get Data
@@ -254,6 +254,7 @@ NTEST        = 2000
 
 data = datamodule.Data(DATASET)
 data.prepare(nvocab=NVOCAB)
+print()
 
 for n in (1,2,3,4,5):
 
@@ -289,4 +290,4 @@ for n in (1,2,3,4,5):
     for i in range(nsentences):
         util.uprint(model.generate()) # weird symbols can crash print
 
-
+    print()
