@@ -21,6 +21,14 @@ text to help fight spam.
 * Generate some text using both models and compare subjectively
 
 
+## Usage
+
+* Clone this repository - git clone http://______
+* Run `make download` to download and unzip word vectors
+* Run `make rnn` or `make ngram` to train and test the different models
+* Run `make wordplot` to show plot of sample word embeddings
+
+
 ## Libraries
 
 >>include version numbers for all libraries
