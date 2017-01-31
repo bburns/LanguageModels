@@ -145,6 +145,7 @@ class Ngram():
                 # word = token_prob[0]
                 # pct = token_prob[1]*100
                 if iword_probs:
+                    # predictions = [(iword_prob[0], iword_prob[1]*100) for iword_prob in iword_probs]
                     spredictions = '  '.join(['%s (%.1f%%)' % \
                                               (self.data.iword_to_word[iword_prob[0]], iword_prob[1]*100) \
                                               for iword_prob in iword_probs])
@@ -191,9 +192,7 @@ class Ngram():
         """
         Generate sentence of random text.
         """
-        # start1 = '.' #. magic
-        # start1 = 0 #. magic
-        start1 = self.data.word_to_iword['.']
+        start1 = self.data.word_to_iword['.'] #. magic
         output = []
         input = [start1]
         if self.n>=3:
@@ -208,17 +207,14 @@ class Ngram():
             start4 = random.choice(list(self._d[start1][start2][start3].keys()))
             input.append(start4)
             output.append(start4)
-        # while True:
         for i in range(nwords_to_generate):
             next = self.generate_token(input)
             input.pop(0)
             input.append(next)
             output.append(next)
-            # if next=='.': #. magic
-                # break
-        # sentence = ' '.join(output)
         sentence = ' '.join([self.data.iword_to_word[iword] for iword in output])
         return sentence
+
 
     def predict(self, tokens, k=3):
         """
