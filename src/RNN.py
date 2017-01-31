@@ -1,8 +1,8 @@
 
-# --------------------------------------------------------------------------------
-# Word Prediction Using RNNs
-# Read texts, train an RNN, plot results, and generate sentences.
-# --------------------------------------------------------------------------------
+"""
+Word Prediction Using RNNs
+Read texts, train an RNN, plot results, and generate sentences.
+"""
 
 
 SEED = 0 # random number seed
@@ -60,33 +60,33 @@ import util
 # Set Parameters
 # --------------------------------------------------------------------------------
 
-DATASET = 'gutenbergs'
-# DATASET = 'alice1'
-TRAIN_AMOUNT = 0.001 # percent of training data to use (for debugging), 0.0 to 1.0
-NEPOCHS = 3
-LAYERS = 2 # number of RNN layers, 1 to 3
-DROPOUT = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
-NVOCAB = 10000 # number of vocabulary words to use
+DATASET       = 'gutenbergs'
+# DATASET     = 'alice1'
+TRAIN_AMOUNT  = 0.001 # percent of training data to use (for debugging), 0.0 to 1.0
+NEPOCHS       = 3
+LAYERS        = 2 # number of RNN layers, 1 to 3
+DROPOUT       = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
+NVOCAB        = 10000 # number of vocabulary words to use
 EMBEDDING_DIM = 50 # dimension of embedding layer - 50, 100, 150, 200
-TRAINABLE = False # train word embedding matrix? if True will slow down training ~2x
-NHIDDEN = EMBEDDING_DIM # seemed to work best
-N = 5 # amount to unfold recurrent network
-RNN_CLASS = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
-BATCH_SIZE = 32 # size of batch to use for training
+TRAINABLE     = False # train word embedding matrix? if True will slow down training ~2x
+NHIDDEN       = EMBEDDING_DIM # seems to work best
+N             = 5 # amount to unfold recurrent network
+RNN_CLASS     = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
+BATCH_SIZE    = 32 # size of batch to use for training
 INITIAL_EPOCH = 0 # to continue training
-PATIENCE = 3 # stop after this many epochs of no improvement
-#LOSS_FN = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
-LOSS_FN = 'sparse_categorical_crossentropy'
-OPTIMIZER = 'adam'
-NVALIDATE = 10000 # number of tokens to use for validation
-NTEST = 10000 # number of tokens to use for testing
+PATIENCE      = 3 # stop after this many epochs of no improvement
+#LOSS_FN      = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
+LOSS_FN       = 'sparse_categorical_crossentropy'
+OPTIMIZER     = 'adam'
+NVALIDATE     = 10000 # number of tokens to use for validation
+NTEST         = 10000 # number of tokens to use for testing
 
 #TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
 
-BASE_DIR = '..'
-GLOVE_DIR = BASE_DIR + '/_vectors/glove.6B'
+BASE_DIR   = '..'
+GLOVE_DIR  = BASE_DIR + '/_vectors/glove.6B'
 GLOVE_FILE = GLOVE_DIR + '/glove.6B.%dd.txt' % EMBEDDING_DIM
-MODEL_DIR = BASE_DIR + '/models/' + DATASET
+MODEL_DIR  = BASE_DIR + '/models/' + DATASET
 MODEL_FILE = MODEL_DIR + "/model-train_amount-%s-nvocab-%d-embedding_dim-%d-nhidden-%d-n-%d.h5" % \
                          (TRAIN_AMOUNT, NVOCAB, EMBEDDING_DIM, NHIDDEN, N)
 if debug: print(MODEL_FILE)
@@ -221,6 +221,7 @@ callbacks = [print_sentence, checkpoint, early_stopping]
 
 print('Training model...')
 try:
+    #. pass validation% instead of fixed array
     history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, nb_epoch=NEPOCHS,
                         validation_data=(x_validate, y_validate),
                         callbacks=callbacks)
