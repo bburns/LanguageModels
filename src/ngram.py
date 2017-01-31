@@ -9,7 +9,6 @@ Stores a sparse multidimensional array (dict of dict) of token counts.
 # Import
 # --------------------------------------------------------------------------------
 
-
 import os
 import random
 from pprint import pprint, pformat
@@ -25,10 +24,9 @@ import util
 from benchmark import benchmark
 
 
-
 #. this class could be in a separate file, ngram_model.py, to be more like rnn.py
 # --------------------------------------------------------------------------------
-# define ngram class
+# Define ngram class
 # --------------------------------------------------------------------------------
 
 class Ngram():
@@ -43,14 +41,6 @@ class Ngram():
         self.n = n
         self._d = {} # dictionary of dictionary of ... of counts
 
-    # def fit(self, tokens, train_amount=1.0, debug=0):
-    #     """
-    #     Train the model
-    #     """
-    #     print("Training model n=%d..." % self.n)
-    #     tuples = nltk.ngrams(tokens, self.n)
-    #     for tuple in tuples:
-    #         self._increment_count(tuple) # add ngram counts to model
 
     def fit(self, x_train, y_train, train_amount=1.0, debug=0):
         """
@@ -60,26 +50,6 @@ class Ngram():
         for xs, y in zip(x_train, y_train):
             self._increment_count(xs, y) # add ngram counts to model
 
-    # def _increment_count(self, tuple):
-    #     """
-    #     Increment the value of the multidimensional array at given index (token tuple) by 1.
-    #     """
-    #     ntokens = len(tuple)
-    #     d = self._d
-    #     # need to iterate down the token stream to find the last dictionary,
-    #     # where you can increment the counter.
-    #     for i, token in enumerate(tuple):
-    #         if i==ntokens-1: # at last dictionary
-    #             if token in d:
-    #                 d[token] += 1
-    #             else:
-    #                 d[token] = 1
-    #         else:
-    #             if token in d:
-    #                 d = d[token]
-    #             else:
-    #                 d[token] = {}
-    #                 d = d[token]
 
     def _increment_count(self, xs, y):
         """
@@ -155,8 +125,9 @@ class Ngram():
             #. refactor
             prompt = x_test[i]
             actual = y_test[i]
-            probs = self.predict_proba([prompt])
-            iword_probs = util.get_best_iword_probs(probs, k=3)
+            # probs = self.predict_proba([prompt])
+            # iword_probs = util.get_best_iword_probs(probs, k=3)
+            iword_probs = self.predict(prompt, k=3)
             accurate = False
             if iword_probs: # can be None
                 predicted_tokens = [token_prob[0] for token_prob in iword_probs]
@@ -249,28 +220,24 @@ class Ngram():
         sentence = ' '.join([self.data.iword_to_word[iword] for iword in output])
         return sentence
 
-    # # def predict(self, tokens):
-    # def predict(self, prompt):
-    #     """
-    #     Get the k most likely subsequent tokens following the given string.
-    #     """
-    #     #. use Vocab class?
-    #     s = prompt.lower()
-    #     tokens = prompt.split()
-    #     #. add assert len(tokens)==self.n, or ignore too much/not enough info?
-    #     # get the last dictionary, which contains the subsequent tokens and their counts
-    #     d = self._d
-    #     for token in tokens:
-    #         if token in d:
-    #             d = d[token]
-    #         else:
-    #             return None
-    #     # find the most likely subsequent token
-    #     # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
-    #     # maxtoken = max(d, key=d.get)
-    #     # return maxtoken
-    #     best_tokens = util.get_best_tokens(d, self.k)
-    #     return best_tokens
+    def predict(self, tokens, k=3):
+        """
+        Get the k most likely subsequent tokens following the given string.
+        """
+        #. add assert len(tokens)==self.n, or ignore too much/not enough info?
+        # get the last dictionary, which contains the subsequent tokens and their counts
+        d = self._d
+        for token in tokens:
+            if token in d:
+                d = d[token]
+            else:
+                return [] #. ?
+        # find the most likely subsequent token
+        # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
+        # maxtoken = max(d, key=d.get)
+        # return maxtoken
+        best_tokens = util.get_best_tokens(d, k)
+        return best_tokens
 
 
 
@@ -281,7 +248,7 @@ class Ngram():
 debug = 0
 
 DATASET      = 'gutenbergs'
-TRAIN_AMOUNT = 1
+TRAIN_AMOUNT = .01
 NVOCAB       = 10000
 NTEST        = 2000
 
@@ -322,7 +289,7 @@ for n in (1,2,3,4,5):
     util.uprint(util.table(model.test_samples))
 
     print('generated text:')
-    nsentences = 10
+    nsentences = 5
     for i in range(nsentences):
         util.uprint(model.generate()) # weird symbols can crash print
 

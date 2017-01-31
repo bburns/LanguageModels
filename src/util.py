@@ -207,6 +207,7 @@ def mkdir(path):
     except:
         pass
 
+
 def softmax(x):
     """
     Calculate softmax values for given vector x.
@@ -215,9 +216,11 @@ def softmax(x):
     xt = np.exp(x - np.max(x))
     return xt / np.sum(xt)
 
+
 def get_best_tokens(d, k):
     """
     Return the best k tokens with their probabilities from the given dictionary.
+    eg _____________
     """
     # convert list to a heap, find k largest values
     lst = list(d.items()) # eg [('a',5),('dog',1),...]
