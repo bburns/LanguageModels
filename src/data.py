@@ -28,6 +28,7 @@ class Data():
         """
         Prepare dataset by reading texts and tokenizing into a sequence with nvocab vocabulary words.
         """
+        self.nvocab = nvocab
 
         print('Reading texts...') # ~1sec
         text = ''
@@ -67,7 +68,7 @@ class Data():
 
         print('Find vocabulary words...') # ~1sec
         token_freqs = nltk.FreqDist(tokens)
-        token_counts = token_freqs.most_common(nvocab-1)
+        token_counts = token_freqs.most_common(self.nvocab-1)
         index_to_token = [token_count[0] for token_count in token_counts]
         index_to_token.insert(0, '') # oov/unknown at position 0
         token_to_index = dict([(token,i) for i,token in enumerate(index_to_token)])

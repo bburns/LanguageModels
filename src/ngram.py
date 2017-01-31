@@ -34,7 +34,7 @@ class Ngram():
         """
         Train the model
         """
-        print("Training model...")
+        print("Training model n=%d..." % self.n)
         tokens = self.data.sequence
         tuples = nltk.ngrams(tokens, self.n)
         for tuple in tuples:
@@ -64,83 +64,112 @@ class Ngram():
                     d[token] = {}
                     d = d[token]
 
-    def generate_token(self, tokens):
-        """
-        Get a random token following the given sequence.
-        """
-        if self.n==1:
-            tokens = [] # no context - will just return a random token from vocabulary
-        else:
-            tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
-        # get the final dictionary, which contains the subsequent tokens and their counts
-        d = self._d
-        for token in tokens:
-            if token in d:
-                d = d[token]
-            else:
-                return None
-        # pick a random token according to the distribution of subsequent tokens
-        ntotal = sum(d.values()) # total occurrences of subsequent tokens
-        p = random.random() # a random value 0.0-1.0
-        stopat = p * ntotal # we'll get the cumulative sum and stop when we get here
-        ntotal = 0
-        for token in d.keys():
-            ntotal += d[token]
-            if stopat < ntotal:
-                return token
-        return d.keys()[-1] # right? #. test
 
-    def generate(self):
+    def predict_proba(self, x, verbose=0):
         """
-        Generate sentence of random text.
+        predict probability of following words, over entire vocabulary
+        this method follows keras's api (ie duck typing)
         """
-        start1 = '.' #. magic
-        output = []
-        input = [start1]
-        if self.n>=3:
-            start2 = random.choice(list(self._d[start1].keys()))
-            input.append(start2)
-            output.append(start2)
-        if self.n>=4:
-            start3 = random.choice(list(self._d[start1][start2].keys()))
-            input.append(start3)
-            output.append(start3)
-        if self.n>=5:
-            start4 = random.choice(list(self._d[start1][start2][start3].keys()))
-            input.append(start4)
-            output.append(start4)
-        while True:
-            next = self.generate_token(input)
-            input.pop(0)
-            input.append(next)
-            output.append(next)
-            if next=='.': #. magic
-                break
-        sentence = ' '.join(output)
-        return sentence
-
-    # def predict(self, tokens):
-    def predict(self, prompt):
-        """
-        Get the k most likely subsequent tokens following the given string.
-        """
-        #. use Vocab class?
-        s = prompt.lower()
-        tokens = prompt.split()
-        #. add assert len(tokens)==self.n, or ignore too much/not enough info?
         # get the last dictionary, which contains the subsequent tokens and their counts
         d = self._d
+        tokens = x[0]
         for token in tokens:
             if token in d:
                 d = d[token]
             else:
-                return None
-        # find the most likely subsequent token
-        # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
-        # maxtoken = max(d, key=d.get)
-        # return maxtoken
-        best_tokens = util.get_best_tokens(d, self.k)
-        return best_tokens
+                d = {}
+        nvocab = self.data.nvocab
+        ntotal = sum(d.values()) # total occurrences of subsequent tokens
+        probs = [[]]
+        for iword in range(nvocab):
+            ncount = d.get(iword)
+            if ncount:
+                pct = ncount/ntotal if ntotal!=0 else 0
+            else:
+                pct = 0.0
+            probs[0].append(pct)
+        return probs
+
+
+
+
+    # def generate_token(self, tokens):
+    #     """
+    #     Get a random token following the given sequence.
+    #     """
+    #     if self.n==1:
+    #         tokens = [] # no context - will just return a random token from vocabulary
+    #     else:
+    #         tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
+    #     # get the final dictionary, which contains the subsequent tokens and their counts
+    #     d = self._d
+    #     for token in tokens:
+    #         if token in d:
+    #             d = d[token]
+    #         else:
+    #             return None
+    #     # pick a random token according to the distribution of subsequent tokens
+    #     ntotal = sum(d.values()) # total occurrences of subsequent tokens
+    #     p = random.random() # a random value 0.0-1.0
+    #     stopat = p * ntotal # we'll get the cumulative sum and stop when we get here
+    #     ntotal = 0
+    #     for token in d.keys():
+    #         ntotal += d[token]
+    #         if stopat < ntotal:
+    #             return token
+    #     return d.keys()[-1] # right? #. test
+
+    # def generate(self):
+    #     """
+    #     Generate sentence of random text.
+    #     """
+    #     start1 = '.' #. magic
+    #     output = []
+    #     input = [start1]
+    #     if self.n>=3:
+    #         start2 = random.choice(list(self._d[start1].keys()))
+    #         input.append(start2)
+    #         output.append(start2)
+    #     if self.n>=4:
+    #         start3 = random.choice(list(self._d[start1][start2].keys()))
+    #         input.append(start3)
+    #         output.append(start3)
+    #     if self.n>=5:
+    #         start4 = random.choice(list(self._d[start1][start2][start3].keys()))
+    #         input.append(start4)
+    #         output.append(start4)
+    #     while True:
+    #         next = self.generate_token(input)
+    #         input.pop(0)
+    #         input.append(next)
+    #         output.append(next)
+    #         if next=='.': #. magic
+    #             break
+    #     sentence = ' '.join(output)
+    #     return sentence
+
+    # # def predict(self, tokens):
+    # def predict(self, prompt):
+    #     """
+    #     Get the k most likely subsequent tokens following the given string.
+    #     """
+    #     #. use Vocab class?
+    #     s = prompt.lower()
+    #     tokens = prompt.split()
+    #     #. add assert len(tokens)==self.n, or ignore too much/not enough info?
+    #     # get the last dictionary, which contains the subsequent tokens and their counts
+    #     d = self._d
+    #     for token in tokens:
+    #         if token in d:
+    #             d = d[token]
+    #         else:
+    #             return None
+    #     # find the most likely subsequent token
+    #     # see http://stackoverflow.com/questions/268272/getting-key-with-maximum-value-in-dictionary
+    #     # maxtoken = max(d, key=d.get)
+    #     # return maxtoken
+    #     best_tokens = util.get_best_tokens(d, self.k)
+    #     return best_tokens
 
     # def __str__(self):
     #     """
@@ -174,23 +203,26 @@ if __name__ == '__main__':
 
     from data import Data
     data = Data('alice1')
-    data.prepare(nvocab=100)
+    data.prepare(nvocab=20)
 
     # n=1
     # if 1:
     # for n in (1,2,3,4,5):
     for n in (1,2):
-        ngram = Ngram(data, n=n)
-        ngram.train(debug=1)
-        # ngram.test(test_amount=2000)
-        # print('accuracy:', ngram.test_accuracy)
-        # print('relevance:', ngram.test_relevance)
+        model = Ngram(data, n=n)
+        model.train(debug=1)
+
+        util.uprint('Final epoch generated text:', util.generate_text(model, data, n))
+        print()
+        # model.test(test_amount=2000)
+        # print('accuracy:', model.test_accuracy)
+        # print('relevance:', model.test_relevance)
         # print('sample predictions:')
-        # df = ngram.test_samples
-        # print(tabulate(ngram.test_samples, showindex=False, headers=df.columns))
+        # df = model.test_samples
+        # print(tabulate(model.test_samples, showindex=False, headers=df.columns))
         # # print(df)
-        # # print(ngram._d)
-        # s = ngram.generate()
+        # # print(model._d)
+        # s = model.generate()
         # # print('generate:', s)
         # print('generate:', repr(s)) # weird symbols sometimes crash print
         # print()

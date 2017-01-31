@@ -16,6 +16,7 @@ from tabulate import tabulate
 def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
     """
     Print strings with different encodings.
+    Need this because some text has odd encodings and causes print to fail.
     source: http://stackoverflow.com/a/29988426/243392
     """
     enc = file.encoding
@@ -36,7 +37,10 @@ def get_best_iword_probs(probs, k):
     best_pairs = heapq.nlargest(k, iword_probs, key=lambda pair: pair[1])
     # normalize probabilities
     total = sum([prob for iword,prob in best_pairs])
-    best_iword_probs = [(iword,prob/total) for iword,prob in best_pairs]
+    if total!=0:
+        best_iword_probs = [(iword,prob/total) for iword,prob in best_pairs]
+    else:
+        best_iword_probs = [(iword,0.0) for iword,prob in best_pairs]
     return best_iword_probs
 # test
 # probs = np.array([[0.1,0.2,0.3,0.4]])
@@ -72,12 +76,14 @@ def generate_text(model, data, n, nwords=20, k=5):
     words = []
     for i in range(nwords):
         x = np.roll(x,-1) # flattens array, rotates to left, and reshapes it
-        x[0,-1] = iword # insert new word
+        # print(x)
+        if len(x[0])>0: # for n=1, x[0] will always be empty
+            x[0,-1] = iword # insert new word
         probs = model.predict_proba(x, verbose=0)
         iword_probs = get_best_iword_probs(probs, k)
         iwords = choose_iwords(iword_probs, 1) # choose randomly
         iword = iwords[0]
-        try:
+        try: # in case iword is out of bounds - eg for tiny vocabulary
             word = data.iword_to_word[iword]
             words.append(word)
         except:
