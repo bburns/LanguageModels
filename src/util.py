@@ -13,6 +13,19 @@ import numpy as np
 from tabulate import tabulate
 
 
+def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
+    """
+    Print strings with different encodings.
+    source: http://stackoverflow.com/a/29988426/243392
+    """
+    enc = file.encoding
+    if enc == 'UTF-8':
+        print(*objects, sep=sep, end=end, file=file)
+    else:
+        f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
+        print(*map(f, objects), sep=sep, end=end, file=file)
+
+
 def get_best_iword_probs(probs, k):
     """
     Return the best k words and normalized probabilities from the given probabilities.
@@ -64,8 +77,11 @@ def generate_text(model, data, n, nwords=20, k=5):
         iword_probs = get_best_iword_probs(probs, k)
         iwords = choose_iwords(iword_probs, 1) # choose randomly
         iword = iwords[0]
-        word = data.iword_to_word[iword]
-        words.append(word)
+        try:
+            word = data.iword_to_word[iword]
+            words.append(word)
+        except:
+            pass
     sentence = ' '.join(words)
     return sentence
 

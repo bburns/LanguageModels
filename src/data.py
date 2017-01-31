@@ -29,7 +29,7 @@ class Data():
         Prepare dataset by reading texts and tokenizing into a sequence with nvocab vocabulary words.
         """
 
-        print('reading texts...') # ~1sec
+        print('Reading texts...') # ~1sec
         text = ''
         for filename in sorted(os.listdir(self.folder)):
             filepath = self.folder +'/' + filename
@@ -47,7 +47,7 @@ class Data():
             print(text[:1000])
             print()
 
-        print('split into paragraphs, shuffle, recombine...') # ~1sec
+        print('Split into paragraphs, shuffle, recombine...') # ~1sec
         paragraphs = re.split(r"\n\n+", text)
         if debug: print('nparagraphs:',len(paragraphs))
         random.seed(seed)
@@ -59,13 +59,13 @@ class Data():
             print()
         del paragraphs
 
-        print('tokenizing text (~15sec)...')
+        print('Tokenizing text (~15sec)...')
         tokens = tokenize.word_tokenize(text.lower())
         if debug:
             print('ntokens:',len(tokens))
             print('first tokens:',tokens[:100])
 
-        print('find vocabulary words...') # ~1sec
+        print('Find vocabulary words...') # ~1sec
         token_freqs = nltk.FreqDist(tokens)
         token_counts = token_freqs.most_common(nvocab-1)
         index_to_token = [token_count[0] for token_count in token_counts]
@@ -73,7 +73,7 @@ class Data():
         token_to_index = dict([(token,i) for i,token in enumerate(index_to_token)])
         if debug: print('start of index_to_token:',index_to_token[:10])
 
-        print('convert text to numeric sequence, skipping OOV words...') # ~1sec
+        print('Convert text to numeric sequence, skipping OOV words...') # ~1sec
         self.sequence = []
         for token in tokens:
             itoken = token_to_index.get(token)
@@ -110,8 +110,6 @@ class Data():
             print('sample words in dictionary',random.sample(words,50))
             del words
 
-        print('done')
-
 
     def split(self, n, nvalidate, ntest, train_amount=1.0, debug=False):
         """
@@ -124,6 +122,7 @@ class Data():
 
         nelements = len(self.sequence)
         ntrain_total = nelements - nvalidate - ntest
+        if ntrain_total<0: ntrain_total = nelements # for debugging cases
         ntrain = int(ntrain_total * train_amount)
 
         if debug:
@@ -144,6 +143,8 @@ class Data():
             """
             ncontext = n-1
             xs, ys = [], []
+            noffset = max(0, noffset) # for debugging cases
+            nelements = min(nelements, len(sequence)) # ditto
             for i in range(noffset, noffset + nelements - ncontext):
                 x = sequence[i:i+ncontext]
                 y = sequence[i+ncontext]
@@ -153,11 +154,10 @@ class Data():
             y_set = np.array(ys)
             return x_set, y_set
 
-        print('create train, validate, test sets...') # ~5sec
+        print('Create train, validate, test sets...') # ~5sec
         x_train, y_train = create_dataset(self.sequence, n=n, noffset=0, nelements=ntrain)
         x_validate, y_validate = create_dataset(self.sequence, n=n, noffset=-ntest-nvalidate, nelements=nvalidate)
         x_test, y_test = create_dataset(self.sequence, n=n, noffset=-ntest, nelements=ntest)
-        print('done')
 
         if debug:
             print('train data size:',len(x_train))
@@ -176,10 +176,10 @@ if __name__ == '__main__':
 
     # data = Data('gutenbergs')
     data = Data('alice1')
-    data.prepare(nvocab=100, debug=1)
+    data.prepare(nvocab=100, debug=0)
     n = 4
     #. just return train, test - let model handle validation split
-    x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=n, nvalidate=100, ntest=100, debug=1)
+    x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=n, nvalidate=10000, ntest=10000, debug=1)
     print(x_train[:5])
 
 
