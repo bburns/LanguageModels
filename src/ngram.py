@@ -20,8 +20,10 @@ import nltk
 from nltk import tokenize
 from tabulate import tabulate
 
+import data as datamodule
 import util
 from benchmark import benchmark
+
 
 
 #. this class could be in a separate file, ngram_model.py, to be more like rnn.py
@@ -41,39 +43,64 @@ class Ngram():
         self.n = n
         self._d = {} # dictionary of dictionary of ... of counts
 
-    def fit(self, train_amount=1.0, debug=0):
+    # def fit(self, tokens, train_amount=1.0, debug=0):
+    #     """
+    #     Train the model
+    #     """
+    #     print("Training model n=%d..." % self.n)
+    #     tuples = nltk.ngrams(tokens, self.n)
+    #     for tuple in tuples:
+    #         self._increment_count(tuple) # add ngram counts to model
+
+    def fit(self, x_train, y_train, train_amount=1.0, debug=0):
         """
         Train the model
         """
         print("Training model n=%d..." % self.n)
-        tokens = self.data.sequence
-        tuples = nltk.ngrams(tokens, self.n)
-        for tuple in tuples:
-            self._increment_count(tuple) # add ngram counts to model
-        # if debug:
-            # print('d keys',list(self._d.keys())[:5])
-            # print('d values',list(self._d.values())[:5])
+        for xs, y in zip(x_train, y_train):
+            self._increment_count(xs, y) # add ngram counts to model
 
-    def _increment_count(self, tuple):
+    # def _increment_count(self, tuple):
+    #     """
+    #     Increment the value of the multidimensional array at given index (token tuple) by 1.
+    #     """
+    #     ntokens = len(tuple)
+    #     d = self._d
+    #     # need to iterate down the token stream to find the last dictionary,
+    #     # where you can increment the counter.
+    #     for i, token in enumerate(tuple):
+    #         if i==ntokens-1: # at last dictionary
+    #             if token in d:
+    #                 d[token] += 1
+    #             else:
+    #                 d[token] = 1
+    #         else:
+    #             if token in d:
+    #                 d = d[token]
+    #             else:
+    #                 d[token] = {}
+    #                 d = d[token]
+
+    def _increment_count(self, xs, y):
         """
         Increment the value of the multidimensional array at given index (token tuple) by 1.
         """
-        ntokens = len(tuple)
+        # ntokens = len(tuple)
         d = self._d
         # need to iterate down the token stream to find the last dictionary,
         # where you can increment the counter.
-        for i, token in enumerate(tuple):
-            if i==ntokens-1: # at last dictionary
-                if token in d:
-                    d[token] += 1
-                else:
-                    d[token] = 1
+        for i, token in enumerate(xs):
+            if token in d:
+                d = d[token]
             else:
-                if token in d:
-                    d = d[token]
-                else:
-                    d[token] = {}
-                    d = d[token]
+                d[token] = {}
+                d = d[token]
+        # at last dictionary
+        token = y
+        if token in d:
+            d[token] += 1
+        else:
+            d[token] = 1
 
 
     def predict_proba(self, x, verbose=0):
@@ -104,9 +131,11 @@ class Ngram():
         return probs
 
 
-    def test(self, nsamples=10):
+    def test(self, x_test, y_test, nsamples=10):
         """
         Test the model and return the accuracy, relevance score and some sample predictions.
+        x_test - context/prompt tokens
+        y_test - following token
         nsamples - number of sample predictions to record in self.test_samples
         Returns nothing, but sets
             self.test_time
@@ -115,19 +144,17 @@ class Ngram():
             self.test_relevance
         and saves the model with those values to a file.
         """
-        tokens = self.data.sequence
-        ntokens = len(tokens)
-        npredictions = ntokens - self.n #.
-        nsample_spacing = max(int(ntokens / nsamples), 1)
+        ntest = len(x_test)
+        nsample_spacing = max(int(ntest / nsamples), 1)
         samples = []
         naccurate = 0
         nrelevant = 0
         sample_columns = ['Prompt','Predictions','Actual','Status']
         print("Testing model n=%d..." % self.n)
-        for i in range(npredictions): # iterate over all test tokens
+        for i in range(ntest): # iterate over all test tokens
             #. refactor
-            prompt = tokens[i:i+self.n-1]
-            actual = tokens[i+self.n-1]
+            prompt = x_test[i]
+            actual = y_test[i]
             probs = self.predict_proba([prompt])
             iword_probs = util.get_best_iword_probs(probs, k=3)
             accurate = False
@@ -148,7 +175,6 @@ class Ngram():
                 # pct = token_prob[1]*100
                 if iword_probs:
                     spredictions = '  '.join(['%s (%.1f%%)' % \
-                                              # (iword_prob[0], iword_prob[1]*100) \
                                               (self.data.iword_to_word[iword_prob[0]], iword_prob[1]*100) \
                                               for iword_prob in iword_probs])
                 else:
@@ -156,68 +182,72 @@ class Ngram():
                 saccurate = 'OK' if accurate else 'FAIL'
                 sample = [sprompt, spredictions, sactual, saccurate]
                 samples.append(sample)
-        relevance = nrelevant / npredictions if npredictions>0 else 0
-        accuracy = naccurate / npredictions if npredictions>0 else 0
-        # self.test_time = b.time
+        relevance = nrelevant / ntest if ntest>0 else 0
+        accuracy = naccurate / ntest if ntest>0 else 0
         self.test_accuracy = accuracy
         self.test_relevance = relevance
         self.test_samples = pd.DataFrame(samples, columns=sample_columns)
-        # self.save() # save test time, score, samples
 
-    # def generate_token(self, tokens):
-    #     """
-    #     Get a random token following the given sequence.
-    #     """
-    #     if self.n==1:
-    #         tokens = [] # no context - will just return a random token from vocabulary
-    #     else:
-    #         tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
-    #     # get the final dictionary, which contains the subsequent tokens and their counts
-    #     d = self._d
-    #     for token in tokens:
-    #         if token in d:
-    #             d = d[token]
-    #         else:
-    #             return None
-    #     # pick a random token according to the distribution of subsequent tokens
-    #     ntotal = sum(d.values()) # total occurrences of subsequent tokens
-    #     p = random.random() # a random value 0.0-1.0
-    #     stopat = p * ntotal # we'll get the cumulative sum and stop when we get here
-    #     ntotal = 0
-    #     for token in d.keys():
-    #         ntotal += d[token]
-    #         if stopat < ntotal:
-    #             return token
-    #     return d.keys()[-1] # right? #. test
 
-    # def generate(self):
-    #     """
-    #     Generate sentence of random text.
-    #     """
-    #     start1 = '.' #. magic
-    #     output = []
-    #     input = [start1]
-    #     if self.n>=3:
-    #         start2 = random.choice(list(self._d[start1].keys()))
-    #         input.append(start2)
-    #         output.append(start2)
-    #     if self.n>=4:
-    #         start3 = random.choice(list(self._d[start1][start2].keys()))
-    #         input.append(start3)
-    #         output.append(start3)
-    #     if self.n>=5:
-    #         start4 = random.choice(list(self._d[start1][start2][start3].keys()))
-    #         input.append(start4)
-    #         output.append(start4)
-    #     while True:
-    #         next = self.generate_token(input)
-    #         input.pop(0)
-    #         input.append(next)
-    #         output.append(next)
-    #         if next=='.': #. magic
-    #             break
-    #     sentence = ' '.join(output)
-    #     return sentence
+    def generate_token(self, tokens):
+        """
+        Get a random token following the given sequence.
+        """
+        if self.n==1:
+            tokens = [] # no context - will just return a random token from vocabulary
+        else:
+            tokens = tokens[-self.n+1:] # an n-gram can only see the last n tokens
+        # get the final dictionary, which contains the subsequent tokens and their counts
+        d = self._d
+        for token in tokens:
+            if token in d:
+                d = d[token]
+            else:
+                return None
+        # pick a random token according to the distribution of subsequent tokens
+        ntotal = sum(d.values()) # total occurrences of subsequent tokens
+        p = random.random() # a random value 0.0-1.0
+        stopat = p * ntotal # we'll get the cumulative sum and stop when we get here
+        ntotal = 0
+        for token in d.keys():
+            ntotal += d[token]
+            if stopat < ntotal:
+                return token
+        return d.keys()[-1] # right? #. test
+
+
+    def generate(self, nwords_to_generate=20):
+        """
+        Generate sentence of random text.
+        """
+        # start1 = '.' #. magic
+        # start1 = 0 #. magic
+        start1 = self.data.word_to_iword['.']
+        output = []
+        input = [start1]
+        if self.n>=3:
+            start2 = random.choice(list(self._d[start1].keys()))
+            input.append(start2)
+            output.append(start2)
+        if self.n>=4:
+            start3 = random.choice(list(self._d[start1][start2].keys()))
+            input.append(start3)
+            output.append(start3)
+        if self.n>=5:
+            start4 = random.choice(list(self._d[start1][start2][start3].keys()))
+            input.append(start4)
+            output.append(start4)
+        # while True:
+        for i in range(nwords_to_generate):
+            next = self.generate_token(input)
+            input.pop(0)
+            input.append(next)
+            output.append(next)
+            # if next=='.': #. magic
+                # break
+        # sentence = ' '.join(output)
+        sentence = output
+        return sentence
 
     # # def predict(self, tokens):
     # def predict(self, prompt):
@@ -244,36 +274,56 @@ class Ngram():
 
 
 
-if __name__ == '__main__':
+# --------------------------------------------------------------------------------
+# Set Parameters
+# --------------------------------------------------------------------------------
 
-    from data import Data
-    data = Data('alice1')
-    # data = Data('gutenbergs')
-    data.prepare(nvocab=10000)
+debug = 1
 
-    for n in (1,2,3,4,5):
-        model = Ngram(data, n=n)
+DATASET      = 'gutenbergs'
+TRAIN_AMOUNT = 0.01
+NVOCAB       = 10000
+NTEST        = 1000
 
-        #. pass validation%
-        model.fit(debug=1)
+# --------------------------------------------------------------------------------
+# Get Data
+# --------------------------------------------------------------------------------
 
-        util.uprint(util.generate_text(model, data, n))
-        print()
+data = datamodule.Data(DATASET)
+data.prepare(nvocab=NVOCAB)
 
-        #. need to report validation accuracy here, not test accuracy!
-        model.test()
-        print('accuracy:', model.test_accuracy)
-        print('relevance:', model.test_relevance)
+for n in (1,2,3,4,5):
 
-        # print('sample predictions:')
-        # df = model.test_samples
-        # print(tabulate(model.test_samples, showindex=False, headers=df.columns))
+    x_train, y_train, x_test, y_test = data.split(n=n, ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
 
-        # print('generated text:')
-        # nsentences = 10
-        # nwords_to_generate = 20
-        # k = 10
-        # for i in range(nsentences):
-        #     util.uprint(model.generate(nwords_to_generate, k)) # weird symbols can crash print
+    # --------------------------------------------------------------------------------
+    # Build Model
+    # --------------------------------------------------------------------------------
+
+    model = Ngram(data, n=n)
+
+    # --------------------------------------------------------------------------------
+    # Train Model
+    # --------------------------------------------------------------------------------
+
+    model.fit(x_train, y_train, debug=debug)
+
+    # --------------------------------------------------------------------------------
+    # Evaluate Model
+    # --------------------------------------------------------------------------------
+
+    model.test(x_test, y_test) # sets various model properties
+
+    print('accuracy:', model.test_accuracy)
+    print('relevance:', model.test_relevance)
+
+    print('sample predictions:')
+    df = model.test_samples
+    print(util.table(model.test_samples))
+
+    print('generated text:')
+    nsentences = 10
+    for i in range(nsentences):
+        util.uprint(model.generate()) # weird symbols can crash print
 
 

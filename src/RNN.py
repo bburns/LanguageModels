@@ -51,7 +51,7 @@ except:
     plt = None
 
 # local modules
-import sys; sys.path.append('../src')
+# import sys; sys.path.append('../src')
 import data as datamodule
 import util
 
