@@ -22,11 +22,10 @@ January 31, 2017
 Background information such as the problem domain, the project origin, and
 related data sets or input data is given. -->
 
-Word prediction is the task of predicting the most likely words following the
-preceding text - this is also known as *language modeling*. It has many
-applications, such as suggesting the next word as text is entered, as an aid in
-resolving ambiguity in speech and handwriting recognition, and in machine
-translation.
+Word prediction, or *language modeling*, is the task of predicting the most
+likely words following the preceding text. It has many applications, such as
+suggesting the next word as text is entered, as an aid in resolving ambiguity in
+speech and handwriting recognition, and in machine translation.
 
 The generation of a likely word given prior words goes back to Claude Shannon's
 work on information theory (Shannon 1948) based in part on Markov models
@@ -206,7 +205,8 @@ _Abnormalities_ or characteristics about the data or input that need to
 be addressed have been identified. -->
 
 The training and testing data are obtained from ten books from Project
-Gutenberg, totalling roughly one million words -
+Gutenberg, totalling roughly one million words (or 1.3 million tokens, which
+include punctuation marks like commas, periods, etc.) -
 
 <!-- note: can make this fixed chars by indenting, but needs to be at left margin to make a latex table -->
 <!-- this is output from print(util.table(data.analyze())), then adjusted -->
@@ -266,9 +266,9 @@ closely together, indicating their similarity.
 <!-- Algorithms and techniques used in the project are thoroughly discussed and
 properly justified based on the characteristics of the problem. -->
 
-Until recently, n-grams were state of the art in word prediction - neural
-networks surpassed them in 2003, though at the cost of greater training time
-(Bengio 2003).
+Until recently, n-grams were considered state of the art in word prediction -
+neural networks surpassed them in 2003, though at the cost of greater training
+time (Bengio 2003).
 
 An RNN is able to remember arbitrary amounts of context, while n-grams are
 effectively limited to about 4 words of context (a 5-gram will give 4 words of
@@ -286,7 +286,7 @@ then used to make predictions about the next word.
 
 <!-- -> is this correct about U? read something different. what about matrix E the -->
 <!--    embedding layer? it's separate from U... -->
-<!-- and model returns 6 matrices - so... what gives?  -->
+<!-- and model returns 6 matrices - so... what gives? what is E vs U? -->
 
 The matrix *U* amounts to a table of word embeddings in a vector space of many
 dimensions - each word in the vocabulary corresponds with a row in the table,
@@ -301,6 +301,10 @@ The matrix *V* allows each word in the vocabulary to 'vote' on how likely it
 thinks it will be next, based on the context (current + previous words). The
 softmax output layer then converts these scores into probabilities, so the top
 *k* most likely words can be found for a given context.
+
+Multiple layers of RNNs can also be used, in which case there is more than one
+hidden state - this allows the network to detect and learn higher level
+structures in the input, such as ??????????????????????
 
 To learn the parameters for the matrices *U*, *V*, and *W*, we define an error
 (or loss) function to be the *categorical cross-entropy loss*, and use
@@ -318,8 +322,13 @@ which have problems with vanishing and exploding gradients, which make them slow
 and difficult to train.
 
 A GRU (Gated Recurrent Unit) RNN (Chung 2014) is similar to an LSTM, but has
-fewer parameters and is a bit easier to train, so this is what we will use for our
-base RNN. 
+fewer parameters and is a bit easier to train. 
+
+<!-- -> show plot here comparing loss curve for rnn vs lstm vs gru -->
+
+
+<!-- -> do big O analysis here? estimate memory needed, # calcs, time -->
+
 
 
 <!-- -> show calcs and matrices for abcd example - nvocab=5, nhidden=2, incl loss vs -->
@@ -330,35 +339,24 @@ base RNN.
 <!-- -> compare word-level with character-level rnn learning - maybe character level -->
 <!--    easier on the cpu, as nvocab=26 (or 52 with caps). plus invented words. -->
 
-<!-- -> do big O analysis, estimate memory needed, # calcs, time -->
-
 
 ### Benchmark
 
 <!-- Student clearly defines a benchmark result or threshold for comparing
 performances of solutions obtained. -->
 
-<!-- For the benchmark model a simple n-gram model will be used - this is a standard -->
-For the benchmark model a Kneser-Ney 5-gram model will be used - this is a standard
+For the benchmark model a simple trigram model will be used - this is a standard
 approach for next word prediction based on Markov models. A multidimensional
-array, indexed by vocabulary words, stores counts of occurrences of 5-tuples of
+array, indexed by vocabulary words, stores counts of occurrences of 3-tuples of
 words based on the training data. These are then normalized to get a probability
 distribution, which can be used to predict the most likely words following a
 sequence.
 
-<!-- A trigram (3-gram) model will be used as the baseline, as it should work fairly -->
-<!-- well with a million words of data - going to 4- or 5- grams would -->
-<!-- require more training data. -->
+<!-- -> find published results, history (when were these first developed, called n-grams, get citations) -->
 
--> find published results, history (when were these first developed, called n-grams, get citations)
-
-Kneser, R. & Ney, H. (1995). Improved backing-off for m-gram language modeling.
-Proceedings of the IEEE International Conference on Acoustics, Speech and Signal
-Processing, Detroit, MI, volume 1, pp. 181-184. May 1995.
-
--> another benchmark could just be guessing the most likely word, 'the' - how
-well would that work? what perplexity?
-
+A more state of the art baseline would be a Kneser-Ney 5-gram model (Kneser
+1995), which calculates 1- through 5-grams and interpolates between them, but
+implementing that algorithm is beyond the scope of this project.
 
 
 ## Methodology
@@ -383,7 +381,7 @@ recorded** - punctuation marks are treated as separate tokens.
 
 The sequence of tokens is then split into training, validation, and test sets -
 the validation and test sets were set at 10,000 tokens, and the training set has
-roughly 1,000,000 tokens.
+nearly 1,300,000 tokens.
 
 
 ### Implementation
@@ -401,9 +399,9 @@ analysis.
 
 <!-- -> compare Keras code vs TensorFlow for a simple RNN? -->
 
-The basic architecture of the RNN is an embedding input layer, a GRU RNN with
-one or two layers, a densely connected output layer, and a softmax layer to
-convert the outputs to probabilities.
+The basic architecture of the RNN is an embedding input layer, one or more
+hidden layers, a densely connected output layer, and a softmax layer to convert
+the outputs to probabilities.
 
 The initial approach used sequences of integer tokens for input and one-hot
 encoded tokens for comparison with the output - this proved infeasible
@@ -429,7 +427,7 @@ then a word embedding matrix *E* was built from the complete GloVe word
 embedding array of 400,000 words, and set as the weights for the neural
 network's embedding layer.
 
-For the training step, the training sequence of roughly 1 million tokens was fed
+For the training step, the training sequence of roughly 1.3 million tokens was fed
 to the network, which was trained for a certain number of epochs - depending on
 the network configuration each epoch took around 30 minutes.
 
@@ -440,31 +438,33 @@ accuracy are shown during training and at the end of the epoch, e.g. -
 \small
 
 ~~~
-Train on 1079740 samples, validate on 9996 samples
-generated: the ages projecting satin cool star david drinker accounts accounts
-Epoch 1/3
-1079740/1079740 [===] - 2722s - loss: 5.9512 - acc: 0.1145 - val_loss: 5.6766 - val_acc: 0.1306
-generated: you see i said the man was the fact that
-Epoch 2/3
-1079740/1079740 [===] - 2751s - loss: 5.6650 - acc: 0.1287 - val_loss: 5.6017 - val_acc: 0.1333
-generated: the old woman who has been able the project and
-Epoch 3/3
-1079740/1079740 [===] - 2748s - loss: 5.5962 - acc: 0.1328 - val_loss: 5.5640 - val_acc: 0.1399
-generated: self i said that he said that i am not
-Wall time: 2h 17min 5s
+Training model...
+Train on 1283291 samples, validate on 12963 samples
+Epoch 0 generated text: of lightly malvern gurgling anybody despairing pointing fray 'm amid antechamber 'm fight sooth paid counter chimney-corner weather chimney-corner pierced
+Epoch 1/10
+1283291/1283291 [==============================] - 1207s - loss: 5.4187 - acc: 0.1518 - val_loss: 5.1304 - val_acc: 0.1665
+Epoch 1 generated text: . `` you will have a , and i have not a man . '' she had a little ,
+Epoch 2/10
+1283291/1283291 [==============================] - 1207s - loss: 5.1610 - acc: 0.1669 - val_loss: 5.0386 - val_acc: 0.1734
+Epoch 2 generated text: ; and it is a man , i have not done to say to the . it was a of
+Epoch 3/10
+1283291/1283291 [==============================] - 1206s - loss: 5.1034 - acc: 0.1708 - val_loss: 5.0139 - val_acc: 0.1780
+Epoch 3 generated text: . he knew that she had no one of the of , of which the first man was , ''
 ~~~
 
 \normalsize
 
+Overfitting is prevented by an early stopping trigger, which will stop training
+if the validation accuracy does not improve for a certain number of epochs.
+
 For evaluation, plots are made of the loss and accuracy over the training
-epochs - see Figure 3 below - this helps diagnose overfitting, which is
-indicated by the loss flattening out and increasing.
+epochs - see Figure 3 below - this also helps diagnose overfitting, which is
+indicated by the loss flattening out and starting to increase.
 
 ![Training and validation loss plot](images/loss.png)
 
-The *perplexity* of the model is calculated from the *cross-entropy* by taking
-the exponential - e.g. math.exp(5.5962) = 269.4.
-
+<!-- The *perplexity* of the model is calculated from the *cross-entropy* by taking -->
+<!-- the exponential - e.g. math.exp(5.5962) = 269.4. -->
 
 <!-- Similar experiments were performed with the n-gram baseline.  -->
 
@@ -475,51 +475,42 @@ the exponential - e.g. math.exp(5.5962) = 269.4.
 documented. Both the initial and final solutions are reported, along with
 intermediate solutions, if necessary. -->
 
+The RNN architecture has several parameters which can affect the speed of
+training and the accuracy of the model - the total parameter space has nearly
+90,000 combinations -
 
-Note: if the number of parameters to learn (e.g. size of the hidden layer) is
-too large, the model will be prone to overfitting without sufficient data - but
-if it's too small, it may have a high bias error - the best number of parameters
-for a given amount of training data and vocabulary size will be somewhere in the
-middle.
+\small
 
-->the size hidden layers depend on the dimensions of the word vectors chosen -
-glove has 50, 100, _, available. another way to effectively adjust the number of
-parameters is to use dropout layers, which randomly set values in the hidden
-layer to zero. we'll make a complexity plot with increasing amounts of dropout
-to find the best amount of dropout.
+| Parameter     | Description                                   | Values             | Number of values to explore |
+|---------------+-----------------------------------------------+--------------------+-----------------------------|
+| nepochs       | number of epochs to train model               | 1-10+              |                           1 |
+| patience      | stop after this many epochs of no improvement | 1-10               |                           1 |
+| layers        | number of RNN layers                          | 1-3                |                           3 |
+| dropout       | amount of dropout to apply after each layer   | 0.0-1.0            |                           5 |
+| nvocab        | number of vocabulary words to use             | 5k-40k             |                           4 |
+| embedding_dim | dimension of word embedding layer             | 50,100,200,300     |                           4 |
+| trainable     | train the word embedding matrix?              | True/False         |                           2 |
+| nhidden       | size of the hidden layer(s)                   | 50,100,200,300     |                           4 |
+| n             | amount to unfold recurrent network            | 1-10               |                           5 |
+| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU  |                           3 |
+| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam |                           3 |
+|---------------+-----------------------------------------------+--------------------+-----------------------------|
+| total         |                                               |                    |                       86400 |
 
+\normalsize
 
+With each model taking a few hours to train, we'll only be able to explore a
+small subset of the parameter space.
 
-parameters
+If the neural network is too complex or the amount of training data too small,
+the model will be prone to overfitting - but if the neural network is too
+simple, it may have a high bias error - the best network size for a given amount
+of training data will be somewhere in between.
 
-Objective Fns/Loss Fns
-https://keras.io/objectives/
-will use categorical cross entropy -
-illustrate with a simple example from abcd dataset
-
-Initialization
-uniform, gaussian, other
-
-Optimizers
-sgd - would work but too slow
-rmsprop - rare features get a larger gradient
-adam - like rmsprop with momentum
-we'll use adam
-
-Regularization
-eg keep weights from getting too large, because _________ (leads to overfitting?)
-L1, L2, other?
-early stopping is a form of regularization
-see https://keras.io/regularizers/
 dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting."
 "Since a fully connected layer occupies most of the parameters, it is prone to overfitting. The dropout method is introduced to prevent overfitting. "
 see [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
 (Srivatsava 2014)
-
-Embeddings
-https://www.tensorflow.org/tutorials/word2vec/
-http://nlp.stanford.edu/projects/glove/
-
 
 show overfitting curve - too many epochs and loss starts to increase, so need to
 do early stopping - eg stop if loss doesn't decrease for n epochs.
@@ -533,12 +524,9 @@ could also do crossvalidation to get more accurate scores, but would add more tr
 "overfitting is a very common problem when the dataset is too small compared with the number of model parameters that need to be learned."
 so need more data, or simpler model
 
-incl hyperparameter tuning here - list available parameters, possible ranges
-
 take initial stab at training, get scores
 then use grid search with sklearn keras wrapper to find good parameters with alice_ch1.txt
 then compare those parameters with original guesses on the whole gutenberg dataset
-
 
 
 
@@ -681,6 +669,8 @@ perform pretty well.
 (Gutenberg 2016) Project Gutenberg. (n.d.). Retrieved December 16, 2016, from www.gutenberg.org. 
 
 (Hochreiter 1997) Hochreiter, Sepp, "Long Short-Term Memory." Neural Computation 9(8), 1997. 
+
+(Kneser 1995) Kneser, R. & Ney, H. "Improved backing-off for m-gram language modeling." Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing, Detroit, MI, volume 1, pp. 181-184. May 1995.
 
 (LeCun 2015) LeCun, Bengio, Hinton, "Deep learning." Nature 521, 436 - 444 (28 May 2015) doi:10.1038/nature14539
 
