@@ -246,7 +246,7 @@ debug = 0
 DATASET      = 'gutenbergs'
 TRAIN_AMOUNT = 1
 NVOCAB       = 10000
-NTEST        = 5000
+NTEST        = 10000
 
 # --------------------------------------------------------------------------------
 # Get Data

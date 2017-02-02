@@ -5,9 +5,6 @@ Read texts, train an RNN, plot results, and generate sentences.
 """
 
 
-SEED = 0 # random number seed
-debug = 0 # 0 or 1
-
 
 # --------------------------------------------------------------------------------
 # Import
@@ -22,13 +19,11 @@ print(sys.version)
 import os
 import os.path
 import random
-random.seed(SEED)
 import re
 import heapq
 from importlib import reload
 
 import numpy as np
-np.random.seed(SEED)
 import pandas as pd
 
 from nltk import tokenize
@@ -60,39 +55,46 @@ import util
 # Set Parameters
 # --------------------------------------------------------------------------------
 
+debug            = 0 # 0 or 1
 DATASET          = 'gutenbergs'
 # DATASET        = 'alice1'
 TRAIN_AMOUNT     = 1.0 # percent of training data to use (for debugging), 0.0 to 1.0
-NEPOCHS          = 1 # number of epochs to train model
+NEPOCHS          = 10 # number of epochs to train model
 LAYERS           = 2 # number of RNN layers, 1 to 3
 DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
 NVOCAB           = 10000 # number of vocabulary words to use
-EMBEDDING_DIM    = 50 # dimension of embedding layer - 50, 100, 150, 200
+# EMBEDDING_DIM    = 50 # dimension of embedding layer - 50, 100, 200, 300
+EMBEDDING_DIM    = 100 # dimension of embedding layer - 50, 100, 200, 300
 TRAINABLE        = False # train word embedding matrix? if True will slow down training ~2x
-NHIDDEN          = EMBEDDING_DIM # seems to work best
+# NHIDDEN          = EMBEDDING_DIM # seems to work best
+# NHIDDEN          = 50
+NHIDDEN          = 100 # size of hidden layer(s)
 N                = 5 # amount to unfold recurrent network
 RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
 BATCH_SIZE       = 32 # size of batch to use for training
 INITIAL_EPOCH    = 0 # to continue training
 PATIENCE         = 3 # stop after this many epochs of no improvement
-#LOSS_FN         = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
-LOSS_FN          = 'sparse_categorical_crossentropy'
-OPTIMIZER        = 'adam'
 VALIDATION_SPLIT = 0.01 # percent of training data to use for validation (~10k tokens)
-# NVALIDATE        = 10000 # number of tokens to use for validation
 NTEST            = 10000 # number of tokens to use for testing
+OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam)
+SEED             = 0 # random number seed
 
-#TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
+# TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
 
+# LOSS_FN    = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
+LOSS_FN    = 'sparse_categorical_crossentropy'
 BASE_DIR   = '..'
 GLOVE_DIR  = BASE_DIR + '/_vectors/glove.6B'
 GLOVE_FILE = GLOVE_DIR + '/glove.6B.%dd.txt' % EMBEDDING_DIM
 MODEL_DIR  = BASE_DIR + '/models/' + DATASET
 MODEL_FILE = MODEL_DIR + "/model-train_amount-%s-nvocab-%d-embedding_dim-%d-nhidden-%d-n-%d.h5" % \
                          (TRAIN_AMOUNT, NVOCAB, EMBEDDING_DIM, NHIDDEN, N)
+
 if debug: print(MODEL_FILE)
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+random.seed(SEED)
+np.random.seed(SEED)
 
 # --------------------------------------------------------------------------------
 # Get Data
@@ -238,10 +240,13 @@ print()
 #. convert to pandas table
 #print(batch_recorder.data)
 
+print('history')
+print(history.history)
 
 # --------------------------------------------------------------------------------
 # Evaluate Model
 # --------------------------------------------------------------------------------
+
 
 #model.evaluate(x_test)
 
