@@ -405,8 +405,8 @@ the outputs to probabilities.
 
 The initial approach used sequences of integer tokens for input and one-hot
 encoded tokens for comparison with the output - this proved infeasible
-memory-wise - the training data was only $O(nelements * n)$, roughly 1
-million * 10 ~ 100MB, but the labels were $O(nelements * nvocab)$, roughly 1
+memory-wise - the training data was only *O(nelements \* n)*, roughly 1
+million * 10 ~ 100MB, but the labels were *O(nelements \* nvocab)*, roughly 1
 million * 10,000 ~ 1e11 bytes = 100 GB, too much for a 16GB system.
 
 The next approach used Python generators for the input sequences and output
@@ -418,7 +418,7 @@ The final approach changed the output loss function from
 *categorical_crossentropy* to *sparse_categorical_crossentropy* - this allowed
 the output labels to be specified as arrays of integer tokens, instead of
 one-hot encoded tokens, which allowed them to fit easily into memory, with
-$O(nelements)$ ~ 10MB. 
+*O(nelements)* ~ 10MB. 
 
 ---
 
@@ -472,44 +472,70 @@ indicated by the loss flattening out and starting to increase.
 ### Refinement
 
 <!-- The process of improving upon the algorithms and techniques used is clearly
-documented. Both the initial and final solutions are reported, along with
+documented.
+
+**Both the initial and final solutions are reported, along with
 intermediate solutions, if necessary. -->
 
-The RNN architecture has several parameters which can affect the speed of
-training and the accuracy of the model - the total parameter space has nearly
-90,000 combinations -
+The RNN architecture has many parameters which can affect the speed of training
+and the accuracy of the model - the total parameter space has roughly 90,000
+combinations -
 
 \small
 
-| Parameter     | Description                                   | Values             | Number of values to explore |
-|---------------+-----------------------------------------------+--------------------+-----------------------------|
-| nepochs       | number of epochs to train model               | 1-10+              |                           1 |
-| patience      | stop after this many epochs of no improvement | 1-10               |                           1 |
-| layers        | number of RNN layers                          | 1-3                |                           3 |
-| dropout       | amount of dropout to apply after each layer   | 0.0-1.0            |                           5 |
-| nvocab        | number of vocabulary words to use             | 5k-40k             |                           4 |
-| embedding_dim | dimension of word embedding layer             | 50,100,200,300     |                           4 |
-| trainable     | train the word embedding matrix?              | True/False         |                           2 |
-| nhidden       | size of the hidden layer(s)                   | 50,100,200,300     |                           4 |
-| n             | amount to unfold recurrent network            | 1-10               |                           5 |
-| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU  |                           3 |
-| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam |                           3 |
-|---------------+-----------------------------------------------+--------------------+-----------------------------|
-| total         |                                               |                    |                       86400 |
+| Parameter     | Description                                   | Values             | Number to explore |
+|---------------+-----------------------------------------------+--------------------+-------------------|
+| nepochs       | number of epochs to train model               | 1-10+              |                 1 |
+| patience      | stop after this many epochs of no improvement | 1-10               |                 1 |
+| layers        | number of RNN layers                          | 1-3                |                 3 |
+| dropout       | amount of dropout to apply after each layer   | 0.0-1.0            |                 5 |
+| nvocab        | number of vocabulary words to use             | 5k-40k             |                 4 |
+| embedding_dim | dimension of word embedding layer             | 50,100,200,300     |                 4 |
+| trainable     | train the word embedding matrix?              | True/False         |                 2 |
+| nhidden       | size of the hidden layer(s)                   | 50,100,200,300     |                 4 |
+| n             | amount to unfold recurrent network            | 1-10               |                 5 |
+| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU  |                 3 |
+| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam |                 3 |
+| total         |                                               |                    |            86,400 |
 
 \normalsize
 
-With each model taking a few hours to train, we'll only be able to explore a
-small subset of the parameter space.
+With each model taking a few hours to train, we were only able to explore a
+small subset of the parameter space. The approach taken was to optimize each
+parameter individually in turn - such a search may get stuck in a local optimum,
+but a more complete search would have been prohibitively expensive.
+
+The initial parameters chosen led to a validation accuracy of 14.0%
+
+~~~
+NVOCAB        = 10000
+EMBEDDING_DIM = 50
+NHIDDEN       = 50
+N             = 5
+RNN_CLASS     = GRU <------------- start with simple rnn here
+BATCH_SIZE    = 32
+DROPOUT       = 0
+NEPOCHS       = 1 <-------------- and 10 epochs?
+TRAINABLE     = False
+PATIENCE      = 10
+LOSS_FN       = 'sparse_categorical_crossentropy'
+OPTIMIZER     = 'adam'
+~~~
+
+The final parameters chosen led to a validation accuracy of [  ] %. 
+
+
 
 If the neural network is too complex or the amount of training data too small,
 the model will be prone to overfitting - but if the neural network is too
 simple, it may have a high bias error - the best network size for a given amount
 of training data will be somewhere in between.
 
-dropout - "Dropout consists in randomly setting a fraction `p` of input units to 0 at each update during training time, which helps prevent overfitting."
-"Since a fully connected layer occupies most of the parameters, it is prone to overfitting. The dropout method is introduced to prevent overfitting. "
-see [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
+dropout - "Dropout consists in randomly setting a fraction `p` of input units to
+0 at each update during training time, which helps prevent overfitting." "Since
+a fully connected layer occupies most of the parameters, it is prone to
+overfitting. The dropout method is introduced to prevent overfitting. " see
+[Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
 (Srivatsava 2014)
 
 show overfitting curve - too many epochs and loss starts to increase, so need to
@@ -517,16 +543,19 @@ do early stopping - eg stop if loss doesn't decrease for n epochs.
 because it's fittting to the test data, but loss is against the validation data. 
 so want to stop at the lowest loss point.
 
-**add penalty for 'complexity' (ie overfitting, as with decision trees etc) - complexity ~ more nodes, more layers, and larger weights
+**add penalty for 'complexity' (ie overfitting, as with decision trees etc) -
+  complexity ~ more nodes, more layers, and larger weights
 
-could also do crossvalidation to get more accurate scores, but would add more training time
+could also do crossvalidation to get more accurate scores, but would add more
+training time
 
-"overfitting is a very common problem when the dataset is too small compared with the number of model parameters that need to be learned."
-so need more data, or simpler model
+"overfitting is a very common problem when the dataset is too small compared
+with the number of model parameters that need to be learned." so need more data,
+or simpler model
 
-take initial stab at training, get scores
-then use grid search with sklearn keras wrapper to find good parameters with alice_ch1.txt
-then compare those parameters with original guesses on the whole gutenberg dataset
+take initial stab at training, get scores. then use grid search with sklearn
+keras wrapper to find good parameters with alice_ch1.txt then compare those
+parameters with original guesses on the whole gutenberg dataset
 
 
 
@@ -579,28 +608,11 @@ about the project with thorough discussion. Visual cues are clearly defined. -->
 
 -> add beam search
 
+-> what if let word vectors be trained - would they move much from initial config? 
 
 Examples of text generated by the different models:
 
-n-gram (n=2):
 
-- Not a sudden vibration in the gate , but in books .
-- Hucheloup . `` and whatever , and the Italian , there was no additional contact information about the discovery
-- She opened the brim and terrible quagmire was trying to my fancy it had n't know what may be
-
-n-gram (n=3):
-
-- Joy and pride was shortly to be feared on the ground at the old woman , who saw him no
-- Blcher ordered Blow to attack us . Here was another , to such an authority in reference to what Boulatruelle
-- Dry happiness resembles the voice of the choir , as strange as anything that was easy to inspire my pupils
-
-n-gram (n=4):
-
-- Terror had seized on the whole day , with intervals of listening ; and the gipsy never grudged it him .
-- The glass must be violet for iron jewellery , and black for gold jewellery . 
-- Dry happiness resembles dry bread . 
-
-GRU
 
 
 
@@ -633,16 +645,13 @@ and compared/contrasted to the current solution. -->
 
 train longer, more vocabulary, more hidden nodes
 
-put on amazone instance
-
 online learning (?) - ie learn new vocab words like phone does
 
 better training/testing - distribute text by paragraphs, not sentences
 
-One thing worth noting is that with current hardware limitations, moving away
-from n-grams with smoothing might not be the best approach for an application,
-since state-of-the-art RNN models can be so slow to train, and the n-grams do
-perform pretty well.
+With current hardware limitations, moving away from n-grams with smoothing might
+not be the best approach for an application, since state-of-the-art RNN models
+can be so slow to train, and the n-grams do perform pretty well.
 
 -> but compare performance of RNN vs ngrams once trained, in terms of memory and speed!
 
