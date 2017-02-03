@@ -6,24 +6,24 @@ Udacity Machine Learning Nanodegree Capstone Project
 
 ## About
 
-Word prediction is the task of predicting the most likely words following the
-preceding text. This has many applications, such as suggesting the next word as
-text is entered, as an aid in speech and handwriting recognition, or generating
-text to help fight spam.
+Word prediction, or *language modeling*, is the task of predicting the most
+likely words following the preceding text. It has many applications, such as
+suggesting the next word as text is entered, as an aid in resolving ambiguity in
+speech and handwriting recognition, and in machine translation.
 
 
 ## Goals
 
-* Implement an n-gram predictor as a baseline
-* Implement a recurrent neural network (RNN) to try to improve on the baseline
+* Implement a recurrent neural network (RNN) to try to improve on a baseline model
+* Implement an n-gram predictor as a baseline model
 * Compare accuracy of the two methods for different training set sizes
 * Compare time and space complexity and usage of the two algorithms
-* Generate some text using both models and compare subjectively
+* Generate some text using both models for qualitative comparison
 
 
 ## Usage
 
-* Clone this repository - git clone http://______
+* Clone this repository - `git clone http://github.com/bburns/LanguageModels`
 * Run `make download` to download and unzip word vectors
 * Run `make rnn` or `make ngram` to train and test the different models
 * Run `make wordplot` to show plot of sample word embeddings
@@ -31,16 +31,15 @@ text to help fight spam.
 
 ## Libraries
 
->>include version numbers for all libraries
+<!-- include version numbers for all libraries -->
 
-The base Python used is the Anaconda 3 distribution with Python 3.5 - the following libraries are included:
+The base Python used is the [Anaconda3 4.2 distribution](https://www.continuum.io/downloads) with Python 3.5 - the following libraries are included:
 
 - numpy
 - matplotlib
 - nltk
 - pandas
 - tabulate
-- h5py
 
 The NLTK Punkt tokenizer may need to be installed, in which case:
 
@@ -48,7 +47,7 @@ The NLTK Punkt tokenizer may need to be installed, in which case:
     >>> import nltk
     >>> nltk.download('punkt')
 
-Additional libraries installed with pip install:
+Additional libraries may need to be installed with pip install:
 
 - keras - wrapper around TensorFlow
 - tensorflow
@@ -59,39 +58,12 @@ Additional libraries installed with pip install:
 Additional programs used:
 
 <!-- - dot - to visualize Keras models -->
-- nbstripout - removes output from Jupyter notebooks before commiting them to the git repository - pip install, then add to repo with `nbstripout --install`
+- nbstripout - removes output from Jupyter notebooks before commiting them to
+  the git repository - pip install, then add to repo with `nbstripout --install`
 
 Additional data used:
 
-- GloVe - Wikipedia 2014 + Gigaword 5 (6B tokens, 400K vocab, uncased, 50d, 100d, 200d, & 300d vectors, 822 MB download): glove.6B.zip
-http://nlp.stanford.edu/projects/glove/
-http://nlp.stanford.edu/data/wordvecs/glove.6B.zip
+- [GloVe](http://nlp.stanford.edu/projects/glove/ ) - Wikipedia 2014 + Gigaword
+5 (6B tokens, 400K vocab, uncased, 50d, 100d, 200d, & 300d vectors, 822 MB
+download): [glove.6B.zip](http://nlp.stanford.edu/data/wordvecs/glove.6B.zip)
 
-
-
-## Datasets
-
-There are several datasets available for testing -
-
-> list sizes etc
-
-- abcd
-- alphabet
-- alice1
-- gutenbergs
-
-To make a new one, create a folder in the `data` folder, then a subfolder called
-`1-raw`, put any text files in it, then run the following code, with appropriate
-p values -
-
-    data = Data('abcd')
-    data.prepare(ptrain=0.8, pvalidate=0.1, ptest=0.1)
-
-This will clean the texts, merge them, and split the text up by sentence and
-distribute them among the different sets according to the percentages given -
-the resulting files will be in the `4-split` subfolder.
-
-
-## License
-
-GPL
