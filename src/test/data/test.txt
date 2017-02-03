@@ -1,8 +1,0 @@
-A b c d e f .
-A b d c e f .
-A b d e c f .
-A d b e c f .
-B c d e a f .
-D e a b d c .
-E a b c d f .
-B c a e f d .
