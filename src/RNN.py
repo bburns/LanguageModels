@@ -60,14 +60,11 @@ DATASET          = 'gutenbergs'
 # DATASET        = 'alice1'
 TRAIN_AMOUNT     = 1.0 # percent of training data to use (for debugging), 0.0 to 1.0
 NEPOCHS          = 10 # number of epochs to train model
-LAYERS           = 2 # number of RNN layers, 1 to 3
+LAYERS           = 3 # number of RNN layers, 1 to 3
 DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
 NVOCAB           = 10000 # number of vocabulary words to use
-# EMBEDDING_DIM    = 50 # dimension of embedding layer - 50, 100, 200, 300
 EMBEDDING_DIM    = 100 # dimension of embedding layer - 50, 100, 200, 300
 TRAINABLE        = False # train word embedding matrix? if True will slow down training ~2x
-# NHIDDEN          = EMBEDDING_DIM # seems to work best
-# NHIDDEN          = 50
 NHIDDEN          = 100 # size of hidden layer(s)
 N                = 5 # amount to unfold recurrent network
 RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
@@ -261,7 +258,7 @@ print(history.history)
 print('generated text:')
 nsentences = 10
 nwords_to_generate = 20
-k = 10
+k = 3
 for i in range(nsentences):
     util.uprint(util.generate_text(model, data, N, nwords_to_generate, k))
 

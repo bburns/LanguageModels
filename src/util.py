@@ -8,6 +8,7 @@ from datetime import datetime
 import sys
 import os
 import re
+import random
 
 import numpy as np
 from tabulate import tabulate
@@ -92,12 +93,14 @@ def choose_iwords(iword_probs, k):
 #. stop when reach a period or max words
 #. ->generate_sentence
 #. k->beam_width
-def generate_text(model, data, n, nwords=20, k=5):
+def generate_text(model, data, n, nwords=20, k=3):
     """
     Generate text from the given model with semi stochastic search.
+    k - higher value increases the range of possible next word choices
     """
     x = np.zeros((1,n-1), dtype=int)
-    iword = 0
+    # iword = 0
+    iword = random.randint(1, data.nvocab)
     words = []
     for i in range(nwords):
         x = np.roll(x,-1) # flattens array, rotates to left, and reshapes it
