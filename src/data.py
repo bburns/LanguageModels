@@ -5,7 +5,7 @@ Data module - wraps all data and handles processing.
 Usage:
     data = Data('alice1')
     data.prepare(nvocab=500)
-    x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=4, nvalidate=1000, ntest=1000)
+    x_train, y_train, x_test, y_test = data.split(n=4, ntest=1000)
 """
 
 import os
@@ -24,7 +24,7 @@ class Data():
 
     def __init__(self, dataset):
         self.dataset = dataset
-        self.folder = '../data/' + self.dataset
+        self.folder = './data/' + self.dataset
 
     def prepare(self, nvocab, seed=0, debug=False):
         """

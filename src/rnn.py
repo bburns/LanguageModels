@@ -80,10 +80,10 @@ SEED             = 0 # random number seed
 
 # LOSS_FN    = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
 LOSS_FN    = 'sparse_categorical_crossentropy'
-BASE_DIR   = '..'
+BASE_DIR   = '.'
 GLOVE_DIR  = BASE_DIR + '/_vectors/glove.6B'
 GLOVE_FILE = GLOVE_DIR + '/glove.6B.%dd.txt' % EMBEDDING_DIM
-MODEL_DIR  = BASE_DIR + '/models/' + DATASET
+MODEL_DIR  = BASE_DIR + '/_models/' + DATASET
 MODEL_FILE = MODEL_DIR + "/model-train_amount-%s-nvocab-%d-embedding_dim-%d-nhidden-%d-n-%d.h5" % \
                          (TRAIN_AMOUNT, NVOCAB, EMBEDDING_DIM, NHIDDEN, N)
 
