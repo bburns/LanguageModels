@@ -14,7 +14,7 @@ speech and handwriting recognition, and in machine translation.
 
 ## Goals
 
-* Implement a recurrent neural network (RNN) to try to improve on a baseline model
+* Implement a recurrent neural network (RNN)
 * Implement an n-gram predictor as a baseline model
 * Compare accuracy of the two methods for different training set sizes
 * Compare time and space complexity and usage of the two algorithms
@@ -26,20 +26,18 @@ speech and handwriting recognition, and in machine translation.
 * Clone this repository - `git clone http://github.com/bburns/LanguageModels`
 * Run `make download` to download and unzip word vectors
 * Run `make rnn` or `make ngram` to train and test the different models
-* Run `make wordplot` to show plot of sample word embeddings
+* Run `make wordplot` to show a plot of sample word embeddings
 
 
 ## Libraries
 
-<!-- include version numbers for all libraries -->
+The base Python used is the [Anaconda3 4.2.0 distribution](https://www.continuum.io/downloads) with Python 3.5.2 - the following libraries are included:
 
-The base Python used is the [Anaconda3 4.2 distribution](https://www.continuum.io/downloads) with Python 3.5 - the following libraries are included:
-
-- numpy
-- matplotlib
-- nltk
-- pandas
-- tabulate
+- matplotlib 1.5.3
+- nltk 3.2.1
+- numpy 1.12.0
+- pandas 0.19.2
+- tabulate 0.7.7
 
 The NLTK Punkt tokenizer may need to be installed, in which case:
 
@@ -49,10 +47,10 @@ The NLTK Punkt tokenizer may need to be installed, in which case:
 
 Additional libraries may need to be installed with pip install:
 
-- keras - wrapper around TensorFlow
-- tensorflow
+- keras 1.2.1 - wrapper around TensorFlow
+- tensorflow 0.12.1
+- textstat 0.3.1 - calculates Coleman-Liau Index for texts (grade level readability)
 
-<!-- - textstat - calculates Coleman-Liau Index for texts (grade level readability) -->
 <!-- - pydot - to visualize Keras models -->
 
 Additional programs used:
