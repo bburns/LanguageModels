@@ -24,6 +24,7 @@ speech and handwriting recognition, and in machine translation.
 ## Usage
 
 * Clone this repository - `git clone http://github.com/bburns/LanguageModels`
+* Install Python packages - `pip install -r requirements.txt`
 * Run `make download` to download and unzip word vectors
 * Run `make rnn` or `make ngram` to train and test the different models
 * Run `make wordplot` to show a plot of sample word embeddings
