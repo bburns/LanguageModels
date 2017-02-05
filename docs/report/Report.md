@@ -504,7 +504,7 @@ parameter space was able to be explored. The approach taken was to optimize each
 parameter individually in turn - such a search may get stuck in a local optimum,
 but a more complete search would have been prohibitively expensive.
 
-The initial parameters chosen led to a validation accuracy of 14.0%
+The initial parameters chosen led to a test accuracy of 14.0%
 
 ~~~
 NEPOCHS       = 1 <-------------- and 10 epochs?
@@ -521,25 +521,24 @@ LOSS_FN       = 'sparse_categorical_crossentropy'
 OPTIMIZER     = 'adam'
 ~~~
 
-The final parameters chosen led to a validation accuracy of [23.9] %. 
+The final parameters chosen led to a test accuracy of [23.9] %. 
 
 ~~~
-NEPOCHS          = 10 # number of epochs to train model
-LAYERS           = 1 # number of RNN layers, 1 to 3
-DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
-NVOCAB           = 10000 # number of vocabulary words to use
-EMBEDDING_DIM    = 200 # dimension of embedding layer - 50, 100, 200, 300
-TRAINABLE        = True # allow embedding matrix to be trained?
-NHIDDEN          = 200 # size of hidden layer(s)
-N                = 10 # amount to unfold recurrent network
-RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
-BATCH_SIZE       = 32 # size of batch to use for training
-INITIAL_EPOCH    = 0 # to continue training
-PATIENCE         = 3 # stop after this many epochs of no improvement
-VALIDATION_SPLIT = 0.01 # percent of training data to use for validation (~10k tokens)
-NTEST            = 10000 # number of tokens to use for testing
-OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam)
-SEED             = 0 # random number seed
+NEPOCHS          = 10     # number of epochs to train model
+LAYERS           = 1      # number of RNN layers, 1 to 3
+DROPOUT          = 0.1    # amount of dropout to apply after each layer, 0.0 to 1.0
+NVOCAB           = 10000  # number of vocabulary words to use
+EMBEDDING_DIM    = 200    # dimension of embedding layer - 50, 100, 200, 300
+TRAINABLE        = True   # allow embedding matrix to be trained?
+NHIDDEN          = 200    # size of hidden layer(s)
+N                = 10     # amount to unfold recurrent network
+RNN_CLASS        = GRU    # type of RNN to use - SimpleRNN, LSTM, or GRU
+BATCH_SIZE       = 32     # size of batch to use for training
+PATIENCE         = 3      # stop after this many epochs of no improvement
+VALIDATION_SPLIT = 0.01   # percent of training data to use for validation (0.01 ~10k tokens)
+NTEST            = 10000  # number of tokens to use for testing
+OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam, adagrad)
+SEED             = 0      # random number seed
 ~~~
 
 
