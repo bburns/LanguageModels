@@ -1,7 +1,6 @@
 
 """
 N-gram word prediction model
-Stores a sparse multidimensional array (dict of dict) of token counts.
 """
 
 
@@ -24,7 +23,6 @@ import util
 from benchmark import benchmark
 
 
-#. this class could be in a separate file, ngram_model.py, to be more like rnn.py
 # --------------------------------------------------------------------------------
 # Define ngram class
 # --------------------------------------------------------------------------------
@@ -34,8 +32,8 @@ class Ngram():
     def __init__(self, data, n=3):
         """
         Create an n-gram model.
-        data - a Data object - source of data
-        n - the n in n-gram
+        data - a Data object - see data.py
+        n - amount of context - the n in n-gram
         """
         self.data = data
         self.n = n
@@ -73,62 +71,59 @@ class Ngram():
             d[token] = 1
 
 
-    def predict_proba(self, x, verbose=0):
-        """
-        predict probability of following words, over entire vocabulary
-        this method follows keras's api (ie duck typing)
-        """
-        # get the last dictionary, which contains the subsequent tokens and their counts
-        d = self._d
-        tokens = x[0]
-        for token in tokens:
-            if token in d:
-                d = d[token]
-            else:
-                d = {}
-        nvocab = self.data.nvocab
-        ntotal = sum(d.values()) # total occurrences of subsequent tokens
-        # probs = [[]]
-        probs = np.zeros((1,nvocab))
-        for iword in range(nvocab):
-            ncount = d.get(iword)
-            if ncount:
-                pct = ncount/ntotal if ntotal!=0 else 0
-            else:
-                pct = 0.0
-            # probs[0].append(pct)
-            probs[0,iword] = pct
-        return probs
+    # this was too slow
+    # def predict_proba(self, x, verbose=0):
+    #     """
+    #     Predict probability of following words, over entire vocabulary.
+    #     This method follows keras's api (ie duck typing).
+    #     """
+    #     # get the last dictionary, which contains the subsequent tokens and their counts
+    #     d = self._d
+    #     tokens = x[0]
+    #     for token in tokens:
+    #         if token in d:
+    #             d = d[token]
+    #         else:
+    #             d = {}
+    #     nvocab = self.data.nvocab
+    #     ntotal = sum(d.values()) # total occurrences of subsequent tokens
+    #     # probs = [[]]
+    #     probs = np.zeros((1,nvocab))
+    #     for iword in range(nvocab):
+    #         ncount = d.get(iword)
+    #         if ncount:
+    #             pct = ncount/ntotal if ntotal!=0 else 0
+    #         else:
+    #             pct = 0.0
+    #         # probs[0].append(pct)
+    #         probs[0,iword] = pct
+    #     return probs
 
 
     def test(self, x_test, y_test, nsamples=10):
         """
-        Test the model and return the accuracy, relevance score and some sample predictions.
+        Test the model and set the accuracy, relevance score and some sample predictions.
         x_test - context/prompt tokens
         y_test - following token
         nsamples - number of sample predictions to record in self.test_samples
         Returns nothing, but sets
-            self.test_time
-            self.test_samples
             self.test_accuracy
             self.test_relevance
-        and saves the model with those values to a file.
+            self.test_samples
         """
+        print("Testing model n=%d..." % self.n)
         ntest = len(x_test)
-        nsample_spacing = max(int(ntest / nsamples), 1)
+        nsample_spacing = max(int(ntest / nsamples), 1) # how often to take a sample
         samples = []
+        sample_columns = ['Prompt','Predictions','Actual','Status']
         naccurate = 0
         nrelevant = 0
-        sample_columns = ['Prompt','Predictions','Actual','Status']
-        print("Testing model n=%d..." % self.n)
         for i in range(ntest): # iterate over all test tokens
-            #. refactor
             prompt = x_test[i]
             actual = y_test[i]
-            # probs = self.predict_proba([prompt])
-            # iword_probs = util.get_best_iword_probs(probs, k=3)
             iword_probs = self.predict(prompt, k=3)
             accurate = False
+            relevant = False
             if iword_probs: # can be None
                 predicted_tokens = [token_prob[0] for token_prob in iword_probs]
                 accurate = (actual == predicted_tokens[0])
@@ -141,11 +136,7 @@ class Ngram():
             if (i % nsample_spacing) == 0:
                 sprompt = ' '.join([self.data.iword_to_word[iword] for iword in prompt])
                 sactual = self.data.iword_to_word[actual]
-                #. refactor
-                # word = token_prob[0]
-                # pct = token_prob[1]*100
                 if iword_probs:
-                    # predictions = [(iword_prob[0], iword_prob[1]*100) for iword_prob in iword_probs]
                     spredictions = '  '.join(['%s (%.1f%%)' % \
                                               (self.data.iword_to_word[iword_prob[0]], iword_prob[1]*100) \
                                               for iword_prob in iword_probs])

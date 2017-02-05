@@ -19,6 +19,9 @@ from nltk import tokenize
 
 import util
 
+#. put this here? it's a NOP if already downloaded
+# nltk.download('punkt')
+
 
 class Data():
 

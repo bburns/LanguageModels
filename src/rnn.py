@@ -55,26 +55,25 @@ import util
 # Set Parameters
 # --------------------------------------------------------------------------------
 
-debug            = 0 # 0 or 1
-DATASET          = 'gutenbergs'
-# DATASET        = 'alice1'
-TRAIN_AMOUNT     = 1.0 # percent of training data to use (for debugging), 0.0 to 1.0
-NEPOCHS          = 10 # number of epochs to train model
-LAYERS           = 3 # number of RNN layers, 1 to 3
-DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
-NVOCAB           = 10000 # number of vocabulary words to use
-EMBEDDING_DIM    = 100 # dimension of embedding layer - 50, 100, 200, 300
-TRAINABLE        = False # train word embedding matrix? if True will slow down training ~2x
-NHIDDEN          = 100 # size of hidden layer(s)
-N                = 5 # amount to unfold recurrent network
-RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
-BATCH_SIZE       = 32 # size of batch to use for training
-INITIAL_EPOCH    = 0 # to continue training
-PATIENCE         = 3 # stop after this many epochs of no improvement
-VALIDATION_SPLIT = 0.01 # percent of training data to use for validation (~10k tokens)
-NTEST            = 10000 # number of tokens to use for testing
-OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam)
-SEED             = 0 # random number seed
+debug            = 0         # 0 or 1
+DATASET          = 'gutenbergs' # dataset to use (gutenbergs, alice1)
+TRAIN_AMOUNT     = 1.0       # percent of training data to use (for debugging), 0.0 to 1.0
+NEPOCHS          = 10        # number of epochs to train model
+LAYERS           = 1         # number of RNN layers, 1 to 3
+DROPOUT          = 0.1       # amount of dropout to apply after each layer, 0.0 to 1.0
+NVOCAB           = 10000     # number of vocabulary words to use
+EMBEDDING_DIM    = 100       # dimension of embedding layer - 50, 100, 200, 300
+TRAINABLE        = True      # allow embedding matrix to be trained?
+NHIDDEN          = 100       # size of hidden layer(s)
+N                = 10        # amount to unfold recurrent network
+RNN_CLASS        = GRU       # type of RNN to use - SimpleRNN, LSTM, or GRU
+BATCH_SIZE       = 32        # size of batch to use for training
+INITIAL_EPOCH    = 0         # to continue training
+PATIENCE         = 3         # stop after this many epochs of no improvement
+VALIDATION_SPLIT = 0.01      # percent of training data to use for validation (0.01 ~10k tokens)
+NTEST            = 10000     # number of tokens to use for testing
+OPTIMIZER        = 'adam'    # optimizing algorithm to use (sgd, rmsprop, adam, adagrad)
+SEED             = 0         # random number seed
 
 # TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
 
