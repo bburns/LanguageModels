@@ -14,16 +14,21 @@ speech and handwriting recognition, and in machine translation.
 
 ## Goals
 
-* Implement a recurrent neural network (RNN)
+* Implement a recurrent neural network (RNN) language model
 * Implement an n-gram predictor as a baseline model
 * Compare accuracy of the two methods for different training set sizes
 * Compare time and space complexity and usage of the two algorithms
 * Generate some text using both models for qualitative comparison
 
 
+## Report
+
+The final report is available [here](docs/report/Report.md).
+
+
 ## Usage
 
-* Clone this repository - `git clone http://github.com/bburns/LanguageModels`
+* Clone this repository - `git clone https://github.com/bburns/LanguageModels`
 * Install Python packages - `pip install -r requirements.txt`
 * Run `make download` to download and unzip word vectors
 * Run `make rnn` or `make ngram` to train and test the different models

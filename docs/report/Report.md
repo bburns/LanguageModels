@@ -10,7 +10,7 @@ fontsize: 11pt
 
 Brian Burns  
 Udacity Machine Learning Engineer Nanodegree  
-January 31, 2017  
+February 15, 2017  
 
 <!-- from https://review.udacity.com/#!/rubrics/108/view -->
 
@@ -393,9 +393,8 @@ Complications that occurred during the coding process are discussed. -->
 The RNN was implemented with Python using Keras (Chollet 2015) with a TensorFlow
 backend (Abadi 2015) - TensorFlow is a general-purpose neural network toolbox,
 while Keras is a wrapper around TensorFlow that simplifies its use. Different
-architectures and parameters were explored, and compared based on their loss and
-accuracy scores. The most promising model was then selected for further
-analysis.
+architectures and parameters were explored, and compared based on their accuracy
+scores. The most promising model was then selected for further training and analysis.
 
 <!-- -> compare Keras code vs TensorFlow for a simple RNN? -->
 
@@ -500,29 +499,48 @@ combinations -
 
 \normalsize
 
-With each model taking a few hours to train, we were only able to explore a
-small subset of the parameter space. The approach taken was to optimize each
+With each model taking a few hours to train, only a small subset of the
+parameter space was able to be explored. The approach taken was to optimize each
 parameter individually in turn - such a search may get stuck in a local optimum,
 but a more complete search would have been prohibitively expensive.
 
 The initial parameters chosen led to a validation accuracy of 14.0%
 
 ~~~
+NEPOCHS       = 1 <-------------- and 10 epochs?
 NVOCAB        = 10000
 EMBEDDING_DIM = 50
 NHIDDEN       = 50
 N             = 5
-RNN_CLASS     = GRU <------------- start with simple rnn here
+RNN_CLASS     = SimpleRNN <------------- start with simple rnn here
 BATCH_SIZE    = 32
 DROPOUT       = 0
-NEPOCHS       = 1 <-------------- and 10 epochs?
 TRAINABLE     = False
 PATIENCE      = 10
 LOSS_FN       = 'sparse_categorical_crossentropy'
 OPTIMIZER     = 'adam'
 ~~~
 
-The final parameters chosen led to a validation accuracy of [  ] %. 
+The final parameters chosen led to a validation accuracy of [23.9] %. 
+
+~~~
+NEPOCHS          = 10 # number of epochs to train model
+LAYERS           = 1 # number of RNN layers, 1 to 3
+DROPOUT          = 0.1 # amount of dropout to apply after each layer, 0.0 to 1.0
+NVOCAB           = 10000 # number of vocabulary words to use
+EMBEDDING_DIM    = 200 # dimension of embedding layer - 50, 100, 200, 300
+TRAINABLE        = True # allow embedding matrix to be trained?
+NHIDDEN          = 200 # size of hidden layer(s)
+N                = 10 # amount to unfold recurrent network
+RNN_CLASS        = GRU # type of RNN to use - SimpleRNN, LSTM, or GRU
+BATCH_SIZE       = 32 # size of batch to use for training
+INITIAL_EPOCH    = 0 # to continue training
+PATIENCE         = 3 # stop after this many epochs of no improvement
+VALIDATION_SPLIT = 0.01 # percent of training data to use for validation (~10k tokens)
+NTEST            = 10000 # number of tokens to use for testing
+OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam)
+SEED             = 0 # random number seed
+~~~
 
 
 
