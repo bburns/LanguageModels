@@ -14,6 +14,16 @@ February 15, 2017
 
 <!-- from https://review.udacity.com/#!/rubrics/108/view -->
 
+## Contents
+
+1. [Definition](#definition)
+2. [Analysis](#analysis)
+3. [Methodology](#methodology)
+4. [Results](#results)
+5. [Conclusion](#conclusion)
+6. [References](#references)
+
+
 ## Definition
 
 ### Project Overview
@@ -105,17 +115,12 @@ chat/texting corpus would be more applicable for a phone text entry application.
 A strategy for solving the problem,
 including discussion of the expected solution, has been made. -->
 
-Given a sequence of words, we'll make a prediction for the following *k* most
-likely words and their probabilities.
+Given a sequence of words, predict the most likely following word.
 
-For example, for the sequence "the dog" and *k*=3, a solution might be (barked
-10%, slept 9%, ran 8%).
-
-We'll use an RNN to make the predictions - different architectures will be
+We'll use an RNN to make the prediction - different architectures will be
 trained on a training set, tuned on a validation set, and tested on a hold-out
-test set - the results will be compared against a baseline n-gram model, with
-the best model chosen for more complete analysis - it is anticipated that an
-RNN with proper architecture and parameters will be able to beat the n-gram
+test set - the results will be compared against a baseline n-gram model - it is
+anticipated that an RNN with proper parameters will be able to beat the n-gram
 model.
 
 <!-- A GRU (Gated Recurrent Unit) RNN is expected to offer the best performance for a -->
@@ -137,10 +142,7 @@ defined. Metrics are justified based on the characteristics of the problem. -->
 
 The metric used to evaluate the performance of the models will be *accuracy* -
 the average number of predictions where the highest probability next word
-matches the actual next word:
-
-$$accuracy = \# correct / \# total$$
-
+matches the actual next word.
 
 <!-- The metrics used to evaluate the performance of the models will be -->
 <!-- *cross-entropy*, *perplexity*, *accuracy*, and *relevance*. -->
@@ -229,14 +231,10 @@ include punctuation marks like commas, periods, etc.) -
 
 \normalsize
 
-
 The grade level is calculated using the Coleman-Liau Index (Coleman 1975), which
-is based on the average word and sentence lengths.
-
-The Gutenberg text number is listed in parentheses, and the texts can be found
-online - e.g. Alice in Wonderland can be found at
-http://www.gutenberg.org/etext/28885.
-
+is based on the average word and sentence lengths. The Gutenberg text number is
+listed in parentheses, and the texts can be found online - e.g. Alice in
+Wonderland can be found at http://www.gutenberg.org/etext/28885.
 
 Some sample text:
 
@@ -253,10 +251,10 @@ Some sample text:
 characteristic or feature about the dataset or input data with thorough
 discussion. Visual cues are clearly defined. -->
 
-For this project we'll use 50-dimensional word vectors from GloVe (Pennington
-2014) - Figure 1 below shows some sample word embeddings projected to 2 dimensions
-using PCA - note how the adjectives, verbs, and nouns/agents are grouped
-closely together, indicating their similarity.
+For this project we'll use 50, 100, 200, or 300-dimensional word vectors from
+GloVe (Pennington 2014) - Figure 1 below shows some sample word embeddings
+projected to 2 dimensions using PCA - note how the adjectives, verbs, and
+nouns/agents are grouped closely together, indicating their similarity.
 
 ![GloVe word embeddings](images/word_embeddings.png)
 
@@ -299,12 +297,12 @@ the prior context of arbitrary length.
 
 The matrix *V* allows each word in the vocabulary to 'vote' on how likely it
 thinks it will be next, based on the context (current + previous words). The
-softmax output layer then converts these scores into probabilities, so the top
-*k* most likely words can be found for a given context.
+softmax output layer then converts these scores into probabilities, so the most
+likely next word can be found for a given context.
 
-Multiple layers of RNNs can also be used, in which case there is more than one
-hidden state - this allows the network to detect and learn higher level
-structures in the input, such as ??????????????????????
+<!-- Multiple layers of RNNs can also be used, in which case there is more than one -->
+<!-- hidden state - this allows the network to detect and learn higher level -->
+<!-- structures in the input, such as ?????????????????????? -->
 
 To learn the parameters for the matrices *U*, *V*, and *W*, we define an error
 (or loss) function to be the *categorical cross-entropy loss*, and use
@@ -314,14 +312,14 @@ between the outputs and the true values.
 <!-- There are two problems with training RNN's - vanishing gradients and exploding -->
 <!-- gradients. The gradients tend to either head towards zero or infinity.  -->
 
-A LSTM (Long Short-Term Memory) RNN (Hochreiter 1997) works similarly, but has a
-'memory cell' at the center, which has 'switches' for storing memory, or
+A *LSTM (Long Short-Term Memory)* RNN (Hochreiter 1997) works similarly, but has
+a 'memory cell' at the center, which has 'switches' for storing memory, or
 forgetting memory, and the state of the switches can be learned along with the
 rest of the parameters. This turns out to be easier to train than plain RNN's,
-which have problems with vanishing and exploding gradients, which make them slow
-and difficult to train.
+which have problems with vanishing and exploding gradients, which can make them
+slow and difficult to train.
 
-A GRU (Gated Recurrent Unit) RNN (Chung 2014) is similar to an LSTM, but has
+A *GRU (Gated Recurrent Unit)* RNN (Chung 2014) is similar to an LSTM, but has
 fewer parameters and is a bit easier to train. 
 
 <!-- -> show plot here comparing loss curve for rnn vs lstm vs gru -->
@@ -376,12 +374,12 @@ than if the text was split on sentences and shuffled.
 
 The paragraphs are combined, and the text is converted to lowercase to increase
 the amount of vocabulary that can be learned for a given amount of resources.
-The text is then tokenized to the top *NVOCAB* words - the rarer words are **not
+The text is then tokenized to the top *nvocab* words - the rarer words are **not
 recorded** - punctuation marks are treated as separate tokens.
 
 The sequence of tokens is then split into training, validation, and test sets -
-the validation and test sets were set at 10,000 tokens, and the training set has
-nearly 1,300,000 tokens.
+the test set was set to 10,000 tokens, and the validation set to 1% of the
+training set, which amounts to around 13,000 tokens out of 1,300,000 tokens.
 
 
 ### Implementation
@@ -394,7 +392,8 @@ The RNN was implemented with Python using Keras (Chollet 2015) with a TensorFlow
 backend (Abadi 2015) - TensorFlow is a general-purpose neural network toolbox,
 while Keras is a wrapper around TensorFlow that simplifies its use. Different
 architectures and parameters were explored, and compared based on their accuracy
-scores. The most promising model was then selected for further training and analysis.
+scores. The most promising model was then used to find the final testing
+accuracy score.
 
 <!-- -> compare Keras code vs TensorFlow for a simple RNN? -->
 
@@ -421,20 +420,20 @@ one-hot encoded tokens, which allowed them to fit easily into memory, with
 
 ---
 
-During preprocessing the texts were tokenized to the top *nvocab*=10,000 words,
-then a word embedding matrix *E* was built from the complete GloVe word
-embedding array of 400,000 words, and set as the weights for the neural
+During preprocessing the texts were tokenized to the top *nvocab* words, then a
+word embedding matrix *E* was built from the complete GloVe word embedding array
+(which contains 400,000 words), and set as the initial weights for the neural
 network's embedding layer.
 
 For the training step, the training sequence of roughly 1.3 million tokens was fed
 to the network, which was trained for a certain number of epochs - depending on
-the network configuration each epoch took around 30 minutes.
+the RNN configuration each epoch took around 30 minutes.
 
-During training Keras output the progress is displayed and a generated sequence
-is displayed before/after each epoch - both the training and validation loss and
-accuracy are shown during training and at the end of the epoch, e.g. -
+During training Keras output the progress and a generated sequence before/after
+each epoch - both the training and validation loss and accuracy are shown during
+training and at the end of the epoch, e.g. -
 
-\small
+\footnotesize
 
 ~~~
 Training model...
@@ -453,12 +452,16 @@ Epoch 3 generated text: . he knew that she had no one of the of , of which the f
 
 \normalsize
 
-Overfitting is prevented by an early stopping trigger, which will stop training
-if the validation accuracy does not improve for a certain number of epochs.
+Neural networks can overfit to the training data if they are trained for too
+many epochs - this is prevented by an early stopping trigger, which will stop
+training if the validation accuracy does not improve for a certain number of
+epochs.
 
 For evaluation, plots are made of the loss and accuracy over the training
 epochs - see Figure 3 below - this also helps diagnose overfitting, which is
 indicated by the loss flattening out and starting to increase.
+
+[use better plot]
 
 ![Training and validation loss plot](images/loss.png)
 
@@ -467,86 +470,10 @@ indicated by the loss flattening out and starting to increase.
 
 <!-- Similar experiments were performed with the n-gram baseline.  -->
 
-
-### Refinement
-
-<!-- The process of improving upon the algorithms and techniques used is clearly
-documented.
-
-**Both the initial and final solutions are reported, along with
-intermediate solutions, if necessary. -->
-
-The RNN architecture has many parameters which can affect the speed of training
-and the accuracy of the model - the total parameter space has roughly 90,000
-combinations -
-
-\small
-
-| Parameter     | Description                                   | Values             | Number to explore |
-|---------------+-----------------------------------------------+--------------------+-------------------|
-| nepochs       | number of epochs to train model               | 1-10+              |                 1 |
-| patience      | stop after this many epochs of no improvement | 1-10               |                 1 |
-| layers        | number of RNN layers                          | 1-3                |                 3 |
-| dropout       | amount of dropout to apply after each layer   | 0.0-1.0            |                 5 |
-| nvocab        | number of vocabulary words to use             | 5k-40k             |                 4 |
-| embedding_dim | dimension of word embedding layer             | 50,100,200,300     |                 4 |
-| trainable     | train the word embedding matrix?              | True/False         |                 2 |
-| nhidden       | size of the hidden layer(s)                   | 50,100,200,300     |                 4 |
-| n             | amount to unfold recurrent network            | 1-10               |                 5 |
-| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU  |                 3 |
-| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam |                 3 |
-| total         |                                               |                    |            86,400 |
-
-\normalsize
-
-With each model taking a few hours to train, only a small subset of the
-parameter space was able to be explored. The approach taken was to optimize each
-parameter individually in turn - such a search may get stuck in a local optimum,
-but a more complete search would have been prohibitively expensive.
-
-The initial parameters chosen led to a test accuracy of 14.0%
-
-~~~
-NEPOCHS       = 1 <-------------- and 10 epochs?
-NVOCAB        = 10000
-EMBEDDING_DIM = 50
-NHIDDEN       = 50
-N             = 5
-RNN_CLASS     = SimpleRNN <------------- start with simple rnn here
-BATCH_SIZE    = 32
-DROPOUT       = 0
-TRAINABLE     = False
-PATIENCE      = 10
-LOSS_FN       = 'sparse_categorical_crossentropy'
-OPTIMIZER     = 'adam'
-~~~
-
-The final parameters chosen led to a test accuracy of [23.9] %. 
-
-~~~
-NEPOCHS          = 10     # number of epochs to train model
-LAYERS           = 1      # number of RNN layers, 1 to 3
-DROPOUT          = 0.1    # amount of dropout to apply after each layer, 0.0 to 1.0
-NVOCAB           = 10000  # number of vocabulary words to use
-EMBEDDING_DIM    = 200    # dimension of embedding layer - 50, 100, 200, 300
-TRAINABLE        = True   # allow embedding matrix to be trained?
-NHIDDEN          = 200    # size of hidden layer(s)
-N                = 10     # amount to unfold recurrent network
-RNN_CLASS        = GRU    # type of RNN to use - SimpleRNN, LSTM, or GRU
-BATCH_SIZE       = 32     # size of batch to use for training
-PATIENCE         = 3      # stop after this many epochs of no improvement
-VALIDATION_SPLIT = 0.01   # percent of training data to use for validation (0.01 ~10k tokens)
-NTEST            = 10000  # number of tokens to use for testing
-OPTIMIZER        = 'adam' # optimizing algorithm to use (sgd, rmsprop, adam, adagrad)
-SEED             = 0      # random number seed
-~~~
-
-
-
-If the neural network is too complex or the amount of training data too small,
-the model will be prone to overfitting - but if the neural network is too
-simple, it may have a high bias error - the best network size for a given amount
-of training data will be somewhere in between.
+<!-- If the neural network is too complex or the amount of training data too small, -->
+<!-- the model will be prone to overfitting - but if the neural network is too -->
+<!-- simple, it may have a high bias error - the best network size for a given amount -->
+<!-- of training data will be somewhere in between. -->
 
 dropout - "Dropout consists in randomly setting a fraction `p` of input units to
 0 at each update during training time, which helps prevent overfitting." "Since
@@ -555,25 +482,24 @@ overfitting. The dropout method is introduced to prevent overfitting. " see
 [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
 (Srivatsava 2014)
 
-show overfitting curve - too many epochs and loss starts to increase, so need to
-do early stopping - eg stop if loss doesn't decrease for n epochs.
-because it's fittting to the test data, but loss is against the validation data. 
-so want to stop at the lowest loss point.
-
 **add penalty for 'complexity' (ie overfitting, as with decision trees etc) -
   complexity ~ more nodes, more layers, and larger weights
-
-could also do crossvalidation to get more accurate scores, but would add more
-training time
 
 "overfitting is a very common problem when the dataset is too small compared
 with the number of model parameters that need to be learned." so need more data,
 or simpler model
 
-take initial stab at training, get scores. then use grid search with sklearn
-keras wrapper to find good parameters with alice_ch1.txt then compare those
-parameters with original guesses on the whole gutenberg dataset
 
+
+### Refinement
+
+<!-- The process of improving upon the algorithms and techniques used is clearly
+documented.
+**Both the initial and final solutions are reported, along with
+intermediate solutions, if necessary. -->
+
+The basic RNN algorithm remained the same over the course of the project, but
+many parameter values were explored.
 
 
 ## Results
@@ -584,25 +510,82 @@ parameters with original guesses on the whole gutenberg dataset
 Some type of analysis is used to validate the robustness of the model's
 solution. -->
 
-for rnns show the Loss vs epoch graphs to show increasing accuracy
+The RNN architecture has many parameters which can affect the speed of training
+and the accuracy of the model - the total parameter space has over 2,000,000
+combinations to explore (not including the optimizer parameters, like learning
+rate or decay) -
 
-show overfitting training curves - too much training -> overfitting
+With each model taking a few hours to train, only a small subset of the
+parameter space could be explored. The approach taken was to optimize each
+parameter individually in turn - such a search may get stuck in a local optimum,
+but a more complete search would be too expensive.
 
-robustness - ie how performs in the wild - try on some non-gutenberg text - compare diff models - ngrams, rnns
+The initial parameters chosen led to a validation accuracy of [  ]%, and test
+accuracy of [  ]%:
+
+\footnotesize
+
+| Parameter     | Description                                   | Values                  | Number to explore |        Initial Value | Final Value |
+|---------------+-----------------------------------------------+-------------------------+-------------------+----------------+-------|
+| nepochs       | number of epochs to train model               | 1-10+                   |                 1 |              3 |    10 |
+| patience      | stop after this many epochs of no improvement | 1-10                    |                 1 |              3 |     3 |
+| layers        | number of RNN layers                          | 1-3                     |                 3 |              1 |     1 |
+| dropout       | amount of dropout to apply after each layer   | 0.0-1.0                 |                 5 |              0 |   0.1 |
+| nvocab        | number of vocabulary words to use             | 1k-40k                  |                 4 |            10k |       |
+| embedding_dim | dimension of word embedding layer             | 50,100,200,300          |                 4 |             50 |       |
+| trainable     | train the word embedding matrix?              | True/False              |                 2 |          False |  True |
+| nhidden       | size of the hidden layer(s)                   | 50,100,200,300          |                 4 |             50 |   100 |
+| n             | amount to unfold recurrent network            | 1-10                    |                 5 |              5 |    10 |
+| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU       |                 3 |         Simple |   GRU |
+| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam, etc |                 7 |            sgd |       |
+| initializer   | random initializer for matrices               | uniform, normal, etc    |                 4 | glorot_uniform |       |
+| batch_size    | number of training sets per batch             | 16,32,64                |                 3 |             32 |       |
+| total         |                                               |                         |         2,419,200 |                |       |
+
+\normalsize
+
+Several experiments were performed to improve the validation accuracy:
+
+[update]
+
+\footnotesize
+
+| Parameter     | Values tried                          | Best value | Best accuracy | Notes |
+|---------------+---------------------------------------+------------+---------------+-------|
+| initial       |                                       |            |         0.140 |       |
+| dropout       | 0,0.1,0.2,0.3                         |        0.1 |         0.160 |       |
+| nlayers       | 1,2,3                                 |          2 |         0.167 |       |
+| nhidden       | 40,50,60                              |         50 |         0.167 |       |
+| nepochs       | 2,10                                  |         10 |         0.171 |       |
+| embedding_dim | 50,100                                |        100 |         0.185 |       |
+| nhidden       | 50,100                                |        100 |         0.199 |       |
+| nlayers       | 1,2,3                                 |          1 |         0.200 |       |
+| trainable     | true,false                            |       true |         0.222 |       |
+| n             | 5,10                                  |         10 |         0.232 |       |
+| rnn_class     | simple, lstm, gru                     |        gru |         0.232 |       |
+| optimizer     | adam, sgd, rmsprop, adagrad, adadelta |       adam |         0.232 |       |
+| batch_size    | 4,8,16,32                             |            |               |       |
+| nvocab        | 1k,5k,10k,20k,40k                     |            |               |       |
+| embed+nhid    | 100,200                               |        200 |         0.239 | slow  |
+
+\normalsize
+
+The final parameters chosen led to a validation accuracy of [ ]% and test
+accuracy of [ ]%.
 
 
-perplexity
-
-"The lowest perplexity that has been published on the Brown Corpus (1 million
-words of American English of varying topics and genres) as of 1992 is indeed
-about 247 per word, corresponding to a cross-entropy of log2 247 = 7.95 bits per
-word or 1.75 bits per letter using a trigram model. It is often possible to
-achieve lower perplexity on more specialized corpora, as they are more
-predictable."
-uh... what's more uptodate value
+<!-- robustness - ie how performs in the wild - try on some non-gutenberg text? compare diff models - ngrams, rnns -->
 
 
+<!-- perplexity -->
 
+<!-- "The lowest perplexity that has been published on the Brown Corpus (1 million -->
+<!-- words of American English of varying topics and genres) as of 1992 is indeed -->
+<!-- about 247 per word, corresponding to a cross-entropy of log2 247 = 7.95 bits per -->
+<!-- word or 1.75 bits per letter using a trigram model. It is often possible to -->
+<!-- achieve lower perplexity on more specialized corpora, as they are more -->
+<!-- predictable." -->
+<!-- uh... what's more uptodate value -->
 
 
 ### Justification
@@ -613,7 +596,9 @@ model and solution is significant enough to have adequately solved the problem.
 -->
 
 
-
+The benchmark trigram model achieved a final accuracy of [ ]%, while the best
+RNN architecture achieved an accuracy of [ ]% - this is a significant improvement,
+though at the cost of much greater training time ([ ] hours vs [ ] seconds).
 
 
 ## Conclusion
@@ -625,12 +610,14 @@ about the project with thorough discussion. Visual cues are clearly defined. -->
 
 -> add beam search
 
--> what if let word vectors be trained - would they move much from initial config? 
-
 Examples of text generated by the different models:
 
 
 
+
+Note how the trigram model generates more diverse sequences of words, though the
+RNN achieves higher accuracy by predicting more common words. The RNN is also
+better at opening and closing quotation marks.
 
 
 ### Reflection
@@ -639,19 +626,23 @@ Examples of text generated by the different models:
 one or two particular aspects of the project they found interesting or
 difficult. -->
 
-The most difficult part of this problem was getting a good project
-infrastructure set up - I initially developed a set of Python modules and
-classes to handle the data preprocessing and transformations, tokenization, and
-record results of experiments, but the main problem was that each step needed to
-be saved to disk so that I could develop the models without having to rerun the
-expensive steps. I eventually realized it was overkill to develop a separate
-program like that and just went with a simpler Jupyter notebook.
+The RNN is able to beat the trigram model because it can retain more history
+than just the previous n-1 tokens.
 
-Also, it was difficult to experiment with different model architectures, since
-each epoch is so expensive - they took about 30 minutes for the full dataset on
-my laptop. When I was initially developing the code I tried running simpler
-problems for speed but they would immediately start overfitting, so they weren't
-very helpful.
+
+<!-- The most difficult part of this problem was getting a good project -->
+<!-- infrastructure set up - I initially developed a set of Python modules and -->
+<!-- classes to handle the data preprocessing and transformations, tokenization, and -->
+<!-- record results of experiments, but the main problem was that each step needed to -->
+<!-- be saved to disk so that I could develop the models without having to rerun the -->
+<!-- expensive steps. I eventually realized it was overkill to develop a separate -->
+<!-- program like that and just went with a simpler Jupyter notebook. -->
+
+<!-- Also, it was difficult to experiment with different model architectures, since -->
+<!-- each epoch is so expensive - they took about 30 minutes for the full dataset on -->
+<!-- my laptop. When I was initially developing the code I tried running simpler -->
+<!-- problems for speed but they would immediately start overfitting, so they weren't -->
+<!-- very helpful. -->
 
 
 ### Improvement
@@ -708,7 +699,7 @@ can be so slow to train, and the n-grams do perform pretty well.
 
 (Pennington 2014) Pennington, Jeffrey et al.. "GloVe: Global Vectors for Word Representation." http://nlp.stanford.edu/projects/glove/, 2014
 
->(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton." Project Para. Cornell Aeronautical Laboratory, 1957.
+(Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton." Project Para. Cornell Aeronautical Laboratory, 1957.
 
 (Shannon 1948) Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
 
@@ -717,23 +708,23 @@ can be so slow to train, and the n-grams do perform pretty well.
 
 
 
---------------------------------------------------------------------------------
+<!-- -------------------------------------------------------------------------------- -->
 
-## Quality
+<!-- ## Quality -->
 
-### Presentation
+<!-- ### Presentation -->
 
-<!-- Project report follows a well-organized structure and would be readily
-understood by its intended audience. Each section is written in a clear, concise
-and specific manner. Few grammatical and spelling mistakes are present.
-All resources used to complete the project are cited and referenced. -->
+<!-- <\!-- Project report follows a well-organized structure and would be readily -->
+<!-- understood by its intended audience. Each section is written in a clear, concise -->
+<!-- and specific manner. Few grammatical and spelling mistakes are present. -->
+<!-- All resources used to complete the project are cited and referenced. -\-> -->
 
-### Functionality
+<!-- ### Functionality -->
 
-<!-- Code is formatted neatly with comments that effectively explain complex
-implementations.
-Output produces similar results and solutions as to those
-discussed in the project. -->
+<!-- <\!-- Code is formatted neatly with comments that effectively explain complex -->
+<!-- implementations. -->
+<!-- Output produces similar results and solutions as to those -->
+<!-- discussed in the project. -\-> -->
 
 
 

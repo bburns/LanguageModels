@@ -23,7 +23,7 @@ speech and handwriting recognition, and in machine translation.
 
 ## Report
 
-The final report is available [here](docs/report/Report.pdf).
+The final report is available [here](docs/report/report.pdf).
 
 
 ## Usage
