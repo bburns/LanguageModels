@@ -32,6 +32,7 @@ class Ngram():
     def __init__(self, data, n=3):
         """
         Create an n-gram model.
+        Implements a multidimensional array of word counts as a dictionary of dictionaries.
         data - a Data object - see data.py
         n - amount of context - the n in n-gram
         """

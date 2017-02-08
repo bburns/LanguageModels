@@ -72,7 +72,8 @@ INITIAL_EPOCH    = 0         # to continue training
 PATIENCE         = 3         # stop after this many epochs of no improvement
 VALIDATION_SPLIT = 0.01      # percent of training data to use for validation (0.01 ~10k tokens)
 NTEST            = 10000     # number of tokens to use for testing
-OPTIMIZER        = 'adam'    # optimizing algorithm to use (sgd, rmsprop, adam, adagrad)
+OPTIMIZER        = 'adam'    # optimizing algorithm to use (sgd, rmsprop, adam, adagrad, adadelta, adamax, nadam)
+INITIALIZER      = 'uniform' # random weight initializer (uniform, normal, lecun_uniform, glorot_uniform [default])
 SEED             = 0         # random number seed
 
 # TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
@@ -167,19 +168,19 @@ model.layers[0].trainable = TRAINABLE
 
 # hidden RNN layer(s)
 if LAYERS==1:
-    model.add(RNN_CLASS(NHIDDEN))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER))
     model.add(Dropout(DROPOUT))
 elif LAYERS==2:
-    model.add(RNN_CLASS(NHIDDEN, return_sequences=True))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER, return_sequences=True))
     model.add(Dropout(DROPOUT))
-    model.add(RNN_CLASS(NHIDDEN))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER))
     model.add(Dropout(DROPOUT))
 elif LAYERS==3:
-    model.add(RNN_CLASS(NHIDDEN, return_sequences=True))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER, return_sequences=True))
     model.add(Dropout(DROPOUT))
-    model.add(RNN_CLASS(NHIDDEN, return_sequences=True))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER, return_sequences=True))
     model.add(Dropout(DROPOUT))
-    model.add(RNN_CLASS(NHIDDEN))
+    model.add(RNN_CLASS(NHIDDEN, init=INITIALIZER))
     model.add(Dropout(DROPOUT))
 
 # output layer - convert nhidden to nvocab
@@ -239,12 +240,12 @@ print()
 print('history')
 print(history.history)
 
+
 # --------------------------------------------------------------------------------
 # Evaluate Model
 # --------------------------------------------------------------------------------
 
-
-#model.evaluate(x_test)
+# model.evaluate(x_test)
 
 #. calculate perplexity - use model.predict_proba()?
 
