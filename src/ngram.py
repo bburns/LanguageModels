@@ -236,7 +236,7 @@ class Ngram():
 debug = 0
 
 DATASET      = 'gutenbergs'
-TRAIN_AMOUNT = 1
+TRAIN_AMOUNT = 1 # 0.0 to 1.0
 NVOCAB       = 10000
 NTEST        = 10000
 
@@ -248,38 +248,41 @@ data = datamodule.Data(DATASET)
 data.prepare(nvocab=NVOCAB)
 print()
 
-for n in (1,2,3,4,5):
+# for n in (1,2,3,4,5):
+for n in (3,):
 
-    x_train, y_train, x_test, y_test = data.split(n=n, ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
+    with benchmark('ngram train and test'):
 
-    # --------------------------------------------------------------------------------
-    # Build Model
-    # --------------------------------------------------------------------------------
+        x_train, y_train, x_test, y_test = data.split(n=n, ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
 
-    model = Ngram(data, n=n)
+        # --------------------------------------------------------------------------------
+        # Build Model
+        # --------------------------------------------------------------------------------
 
-    # --------------------------------------------------------------------------------
-    # Train Model
-    # --------------------------------------------------------------------------------
+        model = Ngram(data, n=n)
 
-    model.fit(x_train, y_train, debug=debug)
+        # --------------------------------------------------------------------------------
+        # Train Model
+        # --------------------------------------------------------------------------------
 
-    # --------------------------------------------------------------------------------
-    # Evaluate Model
-    # --------------------------------------------------------------------------------
+        model.fit(x_train, y_train, debug=debug)
 
-    model.test(x_test, y_test) # sets various model properties
+        # --------------------------------------------------------------------------------
+        # Evaluate Model
+        # --------------------------------------------------------------------------------
 
-    print('accuracy:', model.test_accuracy)
-    print('relevance:', model.test_relevance)
+        model.test(x_test, y_test) # sets various model properties
 
-    print('sample predictions:')
-    df = model.test_samples
-    util.uprint(util.table(model.test_samples))
+        print('test accuracy:', model.test_accuracy)
+        print('test relevance:', model.test_relevance)
 
-    print('generated text:')
-    nsentences = 5
-    for i in range(nsentences):
-        util.uprint(model.generate()) # weird symbols can crash print
+        print('sample predictions:')
+        df = model.test_samples
+        util.uprint(util.table(model.test_samples))
 
-    print()
+        print('generated text:')
+        nsentences = 5
+        for i in range(nsentences):
+            util.uprint(model.generate()) # weird symbols can crash print
+
+        print()

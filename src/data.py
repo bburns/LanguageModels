@@ -19,8 +19,8 @@ from nltk import tokenize
 
 import util
 
-#. put this here? it's a NOP if already downloaded
-# nltk.download('punkt')
+# make sure we have the punkt sentence parser installed
+nltk.download('punkt')
 
 
 class Data():
@@ -153,12 +153,12 @@ class Data():
 
 if __name__ == '__main__':
 
+    # testing
+
     # data = Data('gutenbergs')
     data = Data('alice1')
     data.prepare(nvocab=100, debug=0)
     n = 4
-    #. just return train, test - let model handle validation split
-    # x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=n, nvalidate=10000, ntest=10000, debug=1)
     x_train, y_train, x_test, y_test = data.split(n=n, ntest=10000, debug=1)
     print(x_train[:5])
     print(y_train[:5])

@@ -57,7 +57,7 @@ import util
 
 debug            = 0         # 0 or 1
 DATASET          = 'gutenbergs' # dataset to use (gutenbergs, alice1)
-TRAIN_AMOUNT     = 1.0       # percent of training data to use (for debugging), 0.0 to 1.0
+TRAIN_AMOUNT     = 0.5       # percent of training data to use (for debugging), 0.0 to 1.0
 NEPOCHS          = 10        # number of epochs to train model
 LAYERS           = 1         # number of RNN layers, 1 to 3
 DROPOUT          = 0.1       # amount of dropout to apply after each layer, 0.0 to 1.0
@@ -69,7 +69,7 @@ N                = 10        # amount to unfold recurrent network
 RNN_CLASS        = GRU       # type of RNN to use - SimpleRNN, LSTM, or GRU
 BATCH_SIZE       = 32        # size of batch to use for training
 INITIAL_EPOCH    = 0         # to continue training
-PATIENCE         = 3         # stop after this many epochs of no improvement
+PATIENCE         = 10         # stop after this many epochs of no improvement
 VALIDATION_SPLIT = 0.01      # percent of training data to use for validation (0.01 ~10k tokens)
 NTEST            = 10000     # number of tokens to use for testing
 OPTIMIZER        = 'adam'    # optimizing algorithm to use (sgd, rmsprop, adam, adagrad, adadelta, adamax, nadam)
@@ -245,13 +245,6 @@ print(history.history)
 # Evaluate Model
 # --------------------------------------------------------------------------------
 
-# model.evaluate(x_test)
-
-#. calculate perplexity - use model.predict_proba()?
-
-# is this right? ask on stacko? do calcs for simple case?
-# print('final perplexity',np.exp(history.history['val_loss']))
-
 
 # Generate Text
 
@@ -261,6 +254,17 @@ nwords_to_generate = 20
 k = 3
 for i in range(nsentences):
     util.uprint(util.generate_text(model, data, N, nwords_to_generate, k))
+
+
+# calculate test accuracy on the heldout test data
+loss, accuracy = model.evaluate(x_test, y_test, BATCH_SIZE, verbose=0)
+print("Test loss:",loss)
+print("Test accuracy:",accuracy)
+
+
+#. calculate perplexity - use model.predict_proba()?
+# is this right? ask on stacko? do calcs for simple case?
+# print('final perplexity',np.exp(history.history['val_loss']))
 
 
 # --------------------------------------------------------------------------------
