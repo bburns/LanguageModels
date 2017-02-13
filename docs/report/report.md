@@ -231,10 +231,11 @@ include punctuation marks like commas, periods, etc.) -
 
 \normalsize
 
-The grade level is calculated using the Coleman-Liau Index (Coleman 1975), which
-is based on the average word and sentence lengths. The Gutenberg text number is
-listed in parentheses, and the texts can be found online - e.g. Alice in
-Wonderland can be found at http://www.gutenberg.org/etext/28885.
+The Gutenberg text number is listed in parentheses, and the texts can be found
+online - e.g. Alice in Wonderland can be found at
+http://www.gutenberg.org/etext/28885. The grade level is calculated using the
+Coleman-Liau Index (Coleman 1975), which is based on the average word and
+sentence lengths.
 
 Some sample text:
 
@@ -433,7 +434,7 @@ During training Keras output the progress and a generated sequence before/after
 each epoch - both the training and validation loss and accuracy are shown during
 training and at the end of the epoch, e.g. -
 
-\footnotesize
+\scriptsize
 
 ~~~
 Training model...
@@ -520,58 +521,59 @@ parameter space could be explored. The approach taken was to optimize each
 parameter individually in turn - such a search may get stuck in a local optimum,
 but a more complete search would be too expensive.
 
-The initial parameters chosen led to a validation accuracy of [  ]%, and test
-accuracy of [  ]%:
+The initial parameters chosen led to a validation accuracy of 14.0%, and test
+accuracy of 14.7%:
 
 \footnotesize
 
-| Parameter     | Description                                   | Values                  | Number to explore |        Initial Value | Final Value |
-|---------------+-----------------------------------------------+-------------------------+-------------------+----------------+-------|
-| nepochs       | number of epochs to train model               | 1-10+                   |                 1 |              3 |    10 |
-| patience      | stop after this many epochs of no improvement | 1-10                    |                 1 |              3 |     3 |
-| layers        | number of RNN layers                          | 1-3                     |                 3 |              1 |     1 |
-| dropout       | amount of dropout to apply after each layer   | 0.0-1.0                 |                 5 |              0 |   0.1 |
-| nvocab        | number of vocabulary words to use             | 1k-40k                  |                 4 |            10k |       |
-| embedding_dim | dimension of word embedding layer             | 50,100,200,300          |                 4 |             50 |       |
-| trainable     | train the word embedding matrix?              | True/False              |                 2 |          False |  True |
-| nhidden       | size of the hidden layer(s)                   | 50,100,200,300          |                 4 |             50 |   100 |
-| n             | amount to unfold recurrent network            | 1-10                    |                 5 |              5 |    10 |
-| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU       |                 3 |         Simple |   GRU |
-| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam, etc |                 7 |            sgd |       |
-| initializer   | random initializer for matrices               | uniform, normal, etc    |                 4 | glorot_uniform |       |
-| batch_size    | number of training sets per batch             | 16,32,64                |                 3 |             32 |       |
-| total         |                                               |                         |         2,419,200 |                |       |
+| Parameter     | Description                                   | Values                  | Number to explore |  Initial Value | Final Value |
+|---------------+-----------------------------------------------+-------------------------+-------------------+----------------+-------------|
+| nepochs       | number of epochs to train model               | 1-10+                   |                 1 |              3 |          10 |
+| patience      | stop after this many epochs of no improvement | 1-10                    |                 1 |              3 |           3 |
+| layers        | number of RNN layers                          | 1-3                     |                 3 |              1 |           1 |
+| dropout       | amount of dropout to apply after each layer   | 0.0-1.0                 |                 5 |              0 |         0.1 |
+| nvocab        | number of vocabulary words to use             | 5k,10k,20k,40k          |                 4 |            10k |         10k |
+| embedding_dim | dimension of word embedding layer             | 50,100,200,300          |                 4 |             50 |         200 |
+| trainable     | train the word embedding matrix?              | True/False              |                 2 |          False |        True |
+| nhidden       | size of the hidden layer(s)                   | 50,100,200,300          |                 4 |             50 |         200 |
+| n             | amount to unfold recurrent network            | 1-10                    |                 5 |              5 |          10 |
+| rnn_class     | type of RNN to use                            | Simple, LSTM, GRU       |                 3 |         Simple |         GRU |
+| optimizer     | optimizing algorithm to use                   | sgd, rmsprop, adam, etc |                 7 |            sgd |        adam |
+| initializer   | random initializer for matrices               | uniform, normal, etc    |                 4 | glorot_uniform |     uniform |
+| batch_size    | number of training sets per batch             | 16,32,64                |                 3 |             32 |          32 |
+| total         |                                               |                         |         2,419,200 |                |             |
 
 \normalsize
 
-Several experiments were performed to improve the validation accuracy:
+Several experiments were performed to tune the hyperparameters and try to
+improve the validation accuracy:
 
 [update]
 
 \footnotesize
 
-| Parameter     | Values tried                          | Best value | Best accuracy | Notes |
-|---------------+---------------------------------------+------------+---------------+-------|
-| initial       |                                       |            |         0.140 |       |
-| dropout       | 0,0.1,0.2,0.3                         |        0.1 |         0.160 |       |
-| nlayers       | 1,2,3                                 |          2 |         0.167 |       |
-| nhidden       | 40,50,60                              |         50 |         0.167 |       |
-| nepochs       | 2,10                                  |         10 |         0.171 |       |
-| embedding_dim | 50,100                                |        100 |         0.185 |       |
-| nhidden       | 50,100                                |        100 |         0.199 |       |
-| nlayers       | 1,2,3                                 |          1 |         0.200 |       |
-| trainable     | true,false                            |       true |         0.222 |       |
-| n             | 5,10                                  |         10 |         0.232 |       |
-| rnn_class     | simple, lstm, gru                     |        gru |         0.232 |       |
-| optimizer     | adam, sgd, rmsprop, adagrad, adadelta |       adam |         0.232 |       |
-| batch_size    | 4,8,16,32                             |            |               |       |
-| nvocab        | 1k,5k,10k,20k,40k                     |            |               |       |
-| embed+nhid    | 100,200                               |        200 |         0.239 | slow  |
+| Parameter     | Values tried                          | Best value | Best accuracy |
+|---------------+---------------------------------------+------------+---------------|
+| initial       |                                       |            |         0.140 |
+| dropout       | 0,0.1,0.2,0.3                         |        0.1 |         0.160 |
+| nlayers       | 1,2,3                                 |          2 |         0.167 |
+| nhidden       | 40,50,60                              |         50 |         0.167 |
+| nepochs       | 3,10                                  |         10 |         0.171 |
+| embedding_dim | 50,100                                |        100 |         0.185 |
+| nhidden       | 50,100                                |        100 |         0.199 |
+| nlayers       | 1,2,3                                 |          1 |         0.200 |
+| trainable     | true,false                            |       true |         0.222 |
+| n             | 5,10                                  |         10 |         0.232 |
+| rnn_class     | simple, lstm, gru                     |        gru |         0.232 |
+| optimizer     | adam, sgd, rmsprop, adagrad, adadelta |       adam |         0.232 |
+| initializer   | glorot_uniform, uniform, normal       |    uniform |         0.234 |
+| nvocab        | 10k,20k                               |        10k |         0.234 |
+| embed+nhid    | 100,200                               |        200 |         0.236 |
 
 \normalsize
 
-The final parameters chosen led to a validation accuracy of [ ]% and test
-accuracy of [ ]%.
+The final parameters chosen led to a validation accuracy of 23.6% and test
+accuracy of 24.4%, and absolute improvement of nearly 10%.
 
 
 <!-- robustness - ie how performs in the wild - try on some non-gutenberg text? compare diff models - ngrams, rnns -->
@@ -595,10 +597,9 @@ some type of statistical analysis. Justification is made as to whether the final
 model and solution is significant enough to have adequately solved the problem.
 -->
 
-
-The benchmark trigram model achieved a final accuracy of [ ]%, while the best
-RNN architecture achieved an accuracy of [ ]% - this is a significant improvement,
-though at the cost of much greater training time ([ ] hours vs [ ] seconds).
+The benchmark trigram model achieved a final accuracy of 18.7%, while the best
+RNN architecture achieved a test accuracy of 24.4% - this was a significant improvement,
+though at the cost of much greater training time (8 seconds vs 8.2 hours).
 
 
 ## Conclusion
@@ -610,14 +611,23 @@ about the project with thorough discussion. Visual cues are clearly defined. -->
 
 -> add beam search
 
-Examples of text generated by the different models:
+Some examples of text generated by the different models:
 
+* Trigram
 
+- strangely he must have felt in that direction , like house '' built in the book which the infinitely small ,
+- saw all three made the most crushed of men , each on the of this hesitating nature . this was the
+- surprised at this point they reached the first place , because one knows whom , in that one had to be
 
+* RNN
+
+- and then the old woman had been a little girl . the old women of women . the first
+- the whole . the door was open the window , and a large light of the , the old woman
+- it was not to be found . `` i am a , '' replied gavroche . `` i am
 
 Note how the trigram model generates more diverse sequences of words, though the
 RNN achieves higher accuracy by predicting more common words. The RNN is also
-better at opening and closing quotation marks.
+better at handling opening and closing quotation marks.
 
 
 ### Reflection
@@ -629,20 +639,14 @@ difficult. -->
 The RNN is able to beat the trigram model because it can retain more history
 than just the previous n-1 tokens.
 
+q. is that true? 
 
-<!-- The most difficult part of this problem was getting a good project -->
-<!-- infrastructure set up - I initially developed a set of Python modules and -->
-<!-- classes to handle the data preprocessing and transformations, tokenization, and -->
-<!-- record results of experiments, but the main problem was that each step needed to -->
-<!-- be saved to disk so that I could develop the models without having to rerun the -->
-<!-- expensive steps. I eventually realized it was overkill to develop a separate -->
-<!-- program like that and just went with a simpler Jupyter notebook. -->
-
-<!-- Also, it was difficult to experiment with different model architectures, since -->
-<!-- each epoch is so expensive - they took about 30 minutes for the full dataset on -->
-<!-- my laptop. When I was initially developing the code I tried running simpler -->
-<!-- problems for speed but they would immediately start overfitting, so they weren't -->
-<!-- very helpful. -->
+It took a while to get this project set up - I initially developed it with a set
+of Python classes to wrap the n-gram and RNN models to track the different
+experiments, but eventually went with a simpler Jupyter notebook, which made it
+easier to develop the code without having to rerun lengthy initialization
+sections. Then to run it on an Amazon EC2 instance I needed to make it a plain
+Python module, so that was the form it finally took.
 
 
 ### Improvement
@@ -651,17 +655,24 @@ than just the previous n-1 tokens.
 improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
 
-train longer, more vocabulary, more hidden nodes
+The simplest way to improve the accuracy of the model would be to train it
+longer - the accuracy was still improving slightly even after 10 epochs, though
+the rate of improvement was very slow, and at some point the model would start
+overfitting and the accuracy would go down.
 
-online learning (?) - ie learn new vocab words like phone does
+You could also train the model with more data - e.g. 10 million to 1 billion
+tokens, though this would require up to 1000 times the training time.
 
-better training/testing - distribute text by paragraphs, not sentences
+q. why would this help?
 
-With current hardware limitations, moving away from n-grams with smoothing might
-not be the best approach for an application, since state-of-the-art RNN models
-can be so slow to train, and the n-grams do perform pretty well.
+Note that with current hardware performance, moving away from n-grams with
+smoothing might not be the best approach for an application, since
+state-of-the-art RNN models can be slow to train, and the smoothed n-grams do
+perform fairly well.
 
--> but compare performance of RNN vs ngrams once trained, in terms of memory and speed!
+<!-- online learning (?) - ie learn new vocab words like phone does -->
+
+<!-- -> compare performance of RNN vs ngrams once trained, in terms of memory and speed! -->
 
 
 

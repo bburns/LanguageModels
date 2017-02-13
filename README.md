@@ -45,12 +45,6 @@ The base Python used is the [Anaconda3 4.2.0 distribution](https://www.continuum
 - pandas 0.19.2
 - tabulate 0.7.7
 
-The NLTK Punkt tokenizer may need to be installed, in which case:
-
-    $ python
-    >>> import nltk
-    >>> nltk.download('punkt')
-
 Additional libraries may need to be installed with pip install:
 
 - keras 1.2.1 - wrapper around TensorFlow
