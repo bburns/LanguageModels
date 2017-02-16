@@ -439,7 +439,7 @@ training and at the end of the epoch, e.g. -
 ~~~
 Training model...
 Train on 1283291 samples, validate on 12963 samples
-Epoch 0 generated text: of lightly malvern gurgling anybody despairing pointing fray 'm amid antechamber 'm fight sooth paid counter chimney-corner weather chimney-corner pierced
+Epoch 0 generated text: of lightly malvern gurgling anybody despairing pointing fray 'm amid antechamber 'm fight sooth 
 Epoch 1/10
 1283291/1283291 [==============================] - 1207s - loss: 5.4187 - acc: 0.1518 - val_loss: 5.1304 - val_acc: 0.1665
 Epoch 1 generated text: . `` you will have a , and i have not a man . '' she had a little ,
@@ -458,11 +458,18 @@ many epochs - this is prevented by an early stopping trigger, which will stop
 training if the validation accuracy does not improve for a certain number of
 epochs.
 
-For evaluation, plots are made of the loss and accuracy over the training
+Another way to improve the accuracy of the model is to apply *dropout* during
+training, which randomly sets a fraction of input units to 0 at each update,
+which helps to prevent overfitting. This reduces the number of parameters needed
+to learn a fully connected layer, and increases robustness by forcing the model
+to learn multiple ways to learn the same patterns (Srivatsava 2014).
+
+<!-- **add penalty for 'complexity' (ie overfitting, as with decision trees etc) - -->
+<!--   complexity ~ more nodes, more layers, and larger weights -->
+
+For evaluation, plots were made of the training and validation loss over the training
 epochs - see Figure 3 below - this also helps diagnose overfitting, which is
 indicated by the loss flattening out and starting to increase.
-
-[use better plot]
 
 ![Training and validation loss plot](images/loss.png)
 
@@ -471,24 +478,14 @@ indicated by the loss flattening out and starting to increase.
 
 <!-- Similar experiments were performed with the n-gram baseline.  -->
 
+<!-- "overfitting is a very common problem when the dataset is too small compared -->
+<!-- with the number of model parameters that need to be learned." so need more data, -->
+<!-- or simpler model -->
+
 <!-- If the neural network is too complex or the amount of training data too small, -->
 <!-- the model will be prone to overfitting - but if the neural network is too -->
 <!-- simple, it may have a high bias error - the best network size for a given amount -->
 <!-- of training data will be somewhere in between. -->
-
-dropout - "Dropout consists in randomly setting a fraction `p` of input units to
-0 at each update during training time, which helps prevent overfitting." "Since
-a fully connected layer occupies most of the parameters, it is prone to
-overfitting. The dropout method is introduced to prevent overfitting. " see
-[Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf)
-(Srivatsava 2014)
-
-**add penalty for 'complexity' (ie overfitting, as with decision trees etc) -
-  complexity ~ more nodes, more layers, and larger weights
-
-"overfitting is a very common problem when the dataset is too small compared
-with the number of model parameters that need to be learned." so need more data,
-or simpler model
 
 
 
@@ -513,16 +510,8 @@ solution. -->
 
 The RNN architecture has many parameters which can affect the speed of training
 and the accuracy of the model - the total parameter space has over 2,000,000
-combinations to explore (not including the optimizer parameters, like learning
-rate or decay) -
-
-With each model taking a few hours to train, only a small subset of the
-parameter space could be explored. The approach taken was to optimize each
-parameter individually in turn - such a search may get stuck in a local optimum,
-but a more complete search would be too expensive.
-
-The initial parameters chosen led to a validation accuracy of 14.0%, and test
-accuracy of 14.7%:
+combinations to explore (see table below). This does not even including the
+optimizer parameters, like learning rate or decay.
 
 \footnotesize
 
@@ -545,14 +534,19 @@ accuracy of 14.7%:
 
 \normalsize
 
-Several experiments were performed to tune the hyperparameters and try to
-improve the validation accuracy:
+With each model taking a few hours to train, only a small subset of the
+parameter space could be explored. The approach taken was to optimize each
+parameter individually in turn - such a search may get stuck in a local optimum,
+but a more complete search would be too expensive.
+
+The initial parameters chosen led to a test accuracy of 14.7%. Many experiments
+were performed to tune the hyperparameters and try to improve the accuracy:
 
 [update]
 
 \footnotesize
 
-| Parameter     | Values tried                          | Best value | Best accuracy |
+| Parameter     | Values tried                          | Best value | Best validation accuracy |
 |---------------+---------------------------------------+------------+---------------|
 | initial       |                                       |            |         0.140 |
 | dropout       | 0,0.1,0.2,0.3                         |        0.1 |         0.160 |
@@ -572,12 +566,16 @@ improve the validation accuracy:
 
 \normalsize
 
-The final parameters chosen led to a validation accuracy of 23.6% and test
-accuracy of 24.4%, and absolute improvement of nearly 10%.
-
+The final parameters chosen led to a test accuracy of 24.4%, an absolute
+improvement of 9.7% over the initial parameters.
 
 <!-- robustness - ie how performs in the wild - try on some non-gutenberg text? compare diff models - ngrams, rnns -->
 
+The test accuracy gives an indication of the robustsness of the model in the
+domain of 19th and early 20th century English novels and stories - for other
+domains the accuracy would be lower. For instance, using the model for word
+prediction in a texting app would have lower accuracy due to the lack of modern
+words, abbreviations, and phrases in the training data.
 
 <!-- perplexity -->
 
@@ -598,8 +596,53 @@ model and solution is significant enough to have adequately solved the problem.
 -->
 
 The benchmark trigram model achieved a final accuracy of 18.7%, while the best
-RNN architecture achieved a test accuracy of 24.4% - this was a significant improvement,
-though at the cost of much greater training time (8 seconds vs 8.2 hours).
+RNN architecture achieved a test accuracy of 24.4%, an absolute improvement of
+5.7%, though at the cost of much greater training time (8 seconds vs 8.2 hours).
+
+An accuracy score of 24.4% indicates a fairly useful model - if the user was
+presented with the best guess for the next word as they are entering text then
+the correct word would be shown nearly a quarter of the time - showing the 2nd
+and 3rd best guesses also would increase the usefulness of the model even more.
+
+
+For training, the benchmark trigram model has a space complexity of O(v^3), with
+*v*=number of vocabulary words, though the actual space used will be much less,
+as not all word combinations are valid. The time complexity for training is
+roughly O(t), with *t*=number of training words, as each training step is simply
+two O(1) dictionary lookups and an addition operation.
+
+The space complexity for predictions is the same, O(v^3), and the time
+complexity for predicting the next word in a sequence is O(v), since a
+prediction requires two O(1) dictionary lookups, then iterating over all key
+values to find the probabilities of the next word in the sequence. This could be
+improved to O(1) overall by using a priority queue to store the word
+probabilities instead of a dictionary of word counts, which would add a little
+time to the training phase.
+
+
+For training, the neural network model has a space complexity of approximately
+O(vw+2wh+h^2), which is dominated by the word vector lookup table, which is
+roughly O(vw), with *w*=word vector dimensions - this can be much less than the
+trigram model. The time complexity for training is roughly O(etnv), with
+*e*=number of epochs and *n*=amount of context. Each epoch, *t* sets of *n*
+words are fed through the matrices, which are relatively cheap multiplication
+operations, but the final step is a softmax computation over the entire
+vocabulary *v*, which involves exponentials, so this term dominates the
+training. The backpropagation step is roughly the same number of computations,
+so the overall complexity remains the same. This is much larger than the trigram
+training time complexity of O(t).
+
+For predictions the space complexity is the same, O(vw), and the time complexity
+is O(nv), which consists mostly of the softmax layer computations. 
+
+
+So overall, the neural network would be quite usable on a phone, for instance,
+once it was trained - with space requirements on the order of 1 million units
+and time requirements on the order of 100,000 calculations. For comparison, the
+trigram model could require 100 million units (more or less, depending on the
+amount of training data and whether low word counts were eliminated), and 10,000
+calculations. In other words, the neural network would be able to fit more
+information in smaller space, at the cost of increased prediction time.
 
 
 ## Conclusion
@@ -609,25 +652,34 @@ though at the cost of much greater training time (8 seconds vs 8.2 hours).
 <!-- A visualization has been provided that emphasizes an important quality
 about the project with thorough discussion. Visual cues are clearly defined. -->
 
--> add beam search
+A plot of accuracy with increasing amount of training material is shown below -
+it appears likely that both the n-gram and RNN model would keep improving with
+more training data -
+
+![Accuracy vs Train Amount](images/accuracy_vs_train_amount.png)
 
 Some examples of text generated by the different models:
 
-* Trigram
+Trigram
 
-- strangely he must have felt in that direction , like house '' built in the book which the infinitely small ,
-- saw all three made the most crushed of men , each on the of this hesitating nature . this was the
-- surprised at this point they reached the first place , because one knows whom , in that one had to be
+  - strangely he must have felt in that direction , like house '' built in the book which the 
+  - saw all three made the most crushed of men , each on the of this hesitating nature . 
+  - henslow , he has never been so , '' he replied : -- he says , 'no money , but on
+  - surprised at this point they reached the first place , because one knows whom , in that one 
+  - killed or conquerors . the rascal sprang from the vague mystery of the treasure of abbot thomas 's 
 
-* RNN
+RNN
 
-- and then the old woman had been a little girl . the old women of women . the first
-- the whole . the door was open the window , and a large light of the , the old woman
-- it was not to be found . `` i am a , '' replied gavroche . `` i am
+  - and then the old woman had been a little girl . the old women of women . the first
+  - `` i have no other words . he had a good deal , '' said the doctor , and
+  - from the window . the door opened . the door closed , and he was the door . `` i
+  - said he , `` i am not , and i could not have a good thing . ''
+  - he added , `` i know what you are doing , '' said the captain , `` you
 
-Note how the trigram model generates more diverse sequences of words, though the
-RNN achieves higher accuracy by predicting more common words. The RNN is also
-better at handling opening and closing quotation marks.
+In general, the RNN is more grammatically correct - though neither make a lot of
+sense - and is able to handle opening and closing quotation marks across phrases
+of several words, along with appropriate opening and closing phrases like "said
+the captain".
 
 
 ### Reflection
@@ -636,17 +688,23 @@ better at handling opening and closing quotation marks.
 one or two particular aspects of the project they found interesting or
 difficult. -->
 
+<!-- q. is this true?  -->
+
 The RNN is able to beat the trigram model because it can retain more history
 than just the previous n-1 tokens.
 
-q. is that true? 
 
-It took a while to get this project set up - I initially developed it with a set
-of Python classes to wrap the n-gram and RNN models to track the different
-experiments, but eventually went with a simpler Jupyter notebook, which made it
-easier to develop the code without having to rerun lengthy initialization
-sections. Then to run it on an Amazon EC2 instance I needed to make it a plain
-Python module, so that was the form it finally took.
+
+
+
+
+
+
+The project was initially developed as a set of Python classes to wrap the
+n-gram and RNN models to track the different experiments, but eventually became
+a simple Jupyter notebook, which made it easier to develop the code without
+having to rerun lengthy initialization sections. Then in order to run it on an
+Amazon EC2 instance the notebook was converted to a plain Python module.
 
 
 ### Improvement
@@ -655,20 +713,21 @@ Python module, so that was the form it finally took.
 improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
 
-The simplest way to improve the accuracy of the model would be to train it
+The simplest way to improve the accuracy of the model would be to train it with
+more data - e.g. 10 million tokens, though this would require 10 times the
+training time (i.e. 80 hours). One could try adding more and more training data,
+up to a billion tokens, time allowing (that would require 8,000 hours, or nearly
+a year), and see if the test accuracy continues to improve, or levels off at
+some point.
+
+Another way to improve the accuracy of the model would be to train it
 longer - the accuracy was still improving slightly even after 10 epochs, though
 the rate of improvement was very slow, and at some point the model would start
 overfitting and the accuracy would go down.
 
-You could also train the model with more data - e.g. 10 million to 1 billion
-tokens, though this would require up to 1000 times the training time.
-
-q. why would this help?
-
-Note that with current hardware performance, moving away from n-grams with
-smoothing might not be the best approach for an application, since
-state-of-the-art RNN models can be slow to train, and the smoothed n-grams do
-perform fairly well.
+With current hardware performance, moving away from n-grams with smoothing might
+not be the best approach for an application, since state-of-the-art RNN models
+can be slow to train, and the smoothed n-grams do perform fairly well.
 
 <!-- online learning (?) - ie learn new vocab words like phone does -->
 
