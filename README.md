@@ -23,9 +23,7 @@ speech and handwriting recognition, and in machine translation.
 
 ## Report
 
-The final report is available [here](docs/report/report.md) (markdown) (it's
-rendered to PDF with pandoc for the actual report - the tables don't display
-correctly with Github flavored Markdown here, but otherwise renders correctly).
+The final report is available [here (PDF)](docs/report/report.pdf).
 
 
 ## Usage
