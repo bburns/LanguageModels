@@ -57,7 +57,7 @@ import util
 
 debug            = 0         # 0 or 1
 DATASET          = 'gutenbergs' # dataset to use (gutenbergs, alice1)
-TRAIN_AMOUNT     = 0.5       # percent of training data to use (for debugging), 0.0 to 1.0
+TRAIN_AMOUNT     = 0.01       # percent of training data to use (for debugging), 0.0 to 1.0
 NEPOCHS          = 10        # number of epochs to train model
 LAYERS           = 1         # number of RNN layers, 1 to 3
 DROPOUT          = 0.1       # amount of dropout to apply after each layer, 0.0 to 1.0
