@@ -13,7 +13,6 @@ help:
 	@echo "  make ngram        run ngram.py"
 	@echo "  make rnn          run rnn.py"
 	@echo "  make plots        run plots.py"
-	@echo "  make report       make and view pdf of report - docs/report/report.pdf"
 
 # --------------------------------------------------------------------------------
 # * Download
