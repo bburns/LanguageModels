@@ -120,8 +120,8 @@ Given a sequence of words, predict the most likely following word.
 We'll use an RNN to make the prediction - different architectures will be
 trained on a training set, tuned on a validation set, and tested on a hold-out
 test set - the results will be compared against a baseline n-gram model - it is
-anticipated that an RNN with proper parameters will be able to beat the n-gram
-model.
+anticipated that an RNN with proper parameters will be more accurate than the
+n-gram model.
 
 <!-- A GRU (Gated Recurrent Unit) RNN is expected to offer the best performance for a -->
 <!-- given amount of training time, due to its ability to backpropagate the training -->
@@ -266,8 +266,8 @@ nouns/agents are grouped closely together, indicating their similarity.
 properly justified based on the characteristics of the problem. -->
 
 Until recently, n-grams were considered state of the art in word prediction -
-neural networks surpassed them in 2003, though at the cost of greater training
-time (Bengio 2003).
+neural networks surpassed them in accuracy in 2003, though at the cost of
+greater training time (Bengio 2003).
 
 An RNN is able to remember arbitrary amounts of context, while n-grams are
 effectively limited to about 4 words of context (a 5-gram will give 4 words of
@@ -355,7 +355,7 @@ sequence.
 
 A more state of the art baseline would be a Kneser-Ney 5-gram model (Kneser
 1995), which calculates 1- through 5-grams and interpolates between them, but
-implementing that algorithm is beyond the scope of this project.
+implementing that algorithm was beyond the scope of this project.
 
 
 ## Methodology
@@ -542,8 +542,6 @@ but a more complete search would be too expensive.
 The initial parameters chosen led to a test accuracy of 14.7%. Many experiments
 were performed to tune the hyperparameters and try to improve the accuracy:
 
-[update]
-
 \footnotesize
 
 | Parameter     | Values tried                          | Best value | Best validation accuracy |
@@ -674,7 +672,7 @@ RNN
   - `` i have no other words . he had a good deal , '' said the doctor , and
   - from the window . the door opened . the door closed , and he was the door . `` i
   - said he , `` i am not , and i could not have a good thing . ''
-  - he added , `` i know what you are doing , '' said the captain , `` you
+  - he added , \`` i know what you are doing , '' said the captain , \`` you
 
 In general, the RNN is more grammatically correct - though neither make a lot of
 sense - and is able to handle opening and closing quotation marks across phrases
