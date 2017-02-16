@@ -688,23 +688,24 @@ the captain".
 one or two particular aspects of the project they found interesting or
 difficult. -->
 
-<!-- q. is this true?  -->
+The RNN is more accurate than the trigram model because it can retain more
+history than just the previous 2 tokens, and using word vectors instead of
+discrete tokens for each word allows it to generalize and make predictions from
+similar words, not just exact matches.
 
-The RNN is able to beat the trigram model because it can retain more history
-than just the previous n-1 tokens.
+The RNN takes longer to train (e.g. 8 hours vs 8 seconds, about 4000x longer),
+but would easily be able to fit into memory for applications like phone text
+entry - it also performs word predictions a bit slower than the trigram, but not
+enough to be noticeable to an end-user.
 
+The most interesting aspect of this project to me was seeing how well the RNN
+learned to use quotation marks correctly, and that its accuracy looked likely to
+just keep improving with more training data - it makes me wonder what the limits
+of a simple model like this are - would it just keep learning more complex
+sequences and produce even more realistic sounding text with more training and
+larger matrices? And what improvements could be made to the model to make it
+even more accurate, and faster?
 
-
-
-
-
-
-
-The project was initially developed as a set of Python classes to wrap the
-n-gram and RNN models to track the different experiments, but eventually became
-a simple Jupyter notebook, which made it easier to develop the code without
-having to rerun lengthy initialization sections. Then in order to run it on an
-Amazon EC2 instance the notebook was converted to a plain Python module.
 
 
 ### Improvement
@@ -713,25 +714,37 @@ Amazon EC2 instance the notebook was converted to a plain Python module.
 improved. Potential solutions resulting from these improvements are considered
 and compared/contrasted to the current solution. -->
 
-The simplest way to improve the accuracy of the model would be to train it with
-more data - e.g. 10 million tokens, though this would require 10 times the
-training time (i.e. 80 hours). One could try adding more and more training data,
-up to a billion tokens, time allowing (that would require 8,000 hours, or nearly
-a year), and see if the test accuracy continues to improve, or levels off at
-some point.
+The simplest way to improve the accuracy of the model might be to train it with
+more data, as seems apparent from the graph showing increasing accuracy with
+training data - e.g. you could feed it 10 million tokens, though this would
+require 10 times the training time (e.g. 80 hours). One could try adding more
+and more training data, up to a billion tokens, time allowing (that would
+require 8,000 hours, or nearly a year with this setup), and see if the test
+accuracy continued to improve, or leveled off at some point.
 
-Another way to improve the accuracy of the model would be to train it
-longer - the accuracy was still improving slightly even after 10 epochs, though
-the rate of improvement was very slow, and at some point the model would start
-overfitting and the accuracy would go down.
+It would also be possible to improve the accuracy slightly by training it
+longer - the accuracy was still improving a small bit even after 10 epochs,
+though at some point the model would start overfitting and the accuracy would
+begin going down.
 
-With current hardware performance, moving away from n-grams with smoothing might
-not be the best approach for an application, since state-of-the-art RNN models
-can be slow to train, and the smoothed n-grams do perform fairly well.
+It's possible that the training could be sped up also - the softmax output layer
+is the most computationally expensive part of the training, and there are some
+ways of approximating it, such as hierarchical softmax or differentiated softmax
+(Ruder 2016). This would make it possible to improve the accuracy and perform
+more experiments with the architecture, so would be worthwhile to try to
+incorporate.
+
+There are other aspects of the architecture which I haven't explored, such
+as stateful or stacked RNNs, which might improve the accuracy further. 
+
+
+
+
+<!-- With current hardware performance, moving away from n-grams with smoothing might -->
+<!-- not be the best approach for an application, since state-of-the-art RNN models -->
+<!-- can be slow to train, and the smoothed n-grams do perform fairly well. -->
 
 <!-- online learning (?) - ie learn new vocab words like phone does -->
-
-<!-- -> compare performance of RNN vs ngrams once trained, in terms of memory and speed! -->
 
 
 
@@ -770,6 +783,8 @@ can be slow to train, and the smoothed n-grams do perform fairly well.
 (Pennington 2014) Pennington, Jeffrey et al.. "GloVe: Global Vectors for Word Representation." http://nlp.stanford.edu/projects/glove/, 2014
 
 (Rosenblatt 1957) Rosenblatt, F. "The perceptron, a perceiving and recognizing automaton." Project Para. Cornell Aeronautical Laboratory, 1957.
+
+(Ruder 2016) Ruder, Sebastian. "On word embeddings - Part 2: Approximating the Softmax." http://sebastianruder.com/word-embeddings-softmax, 2016.
 
 (Shannon 1948) Shannon, Claude, "A Mathematical Theory of Communication." The Bell System Technical Journal, Vol. 27, July 1948.
 
