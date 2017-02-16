@@ -72,35 +72,6 @@ class Ngram():
             d[token] = 1
 
 
-    # this was too slow
-    # def predict_proba(self, x, verbose=0):
-    #     """
-    #     Predict probability of following words, over entire vocabulary.
-    #     This method follows keras's api (ie duck typing).
-    #     """
-    #     # get the last dictionary, which contains the subsequent tokens and their counts
-    #     d = self._d
-    #     tokens = x[0]
-    #     for token in tokens:
-    #         if token in d:
-    #             d = d[token]
-    #         else:
-    #             d = {}
-    #     nvocab = self.data.nvocab
-    #     ntotal = sum(d.values()) # total occurrences of subsequent tokens
-    #     # probs = [[]]
-    #     probs = np.zeros((1,nvocab))
-    #     for iword in range(nvocab):
-    #         ncount = d.get(iword)
-    #         if ncount:
-    #             pct = ncount/ntotal if ntotal!=0 else 0
-    #         else:
-    #             pct = 0.0
-    #         # probs[0].append(pct)
-    #         probs[0,iword] = pct
-    #     return probs
-
-
     def test(self, x_test, y_test, nsamples=10):
         """
         Test the model and set the accuracy, relevance score and some sample predictions.
@@ -248,7 +219,6 @@ data = datamodule.Data(DATASET)
 data.prepare(nvocab=NVOCAB)
 print()
 
-# for n in (1,2,3,4,5):
 for n in (3,):
 
     with benchmark('ngram train and test'):

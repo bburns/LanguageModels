@@ -88,11 +88,6 @@ def choose_iwords(iword_probs, k):
 # print(choose_iwords([(3,0.5),(2,0.3),(9,0.2)], 2))
 
 
-#. make stochastic beam search
-#. when have punctuation, start with period
-#. stop when reach a period or max words
-#. ->generate_sentence
-#. k->beam_width
 def generate_text(model, data, n, nwords=20, k=3):
     """
     Generate text from the given model with semi stochastic search.

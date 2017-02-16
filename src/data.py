@@ -92,7 +92,6 @@ class Data():
             print('start of sequence:')
             print(self.sequence[:100])
 
-        #.
         self.word_to_iword = token_to_index
         self.iword_to_word = {iword:word for iword,word in enumerate(index_to_token)}
 
@@ -155,8 +154,7 @@ if __name__ == '__main__':
 
     # testing
 
-    # data = Data('gutenbergs')
-    data = Data('alice1')
+    data = Data('gutenbergs')
     data.prepare(nvocab=100, debug=0)
     n = 4
     x_train, y_train, x_test, y_test = data.split(n=n, ntest=10000, debug=1)

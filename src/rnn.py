@@ -33,7 +33,6 @@ from keras.utils.np_utils import to_categorical
 from keras.layers import Dense, Activation, Dropout
 from keras.models import Model
 from keras.models import Sequential
-#from keras.models import load_model
 from keras.layers.embeddings import Embedding
 from keras.layers.recurrent import SimpleRNN, LSTM, GRU
 from keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
@@ -46,7 +45,6 @@ except:
     plt = None
 
 # local modules
-# import sys; sys.path.append('../src')
 import data as datamodule
 import util
 
@@ -76,8 +74,6 @@ OPTIMIZER        = 'adam'    # optimizing algorithm to use (sgd, rmsprop, adam, 
 INITIALIZER      = 'uniform' # random weight initializer (uniform, normal, lecun_uniform, glorot_uniform [default])
 SEED             = 0         # random number seed
 
-# TOP_PREDICTIONS = 3 # top number of predictions to be considered for relevance score
-
 # LOSS_FN    = 'categorical_crossentropy' # allows calculation of top_k_accuracy, but requires one-hot encoding y values
 LOSS_FN    = 'sparse_categorical_crossentropy'
 BASE_DIR   = '.'
@@ -101,9 +97,7 @@ data = datamodule.Data(DATASET)
 
 data.prepare(nvocab=NVOCAB) # ~15sec to tokenize
 
-# split data into train, validate, test sets
-# x_train, y_train, x_validate, y_validate, x_test, y_test = data.split(n=N, nvalidate=NVALIDATE,
-                                                                      # ntest=NTEST, train_amount=TRAIN_AMOUNT, debug=debug)
+# split data into train and test sets
 x_train, y_train, x_test, y_test = data.split(n=N, ntest=NTEST,
                                               train_amount=TRAIN_AMOUNT, debug=debug)
 
@@ -132,7 +126,6 @@ if debug:
 
 # build embedding matrix of the top nvocab words ~30ms
 def get_embedding_matrix(data, word_vectors, nvocab):
-    # nwords = min(nvocab, len(data.word_to_iword))
     nwords = nvocab
     embedding_dim = len(word_vectors['a'])
     E = np.zeros((nwords + 1, embedding_dim))
@@ -185,7 +178,6 @@ elif LAYERS==3:
 
 # output layer - convert nhidden to nvocab
 model.add(Dense(NVOCAB))
-#model.add(TimeDistributedDense(NVOCAB)) # q. how different from Dense layer?
 
 # convert nvocab to probabilities - expensive
 model.add(Activation('softmax'))
@@ -206,26 +198,16 @@ class Print_Sentence(Callback):
         sentence = util.generate_text(self.model, data, N)
         util.uprint('Epoch %d generated text:' % epoch, sentence)
 
-#class BatchRecorder(Callback):
-#    def on_train_begin(self, logs={}):
-#        self.data = []
-#    def on_batch_end(self, batch, logs={}):
-#        row = [batch, logs.get('loss'), logs.get('acc')]
-#        self.data.append(row)
-
 print_sentence = Print_Sentence()
 checkpoint = ModelCheckpoint(MODEL_FILE, monitor='val_acc', save_best_only=True, mode='max')
 early_stopping = EarlyStopping(monitor='val_acc', patience=PATIENCE)
-#batch_recorder = BatchRecorder()
 
 callbacks = [print_sentence, checkpoint, early_stopping]
 
 
 print('Training model...')
 try:
-    #. pass validation% here instead of fixed array
     history = model.fit(x_train, y_train, batch_size=BATCH_SIZE, nb_epoch=NEPOCHS,
-                        # validation_data=(x_validate, y_validate),
                         validation_split=VALIDATION_SPLIT,
                         callbacks=callbacks)
 except KeyboardInterrupt:
@@ -233,9 +215,6 @@ except KeyboardInterrupt:
 
 util.uprint('Final epoch generated text:', util.generate_text(model, data, N))
 print()
-
-#. convert to pandas table
-#print(batch_recorder.data)
 
 print('history')
 print(history.history)
@@ -255,16 +234,10 @@ k = 3
 for i in range(nsentences):
     util.uprint(util.generate_text(model, data, N, nwords_to_generate, k))
 
-
 # calculate test accuracy on the heldout test data
 loss, accuracy = model.evaluate(x_test, y_test, BATCH_SIZE, verbose=0)
 print("Test loss:",loss)
 print("Test accuracy:",accuracy)
-
-
-#. calculate perplexity - use model.predict_proba()?
-# is this right? ask on stacko? do calcs for simple case?
-# print('final perplexity',np.exp(history.history['val_loss']))
 
 
 # --------------------------------------------------------------------------------

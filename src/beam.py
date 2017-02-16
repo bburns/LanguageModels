@@ -1,7 +1,0 @@
-
-def beamsearch():
-    pass
-
-
-
-beamsearch()

@@ -1,6 +1,6 @@
 
 """
-Plots
+Various plots with data obtained from ngram and rnn runs.
 """
 
 import matplotlib.pyplot as plt
